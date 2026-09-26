@@ -1,0 +1,554 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 110;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		D98A86FE30685002007D5F92 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D98A86E830685001007D5F92 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D98A86EF30685001007D5F92;
+			remoteInfo = Chromahora;
+		};
+		D98A870830685002007D5F92 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D98A86E830685001007D5F92 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D98A86EF30685001007D5F92;
+			remoteInfo = Chromahora;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D98A86F030685001007D5F92 /* Chromahora.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chromahora.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D98A86FD30685002007D5F92 /* ChromahoraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChromahoraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D98A870730685002007D5F92 /* ChromahoraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChromahoraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D98A86F230685001007D5F92 /* Chromahora */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Chromahora;
+			sourceTree = "<group>";
+		};
+		D98A870030685002007D5F92 /* ChromahoraTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ChromahoraTests;
+			sourceTree = "<group>";
+		};
+		D98A870A30685002007D5F92 /* ChromahoraUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ChromahoraUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D98A86ED30685001007D5F92 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		D98A86FA30685002007D5F92 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		D98A870430685002007D5F92 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D98A86E730685001007D5F92 = {
+			isa = PBXGroup;
+			children = (
+				D98A86F230685001007D5F92 /* Chromahora */,
+				D98A870030685002007D5F92 /* ChromahoraTests */,
+				D98A870A30685002007D5F92 /* ChromahoraUITests */,
+				D98A86F130685001007D5F92 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D98A86F130685001007D5F92 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D98A86F030685001007D5F92 /* Chromahora.app */,
+				D98A86FD30685002007D5F92 /* ChromahoraTests.xctest */,
+				D98A870730685002007D5F92 /* ChromahoraUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D98A86EF30685001007D5F92 /* Chromahora */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D98A870F30685002007D5F92 /* Build configuration list for PBXNativeTarget "Chromahora" */;
+			buildPhases = (
+				D98A86EC30685001007D5F92 /* Sources */,
+				D98A86ED30685001007D5F92 /* Frameworks */,
+				D98A86EE30685001007D5F92 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				D98A86F230685001007D5F92 /* Chromahora */,
+			);
+			name = Chromahora;
+			productName = Chromahora;
+			productReference = D98A86F030685001007D5F92 /* Chromahora.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D98A86FC30685002007D5F92 /* ChromahoraTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D98A871230685002007D5F92 /* Build configuration list for PBXNativeTarget "ChromahoraTests" */;
+			buildPhases = (
+				D98A86F930685002007D5F92 /* Sources */,
+				D98A86FA30685002007D5F92 /* Frameworks */,
+				D98A86FB30685002007D5F92 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D98A86FF30685002007D5F92 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D98A870030685002007D5F92 /* ChromahoraTests */,
+			);
+			name = ChromahoraTests;
+			productName = ChromahoraTests;
+			productReference = D98A86FD30685002007D5F92 /* ChromahoraTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D98A870630685002007D5F92 /* ChromahoraUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D98A871530685002007D5F92 /* Build configuration list for PBXNativeTarget "ChromahoraUITests" */;
+			buildPhases = (
+				D98A870330685002007D5F92 /* Sources */,
+				D98A870430685002007D5F92 /* Frameworks */,
+				D98A870530685002007D5F92 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D98A870930685002007D5F92 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D98A870A30685002007D5F92 /* ChromahoraUITests */,
+			);
+			name = ChromahoraUITests;
+			productName = ChromahoraUITests;
+			productReference = D98A870730685002007D5F92 /* ChromahoraUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D98A86E830685001007D5F92 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					D98A86EF30685001007D5F92 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					D98A86FC30685002007D5F92 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = D98A86EF30685001007D5F92;
+					};
+					D98A870630685002007D5F92 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = D98A86EF30685001007D5F92;
+					};
+				};
+			};
+			buildConfigurationList = D98A86EB30685001007D5F92 /* Build configuration list for PBXProject "Chromahora" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D98A86E730685001007D5F92;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D98A86F130685001007D5F92 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D98A86EF30685001007D5F92 /* Chromahora */,
+				D98A86FC30685002007D5F92 /* ChromahoraTests */,
+				D98A870630685002007D5F92 /* ChromahoraUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D98A86EE30685001007D5F92 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		D98A86FB30685002007D5F92 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		D98A870530685002007D5F92 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D98A86EC30685001007D5F92 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		D98A86F930685002007D5F92 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		D98A870330685002007D5F92 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D98A86FF30685002007D5F92 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D98A86EF30685001007D5F92 /* Chromahora */;
+			targetProxy = D98A86FE30685002007D5F92 /* PBXContainerItemProxy */;
+		};
+		D98A870930685002007D5F92 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D98A86EF30685001007D5F92 /* Chromahora */;
+			targetProxy = D98A870830685002007D5F92 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D98A870D30685002007D5F92 /* Debug configuration for PBXProject "Chromahora" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D98A870E30685002007D5F92 /* Release configuration for PBXProject "Chromahora" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D98A871030685002007D5F92 /* Debug configuration for PBXNativeTarget "Chromahora" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.Chromahora;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D98A871130685002007D5F92 /* Release configuration for PBXNativeTarget "Chromahora" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.Chromahora;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D98A871330685002007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.ChromahoraTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Chromahora.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Chromahora";
+			};
+			name = Debug;
+		};
+		D98A871430685002007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.ChromahoraTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Chromahora.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Chromahora";
+			};
+			name = Release;
+		};
+		D98A871630685002007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.ChromahoraUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Chromahora;
+			};
+			name = Debug;
+		};
+		D98A871730685002007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.ChromahoraUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Chromahora;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D98A86EB30685001007D5F92 /* Build configuration list for PBXProject "Chromahora" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D98A870D30685002007D5F92 /* Debug configuration for PBXProject "Chromahora" */,
+				D98A870E30685002007D5F92 /* Release configuration for PBXProject "Chromahora" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D98A870F30685002007D5F92 /* Build configuration list for PBXNativeTarget "Chromahora" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D98A871030685002007D5F92 /* Debug configuration for PBXNativeTarget "Chromahora" */,
+				D98A871130685002007D5F92 /* Release configuration for PBXNativeTarget "Chromahora" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D98A871230685002007D5F92 /* Build configuration list for PBXNativeTarget "ChromahoraTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D98A871330685002007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraTests" */,
+				D98A871430685002007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D98A871530685002007D5F92 /* Build configuration list for PBXNativeTarget "ChromahoraUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D98A871630685002007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraUITests" */,
+				D98A871730685002007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraUITests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D98A86E830685001007D5F92 /* Project object */;
+	validationLevel = 1;
+}
