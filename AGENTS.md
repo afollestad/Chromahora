@@ -16,14 +16,15 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Xcode 27 project with an iOS 27 deployment target. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely.
 - Source folders are synchronized groups. New files under `Chromahora/`, `ChromahoraTests/`, or `ChromahoraUITests/` join their targets automatically; never edit `project.pbxproj` to add files.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint` and `xcsift` and a pre-commit hook that lints.
-- Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh` (set `SIMULATOR` to pick another device).
+- Build, run, test and lint through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator and the DerivedData path that results depend on.
+- Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).
 - Unit tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`.
 - Lint: `./scripts/lint.sh` from the repo root. SwiftLint runs in strict mode and Swift warnings are errors, so both fail on any warning.
 - Scripts build into `.build/xcode` so agent builds don't touch the shared DerivedData, and pipe through `xcsift` when installed; read its TOON `status` and `summary`.
 
 ## Verifying UI
 
-- Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh` and capture with `xcrun simctl io <udid> screenshot`.
+- Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh -b` and capture with `xcrun simctl io <udid> screenshot`.
 - `xcodebuild test` runs on a simulator clone and shuts the original down. Boot it again before taking screenshots.
 - `simctl` cannot scroll or tap. To inspect another part of the timeline, temporarily override `now` or the store's initial `selectedDate` in `ContentView`; to open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render.
 - To see the loading or failed placeholders, temporarily hand `ContentView` a provider that never answers or always throws.

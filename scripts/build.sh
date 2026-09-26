@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Homebrew tools such as xcsift and swiftlint can be missing from PATH in git hooks and GUI-launched shells.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 

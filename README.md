@@ -5,11 +5,11 @@ Chromahora is an iOS app designed to show photographers when blue hour and golde
 ## Development
 
 ```sh
-./scripts/setup.sh  # Install SwiftLint and xcsift, and a lint pre-commit hook
-./scripts/build.sh  # Build for the iOS Simulator
-./scripts/run.sh    # Build, install, and launch in the simulator
-./scripts/test.sh   # Run unit tests
-./scripts/lint.sh   # Run SwiftLint
+./scripts/setup.sh   # Install SwiftLint and xcsift, and a lint pre-commit hook
+./scripts/build.sh   # Build for the iOS Simulator
+./scripts/run.sh -b  # Build, install, and launch in the simulator (omit -b to relaunch the last build)
+./scripts/test.sh    # Run unit tests
+./scripts/lint.sh    # Run SwiftLint
 ```
 
 ## License
