@@ -11,7 +11,8 @@ import SwiftUI
 struct ChromahoraApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // The one place to swap in a real provider once solar data is available.
+            ContentView(provider: MockSolarDayProvider())
         }
     }
 }

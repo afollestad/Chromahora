@@ -25,7 +25,8 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 - Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh` and capture with `xcrun simctl io <udid> screenshot`.
 - `xcodebuild test` runs on a simulator clone and shuts the original down. Boot it again before taking screenshots.
-- `simctl` cannot scroll or tap. To inspect another part of the timeline, temporarily override `now` or `selectedDate` in `ContentView`; to open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render.
+- `simctl` cannot scroll or tap. To inspect another part of the timeline, temporarily override `now` or the store's initial `selectedDate` in `ContentView`; to open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render.
+- To see the loading or failed placeholders, temporarily hand `ContentView` a provider that never answers or always throws.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.
 - Check anything in the navigation bar over both backdrops: the same view around 3 AM (night) and mid afternoon (daylight).
 - Check edge-hugging changes in landscape too: call `requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight))` on the window scene from a temporary `.task`, and capture with `--mask=black` to see the Dynamic Island.
@@ -33,7 +34,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 ## Design rules
 
 - Vertical position is proportional to time of day. Never compress or stretch phases to make them more visible; zoom (`pointsPerHour`) and scrolling are the only tools.
-- `SolarDay` is the single contract for a day's data. `SolarDay.mock(for:)` is a placeholder, and `ContentView.day` is the one place to swap in real solar data.
+- `SolarDay` is the single contract for a day's data, which `SolarDayStore` loads through a `SolarDayProvider`. `MockSolarDayProvider` is a placeholder, and `ChromahoraApp` is the one place to swap in a real provider.
 - All positions come from `SolarDay.fraction(of:)`. Never hard-code hours or minutes in views.
 - The sky gradient interpolates in perceptual color space, holds color across night and daylight, peaks at the midpoint of blue and golden hours, and crosses a mauve stop between them. Blue and golden are near-complementary and blend to mud otherwise.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. No scroll edge effects, since the soft style blurs hours of timeline and the hard style paints a dark band.
@@ -47,4 +48,4 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Views live in `Chromahora/Views/` and models in `Chromahora/Model/`. Keep each view file to one screen or overlay.
 - Every view has a `#Preview`. Use `@Previewable @State` for bindings.
 - Doc comments explain why a constant has its value, not what the code does.
-- Unit tests cover the model, not layout. Add a test whenever `SolarDay` gains behavior.
+- Unit tests cover the model, not layout. Add a test whenever `SolarDay` or `SolarDayStore` gains behavior, and drive store tests through `StubSolarDayProvider` so response order is explicit, never timed.
