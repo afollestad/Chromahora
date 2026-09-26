@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Annotates the sky gradient: an hour ruler on the leading edge, sunrise,
-/// sunset and "now" markers, and a label for each phase on the trailing edge.
+/// sunset and "now" markers, and a label for each phase but night on the trailing edge.
 struct DayTimelineOverlay: View {
     let day: SolarDay
     let now: Date
@@ -163,7 +163,6 @@ struct DayTimelineOverlay: View {
     }
 
     private func text(for segment: DaySegment) -> String {
-        guard segment.phase != .night else { return segment.phase.title }
         let range = (segment.interval.start..<segment.interval.end)
             .formatted(date: .omitted, time: .shortened)
         return "\(segment.phase.title) · \(range)"
@@ -199,11 +198,13 @@ struct DayTimelineOverlay: View {
         }
     }
 
-    /// Each phase's label rests at the phase's midpoint, nudged apart like the markers.
+    /// A phase's label rests at the phase's midpoint, nudged apart like the markers.
     /// While the phase is partly on screen, the label may slide toward the visible
     /// part, but only within its own phase and clear of its neighbors' resting spots.
     private func placedPhases(size: CGSize) -> [PlacedPhase] {
-        let segments = day.segments
+        // Night goes unlabeled. Its band is unmistakable, midnight cuts its range
+        // short, and the blue hour labels already mark where it begins and ends.
+        let segments = day.segments.filter { $0.phase != .night }
         let labelYs = spaced(segments.map { y(for: $0.midpoint, in: size) })
 
         return segments.indices.map { index in
