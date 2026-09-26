@@ -14,7 +14,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 ## Build and test
 
 - Xcode 27 project with an iOS 27 deployment target. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely.
-- Source folders are synchronized groups. New files under `Chromahora/`, `ChromahoraTests/`, or `ChromahoraUITests/` join their targets automatically; never edit `project.pbxproj` to add files.
+- Source folders are synchronized groups. New files under `Chromahora/` or `ChromahoraTests/` join their targets automatically; never edit `project.pbxproj` to add files.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint` and `xcsift` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on.
 - Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).

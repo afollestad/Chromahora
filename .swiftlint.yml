@@ -2,7 +2,6 @@ strict: true
 included:
   - Chromahora
   - ChromahoraTests
-  - ChromahoraUITests
 excluded:
   - .build
 line_length:
