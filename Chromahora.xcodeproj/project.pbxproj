@@ -6,6 +6,10 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D98A871B30685002007D5F92 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = D98A871A30685002007D5F92 /* SnapshotTesting */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		D98A86FE30685002007D5F92 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,6 +33,17 @@
 		D98A870730685002007D5F92 /* ChromahoraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChromahoraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D98A871C30685002007D5F92 /* Exceptions for "ChromahoraTests" folder in "ChromahoraTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Snapshots/AGENTS.md,
+				Snapshots/CLAUDE.md,
+			);
+			target = D98A86FC30685002007D5F92 /* ChromahoraTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D98A86F230685001007D5F92 /* Chromahora */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -37,6 +52,9 @@
 		};
 		D98A870030685002007D5F92 /* ChromahoraTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D98A871C30685002007D5F92 /* Exceptions for "ChromahoraTests" folder in "ChromahoraTests" target */,
+			);
 			path = ChromahoraTests;
 			sourceTree = "<group>";
 		};
@@ -56,6 +74,7 @@
 		D98A86FA30685002007D5F92 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				D98A871B30685002007D5F92 /* SnapshotTesting in Frameworks */,
 			);
 		};
 		D98A870430685002007D5F92 /* Frameworks */ = {
@@ -124,6 +143,9 @@
 				D98A870030685002007D5F92 /* ChromahoraTests */,
 			);
 			name = ChromahoraTests;
+			packageProductDependencies = (
+				D98A871A30685002007D5F92 /* SnapshotTesting */,
+			);
 			productName = ChromahoraTests;
 			productReference = D98A86FD30685002007D5F92 /* ChromahoraTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -181,6 +203,9 @@
 			);
 			mainGroup = D98A86E730685001007D5F92;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D98A871930685002007D5F92 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D98A86F130685001007D5F92 /* Products */;
 			projectDirPath = "";
@@ -550,6 +575,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D98A871930685002007D5F92 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = exactVersion;
+				version = 1.19.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D98A871A30685002007D5F92 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D98A871930685002007D5F92 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D98A86E830685001007D5F92 /* Project object */;
 	validationLevel = 1;

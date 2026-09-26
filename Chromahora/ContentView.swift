@@ -11,8 +11,8 @@ struct ContentView: View {
     /// One store per window, so each window can show its own day.
     @State private var store: SolarDayStore
 
-    init(provider: any SolarDayProvider) {
-        _store = State(initialValue: SolarDayStore(provider: provider))
+    init(provider: any SolarDayProvider, selectedDate: Date = .now) {
+        _store = State(initialValue: SolarDayStore(provider: provider, selectedDate: selectedDate))
     }
 
     var body: some View {
