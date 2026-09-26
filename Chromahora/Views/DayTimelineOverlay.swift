@@ -10,8 +10,15 @@ import SwiftUI
 struct DayTimelineOverlay: View {
     let day: SolarDay
     let now: Date
+    /// The screen's safe area. The timeline scrolls edge to edge, so this view sees
+    /// no insets of its own, and each edge differs by device and orientation.
+    let safeAreaInsets: EdgeInsets
 
     private let horizontalPadding: CGFloat = 16
+
+    /// Keeps a phase label held at the screen's edge visibly apart from the
+    /// navigation bar's glass and the home indicator.
+    private let heldLabelInset: CGFloat = 8
 
     /// Width of the darkened gutter behind the hour ruler, which keeps its
     /// white labels legible over the bright daylight band.
@@ -40,6 +47,15 @@ struct DayTimelineOverlay: View {
         let labelY: CGFloat
 
         var id: String { marker.id }
+    }
+
+    private struct PlacedPhase: Identifiable {
+        let segment: DaySegment
+        let labelY: CGFloat
+        /// How far the label may slide from `labelY` to stay on screen, negative for up.
+        let slack: ClosedRange<CGFloat>
+
+        var id: Int { segment.id }
     }
 
     var body: some View {
@@ -72,7 +88,7 @@ struct DayTimelineOverlay: View {
             startPoint: .leading,
             endPoint: .trailing
         )
-        .frame(width: rulerScrimWidth)
+        .frame(width: rulerScrimWidth + safeAreaInsets.leading)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityHidden(true)
     }
@@ -97,6 +113,7 @@ struct DayTimelineOverlay: View {
                             .shadow(color: .black.opacity(0.3), radius: 1, y: 0.5)
                     }
                 }
+                .padding(.leading, safeAreaInsets.leading)
             }
         }
     }
@@ -111,19 +128,26 @@ struct DayTimelineOverlay: View {
 
             row(at: placed.labelY, alignment: .leading, size: size) {
                 label("\(placed.marker.title) · \(placed.marker.date.formatted(date: .omitted, time: .shortened))")
-                    .padding(.leading, horizontalPadding)
+                    .padding(.leading, safeAreaInsets.leading + horizontalPadding)
             }
         }
     }
 
     private func phaseLabels(size: CGSize) -> some View {
-        let segments = day.segments
-        let labelYs = spaced(segments.map { y(for: $0.midpoint, in: size) })
-
-        return ForEach(Array(zip(segments, labelYs)), id: \.0.id) { segment, labelY in
-            row(at: labelY, alignment: .trailing, size: size) {
-                label(text(for: segment), glass: .regular.tint(segment.phase.color.opacity(0.5)))
-                    .padding(.trailing, horizontalPadding)
+        ForEach(placedPhases(size: size)) { placed in
+            row(at: placed.labelY, alignment: .trailing, size: size) {
+                label(text(for: placed.segment), glass: .regular.tint(placed.segment.phase.color.opacity(0.5)))
+                    .padding(.trailing, safeAreaInsets.trailing + horizontalPadding)
+                    .visualEffect { [safeAreaInsets, heldLabelInset, slack = placed.slack] content, proxy in
+                        // The scroll view's bounds in the label's own space, where the label spans 0 to its height.
+                        guard let visible = proxy.bounds(of: .scrollView) else {
+                            return content.offset(y: 0)
+                        }
+                        let top = visible.minY + safeAreaInsets.top + heldLabelInset
+                        let bottom = visible.maxY - safeAreaInsets.bottom - heldLabelInset - proxy.size.height
+                        let onScreen = min(max(0, top), bottom)
+                        return content.offset(y: min(max(onScreen, slack.lowerBound), slack.upperBound))
+                    }
             }
         }
     }
@@ -172,6 +196,31 @@ struct DayTimelineOverlay: View {
 
         return zip(zip(markers, lineYs), spaced(lineYs)).map { pair, labelY in
             PlacedMarker(marker: pair.0, lineY: pair.1, labelY: labelY)
+        }
+    }
+
+    /// Each phase's label rests at the phase's midpoint, nudged apart like the markers.
+    /// While the phase is partly on screen, the label may slide toward the visible
+    /// part, but only within its own phase and clear of its neighbors' resting spots.
+    private func placedPhases(size: CGSize) -> [PlacedPhase] {
+        let segments = day.segments
+        let labelYs = spaced(segments.map { y(for: $0.midpoint, in: size) })
+
+        return segments.indices.map { index in
+            let labelY = labelYs[index]
+            var highest = y(for: segments[index].interval.start, in: size) + labelSpacing / 2
+            var lowest = y(for: segments[index].interval.end, in: size) - labelSpacing / 2
+            if index > 0 {
+                highest = max(highest, labelYs[index - 1] + labelSpacing)
+            }
+            if index + 1 < labelYs.count {
+                lowest = min(lowest, labelYs[index + 1] - labelSpacing)
+            }
+            return PlacedPhase(
+                segment: segments[index],
+                labelY: labelY,
+                slack: (min(highest, labelY) - labelY)...(max(lowest, labelY) - labelY)
+            )
         }
     }
 

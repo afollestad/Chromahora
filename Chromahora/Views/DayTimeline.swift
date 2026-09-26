@@ -21,6 +21,7 @@ struct DayTimeline: View {
     private let barProbeOffset: CGFloat = 64
 
     @State private var phaseUnderBar: DayPhase = .night
+    @State private var safeAreaInsets = EdgeInsets()
     @State private var isChoosingDay = false
 
     var body: some View {
@@ -28,7 +29,7 @@ struct DayTimeline: View {
             ScrollView {
                 ZStack {
                     SkyGradient(day: day)
-                    DayTimelineOverlay(day: day, now: now)
+                    DayTimelineOverlay(day: day, now: now, safeAreaInsets: safeAreaInsets)
                 }
                 .frame(height: contentHeight)
                 .overlay(alignment: .top) {
@@ -42,6 +43,12 @@ struct DayTimeline: View {
             }
             .background(DayPhase.night.color)
             .ignoresSafeArea()
+            // Measured outside `ignoresSafeArea`, since the scroll content sees no insets at all.
+            .onGeometryChange(for: EdgeInsets.self) { proxy in
+                proxy.safeAreaInsets
+            } action: { insets in
+                safeAreaInsets = insets
+            }
             .scrollEdgeEffectHidden()
             .onAppear {
                 proxy.scrollTo(focusAnchorID, anchor: .center)
