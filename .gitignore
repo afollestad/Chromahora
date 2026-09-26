@@ -1,0 +1,16 @@
+.build/
+.swiftpm/
+DerivedData/
+Package.resolved
+
+xcuserdata/
+*.profraw
+
+.DS_Store
+
+.claude/*
+!.claude/skills
+!.claude/checks
+.codex/*
+!.codex/skills
+!.codex/checks
