@@ -21,6 +21,11 @@ struct DayTimeline: View {
 
     private let focusAnchorID = "focus"
 
+    /// Room past the bars at each end of the day, so a label centered on a line near
+    /// midnight scrolls clear of them: half the tallest label, at the accessibility1
+    /// cap, plus the gap held labels keep from the bars.
+    private static let edgeClearance: CGFloat = 24
+
     /// The sky's relative luminance where white and black text contrast with it
     /// equally is about 0.18. The bar turns dark below this range and light above
     /// it, so scrolling slowly across the crossover doesn't flicker the title.
@@ -56,6 +61,12 @@ struct DayTimeline: View {
                         .id(focusAnchorID)
                         .padding(.top, contentHeight * day.fraction(of: focusDate))
                 }
+                // Without this the day ends flush with the screen, under the bars, where a scroll
+                // view can't reach past it. Padding rather than content margins, so centering on
+                // the focus still uses the whole screen, and the sky continued in the
+                // background fills it, so time stays proportional.
+                .padding(.top, topClearance)
+                .padding(.bottom, safeAreaInsets.bottom + Self.edgeClearance)
             }
             // Overscrolling past either end uncovers this, so each half continues the sky at
             // its end and the scrim runs on without a seam. The opaque sky covers it otherwise.
@@ -104,7 +115,7 @@ struct DayTimeline: View {
                 }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
-                let y = geometry.visibleRect.minY + titleMidY - timelineMinY
+                let y = geometry.visibleRect.minY + titleMidY - timelineMinY - topClearance
                 return SkyGradient.color(at: y / contentHeight, in: day)
             } action: { _, color in
                 skyBehindTitle = color
@@ -114,6 +125,11 @@ struct DayTimeline: View {
 
     private var contentHeight: CGFloat {
         pointsPerHour * day.duration / (60 * 60)
+    }
+
+    /// Where the day starts in the scroll content, below the padding that lets midnight clear the bar.
+    private var topClearance: CGFloat {
+        safeAreaInsets.top + Self.edgeClearance
     }
 
     /// Whether the bar should be dark over `color`. Inside `darkBarLuminance` it keeps `wasDark`.

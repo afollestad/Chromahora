@@ -272,12 +272,12 @@ struct DayTimelineOverlay: View {
         return segments.indices.map { index in
             let segment = segments[index]
             let labelY = labelYs[index]
-            // A phase cut off by midnight can be too short to show its label clear of the
-            // bar or home indicator, so its label may leave it toward the day's middle.
-            let startsDay = segment.span == .until || segment.span == .allDay
-            let endsDay = segment.span == .from || segment.span == .allDay
-            var highest = endsDay ? -.infinity : y(for: segment.interval.start, in: size) + labelSpacing / 2
-            var lowest = startsDay ? .infinity : y(for: segment.interval.end, in: size) - labelSpacing / 2
+            // A phase that fills the day has no neighbors, so its label may follow the screen
+            // anywhere. Any other label leaving its phase would stop at a neighbor's resting
+            // spot, which can sit under a bar once the view moves on.
+            let fillsDay = segment.span == .allDay
+            var highest = fillsDay ? -.infinity : y(for: segment.interval.start, in: size) + labelSpacing / 2
+            var lowest = fillsDay ? .infinity : y(for: segment.interval.end, in: size) - labelSpacing / 2
             if index > 0 {
                 highest = max(highest, labelYs[index - 1] + labelSpacing)
             }

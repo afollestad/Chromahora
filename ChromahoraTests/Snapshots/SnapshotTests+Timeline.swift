@@ -57,7 +57,8 @@ extension SnapshotTests {
     }
 
     /// St. Petersburg's June blue hour runs past midnight at both ends. Near either end,
-    /// the short cut-off phase's label slides clear of the bar and home indicator.
+    /// the timeline scrolls far enough for the now marker and the short cut-off phase's
+    /// label to clear the bar and home indicator.
     @Test func blueHourPastMidnightAtStart() async throws {
         try await assertScreenSnapshot(of: timeline(.blueHourPastMidnight, now: time(month: 6, day: 21, 0, 5)))
     }

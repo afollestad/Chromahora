@@ -9,6 +9,7 @@ These rules cover `Chromahora/Timeline/` and its tests in `ChromahoraTests/Timel
 - The sky gradient interpolates in perceptual color space, holds color across night and daylight, and crosses a mauve stop between blue and golden hours, which are near-complementary and blend to mud otherwise. Blue and golden hours hold their color over `DaySegment.heldColorRange`, which narrows to the midpoint for normal-length ones.
 - Emit exactly two gradient stops per segment, plus a bridge between blue and golden, so the stop count depends only on the phase sequence. Gliding between days animates stop locations, which needs matching counts.
 - The timeline draws edge to edge, so its content sees zero safe-area insets. Inset labels by the per-edge `safeAreaInsets` that `DayTimeline` measures outside `ignoresSafeArea`, never by a fixed padding alone.
+- Pad the scroll content by the safe area plus `edgeClearance` at both ends, so midnight at either end scrolls clear of the bars. Use padding, not `contentMargins`, which would also move where the timeline centers on its focus.
 - Keep `labelSpacing` in `DayTimelineOverlay` larger than the glass container's merge distance so stacked capsules never fuse.
 
 ### Verifying
