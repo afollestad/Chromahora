@@ -16,4 +16,3 @@ These rules cover `ChromahoraTests/Snapshots/`: `SnapshotTests` and its `+Topic`
 - Snapshot the timeline through `timeline(now:)`, not `ContentView`, whose `TimelineView` reads the real clock. `ContentView` suits the placeholders when given a fixed `selectedDate`.
 - The status bar, Dynamic Island and home indicator draw outside the app and never appear. Check them with simulator screenshots.
 - Group tests into `SnapshotTests+Topic.swift` files by screen. Moving a test between files moves its baseline under `__Snapshots__/`, so move or re-record the PNG with it.
-- `project.pbxproj` excludes this file and `CLAUDE.md` from the test target, which would otherwise copy them into the test bundle. Xcode drops an exception whose path doesn't exist when it next saves the project, so recheck it after moving either.

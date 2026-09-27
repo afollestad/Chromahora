@@ -34,11 +34,24 @@
 			);
 			target = D98A86FC30685002007D5F92 /* ChromahoraTests */;
 		};
+		D98A871D30685002007D5F92 /* Exceptions for "Chromahora" folder in "Chromahora" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SolarDay/AGENTS.md,
+				SolarDay/CLAUDE.md,
+				Timeline/AGENTS.md,
+				Timeline/CLAUDE.md,
+			);
+			target = D98A86EF30685001007D5F92 /* Chromahora */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D98A86F230685001007D5F92 /* Chromahora */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D98A871D30685002007D5F92 /* Exceptions for "Chromahora" folder in "Chromahora" target */,
+			);
 			path = Chromahora;
 			sourceTree = "<group>";
 		};
