@@ -155,13 +155,19 @@ struct DayTimeline: View {
         return 0.2126 * Double(resolved.linearRed) + 0.7152 * Double(resolved.linearGreen) + 0.0722 * Double(resolved.linearBlue)
     }
 
-    /// The time the view centers on: now when it falls on this day, otherwise the middle of daylight.
+    /// The time the view centers on: now when it falls on this day, otherwise the middle
+    /// of the brightest phase the day reaches, since a high-latitude winter day may have no daylight.
     private var focusDate: Date {
         if day.contains(now) {
             return now
         }
-        return day.segments.first { $0.phase == .daylight }?.midpoint
-            ?? day.dayStart.addingTimeInterval(day.duration / 2)
+        let segments = day.segments
+        for phase in [DayPhase.daylight, .goldenHour, .blueHour] {
+            if let segment = segments.first(where: { $0.phase == phase }) {
+                return segment.midpoint
+            }
+        }
+        return day.dayStart.addingTimeInterval(day.duration / 2)
     }
 }
 

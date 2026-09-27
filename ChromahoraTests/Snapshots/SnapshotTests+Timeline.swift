@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Testing
+@testable import Chromahora
 
 extension SnapshotTests {
     @Test func afternoon() async throws {
@@ -41,5 +42,41 @@ extension SnapshotTests {
     /// With now on another day there's no now marker, and the timeline centers on daylight.
     @Test func anotherDay() async throws {
         try await assertScreenSnapshot(of: timeline(now: time(day: 17, 9)))
+    }
+
+    // MARK: High-latitude days, on the dates their scenarios come from
+
+    /// Reykjavík's December golden hour lasts all day and holds its color, with no daylight.
+    @Test func allDayGolden() async throws {
+        try await assertScreenSnapshot(of: timeline(.allDayGolden, now: time(month: 12, day: 21, 12)))
+    }
+
+    /// Trondheim's June night is golden hour, with no night or blue hour.
+    @Test func goldenNight() async throws {
+        try await assertScreenSnapshot(of: timeline(.goldenNight, now: time(month: 6, day: 21, 1)))
+    }
+
+    /// St. Petersburg's June blue hour runs past midnight at both ends. Near either end,
+    /// the short cut-off phase's label slides clear of the bar and home indicator.
+    @Test func blueHourPastMidnightAtStart() async throws {
+        try await assertScreenSnapshot(of: timeline(.blueHourPastMidnight, now: time(month: 6, day: 21, 0, 5)))
+    }
+
+    @Test func blueHourPastMidnightAtEnd() async throws {
+        try await assertScreenSnapshot(of: timeline(.blueHourPastMidnight, now: time(month: 6, day: 21, 23, 50)))
+    }
+
+    /// Tromsø's December twilight never reaches sunrise.
+    @Test func polarTwilight() async throws {
+        try await assertScreenSnapshot(of: timeline(.polarTwilight, now: time(month: 12, day: 10, 11, 30)))
+    }
+
+    /// A day in one phase labels it as lasting all day.
+    @Test func midnightSun() async throws {
+        try await assertScreenSnapshot(of: timeline(.midnightSun, now: time(month: 6, day: 21, 12)))
+    }
+
+    @Test func polarNight() async throws {
+        try await assertScreenSnapshot(of: timeline(.polarNight, now: time(month: 12, day: 21, 12)))
     }
 }

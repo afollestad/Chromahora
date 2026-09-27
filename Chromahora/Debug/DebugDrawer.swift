@@ -98,10 +98,15 @@ private struct DebugPanel: View {
                             Text(mode.title).tag(mode)
                         }
                     }
-                    Button("Reload from scratch") {
-                        store.discardLoadedDays()
-                        store.reload()
+                    Picker("Day shape", selection: $settings.scenario) {
+                        Text("App's provider").tag(MockScenario?.none)
+                        ForEach(MockScenario.allCases) { scenario in
+                            Text(scenario.title).tag(Optional(scenario))
+                        }
                     }
+                    // The store keeps loaded days, so a new shape only shows once they're gone.
+                    .onChange(of: settings.scenario, reloadFromScratch)
+                    Button("Reload from scratch", action: reloadFromScratch)
                 }
 
                 Section {
@@ -124,6 +129,11 @@ private struct DebugPanel: View {
                 }
             }
         }
+    }
+
+    private func reloadFromScratch() {
+        store.discardLoadedDays()
+        store.reload()
     }
 
     private var isOverridingNow: Binding<Bool> {

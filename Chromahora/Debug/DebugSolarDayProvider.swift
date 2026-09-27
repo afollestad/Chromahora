@@ -6,7 +6,8 @@
 #if DEBUG
 import Foundation
 
-/// Wraps the app's provider so the debug drawer can slow, stall or fail a load on demand.
+/// Wraps the app's provider so the debug drawer can slow, stall or fail a load on demand,
+/// or swap in a fixed day shape.
 final class DebugSolarDayProvider: SolarDayProvider {
     struct SimulatedFailure: LocalizedError {
         var errorDescription: String? { "The debug drawer failed this load on purpose." }
@@ -42,7 +43,8 @@ final class DebugSolarDayProvider: SolarDayProvider {
         case .fail:
             throw SimulatedFailure()
         }
-        return try await base.solarDay(for: date, calendar: calendar)
+        let provider = settings.scenario.map { MockSolarDayProvider(scenario: $0) } ?? base
+        return try await provider.solarDay(for: date, calendar: calendar)
     }
 }
 #endif

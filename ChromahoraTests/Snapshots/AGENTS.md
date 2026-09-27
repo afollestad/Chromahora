@@ -12,7 +12,7 @@ These rules cover `ChromahoraTests/Snapshots/`: `SnapshotTests` and its `+Topic`
 
 ### Writing
 
-- Build dates with `time(day:_:_:)`, never absolute timestamps. It uses local components on a day without a daylight saving change, so labels match in every time zone.
+- Build dates with `time(month:day:_:_:)`, never absolute timestamps. It uses local components, so labels match in every time zone, as long as the day has no daylight saving change anywhere: September 16, June 21, December 10 and December 21 are safe.
 - Snapshot the timeline through `timeline(now:)`, not `ContentView`, whose `TimelineView` reads the real clock. `ContentView` suits the placeholders when given a fixed `selectedDate`.
 - The status bar, Dynamic Island and home indicator draw outside the app and never appear. Check them with simulator screenshots.
 - Group tests into `SnapshotTests+Topic.swift` files by screen. Moving a test between files moves its baseline under `__Snapshots__/`, so move or re-record the PNG with it.

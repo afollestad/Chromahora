@@ -12,9 +12,11 @@ protocol SolarDayProvider {
     func solarDay(for date: Date, calendar: Calendar) async throws -> SolarDay
 }
 
-/// Serves `SolarDay.mock(for:calendar:)` until real solar data is available.
+/// Serves `scenario`'s times for any day, until real solar data is available.
 struct MockSolarDayProvider: SolarDayProvider {
+    var scenario: MockScenario = .typical
+
     func solarDay(for date: Date, calendar: Calendar) async throws -> SolarDay {
-        .mock(for: date, calendar: calendar)
+        .mock(scenario, for: date, calendar: calendar)
     }
 }

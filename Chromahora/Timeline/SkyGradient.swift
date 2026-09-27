@@ -40,24 +40,22 @@ struct SkyGradient: View {
         return lower.color.mix(with: stops[upper].color, by: progress, in: .perceptual)
     }
 
-    private static func stops(for day: SolarDay) -> [Gradient.Stop] {
+    /// Two stops per segment, plus a bridge between blue and golden hours, so the count
+    /// depends only on the day's phase sequence and never on how long each phase lasts.
+    static func stops(for day: SolarDay) -> [Gradient.Stop] {
         let segments = day.segments
         var stops: [Gradient.Stop] = []
 
         for (index, segment) in segments.enumerated() {
-            let start = day.fraction(of: segment.interval.start)
-            let end = day.fraction(of: segment.interval.end)
             let color = segment.phase.color
-
-            if segment.phase.holdsColor {
-                stops.append(.init(color: color, location: start))
-                stops.append(.init(color: color, location: end))
-            } else {
-                stops.append(.init(color: color, location: (start + end) / 2))
-            }
+            let held = segment.phase.holdsColor
+                ? segment.interval.start...segment.interval.end
+                : segment.heldColorRange
+            stops.append(.init(color: color, location: day.fraction(of: held.lowerBound)))
+            stops.append(.init(color: color, location: day.fraction(of: held.upperBound)))
 
             if index + 1 < segments.count, needsBridge(segment.phase, segments[index + 1].phase) {
-                stops.append(.init(color: duskBridge, location: end))
+                stops.append(.init(color: duskBridge, location: day.fraction(of: segment.interval.end)))
             }
         }
 

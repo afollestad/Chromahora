@@ -7,7 +7,7 @@ import SwiftUI
 
 /// The lighting phases a day cycles through. Nonisolated so tests and other
 /// off-main code can compare phases.
-nonisolated enum DayPhase {
+nonisolated enum DayPhase: Sendable {
     case night
     case blueHour
     case goldenHour
@@ -32,28 +32,95 @@ nonisolated enum DayPhase {
     }
 
     /// Long phases hold their color across their whole span. Short transitional
-    /// phases peak at their midpoint and fade into their neighbors.
+    /// phases peak in their middle and fade into their neighbors.
     var holdsColor: Bool {
         switch self {
         case .night, .daylight: true
         case .blueHour, .goldenHour: false
         }
     }
+
+    /// The phase with the sun at `degrees` above the horizon. Blue hour runs from -6° to
+    /// -4° and golden hour from -4° to +6°, so sunrise and sunset fall inside golden hour.
+    static func band(forAltitude degrees: Double) -> DayPhase {
+        if degrees > 6 {
+            .daylight
+        } else if degrees > -4 {
+            .goldenHour
+        } else if degrees > -6 {
+            .blueHour
+        } else {
+            .night
+        }
+    }
+
+    /// The phases in order of the sun's altitude. The sun crosses one boundary at a
+    /// time, so a day only ever moves between neighbors in this order.
+    private var altitudeRank: Int {
+        switch self {
+        case .night: 0
+        case .blueHour: 1
+        case .goldenHour: 2
+        case .daylight: 3
+        }
+    }
+
+    func borders(_ other: DayPhase) -> Bool {
+        abs(altitudeRank - other.altitudeRank) == 1
+    }
+}
+
+/// The moment the sun crosses from one phase into a neighboring one.
+nonisolated struct PhaseTransition: Equatable, Sendable {
+    let date: Date
+    let from: DayPhase
+    let into: DayPhase
+}
+
+nonisolated enum SolarDayError: Error, Equatable {
+    /// The phase changes don't chain, like one that leaves blue hour while the day is
+    /// in daylight, or one that skips a phase.
+    case inconsistentPhases
 }
 
 /// A contiguous span of the day spent in a single phase.
-struct DaySegment: Identifiable {
+nonisolated struct DaySegment: Identifiable, Sendable {
+    /// How a segment sits in the day, which decides how its time range reads.
+    enum Span: Equatable, Sendable {
+        /// Starts and ends within the day.
+        case range
+        /// Began before midnight and ends within the day.
+        case until
+        /// Starts within the day and runs past midnight.
+        case from
+        /// Fills the whole day.
+        case allDay
+    }
+
+    /// Normal blue and golden hours last under 90 minutes, so they keep peaking at their
+    /// midpoint. Longer ones at high latitudes, like Reykjavík's six-hour golden hour in
+    /// December, hold their color between blends this long at each end.
+    static let colorBlend: TimeInterval = 45 * 60
+
     let id: Int
     let phase: DayPhase
     let interval: DateInterval
+    let span: Span
 
     var midpoint: Date {
         interval.start.addingTimeInterval(interval.duration / 2)
     }
+
+    /// Where the phase shows its own color at full strength: all but `colorBlend` at
+    /// each end, narrowing to the midpoint when the phase is shorter than two blends.
+    var heldColorRange: ClosedRange<Date> {
+        let blend = min(Self.colorBlend, interval.duration / 2)
+        return interval.start.addingTimeInterval(blend)...interval.end.addingTimeInterval(-blend)
+    }
 }
 
 /// An instant worth marking on the timeline, like sunrise or sunset.
-struct SolarEvent: Identifiable {
+nonisolated struct SolarEvent: Identifiable, Sendable {
     let title: String
     let date: Date
 
@@ -61,7 +128,7 @@ struct SolarEvent: Identifiable {
 }
 
 /// A whole hour within the day, used for the timeline ruler.
-struct HourMark: Identifiable {
+nonisolated struct HourMark: Identifiable, Sendable {
     /// The hour on the clock, which a daylight saving change skips or repeats.
     let hour: Int
     let date: Date
@@ -70,46 +137,68 @@ struct HourMark: Identifiable {
     var id: Date { date }
 }
 
-/// The sun-driven schedule for a single calendar day.
+/// The sun-driven schedule for a single calendar day: the phase at midnight, and
+/// each change of phase after it.
 ///
-/// Blue hour runs from the sun at -6° to -4°, golden hour from -4° to +6°, so
-/// sunrise and sunset fall inside their respective golden hours.
-struct SolarDay: Equatable {
+/// High latitudes skip phases, like Reykjavík's December with no daylight, and carry
+/// them past midnight, like St. Petersburg's June blue hour. So a day never assumes a
+/// phase, a sunrise or a sunset exists. The memberwise init doesn't check its input;
+/// build days from outside data through `make`, which does.
+nonisolated struct SolarDay: Equatable, Sendable {
     let calendar: Calendar
     let dayStart: Date
     let dayEnd: Date
 
-    let morningBlueHourStart: Date
-    let morningGoldenHourStart: Date
-    let sunrise: Date
-    let morningGoldenHourEnd: Date
+    let initialPhase: DayPhase
+    /// In time order, strictly between `dayStart` and `dayEnd`.
+    let transitions: [PhaseTransition]
 
-    let eveningGoldenHourStart: Date
-    let sunset: Date
-    let eveningBlueHourStart: Date
-    let eveningBlueHourEnd: Date
+    let sunrise: Date?
+    let sunset: Date?
 
     var segments: [DaySegment] {
-        let starts: [(DayPhase, Date)] = [
-            (.night, dayStart),
-            (.blueHour, morningBlueHourStart),
-            (.goldenHour, morningGoldenHourStart),
-            (.daylight, morningGoldenHourEnd),
-            (.goldenHour, eveningGoldenHourStart),
-            (.blueHour, eveningBlueHourStart),
-            (.night, eveningBlueHourEnd)
-        ]
-        return starts.enumerated().map { index, entry in
-            let end = index + 1 < starts.count ? starts[index + 1].1 : dayEnd
-            return DaySegment(id: index, phase: entry.0, interval: DateInterval(start: entry.1, end: end))
+        var segments: [DaySegment] = []
+        var start = dayStart
+        var phase = initialPhase
+
+        func append(until end: Date, endsDay: Bool) {
+            let span: DaySegment.Span = switch (segments.isEmpty, endsDay) {
+            case (true, true): .allDay
+            case (true, false): .until
+            case (false, true): .from
+            case (false, false): .range
+            }
+            segments.append(DaySegment(id: segments.count, phase: phase, interval: DateInterval(start: start, end: end), span: span))
         }
+
+        // The memberwise init takes transitions unchecked, and `DateInterval` traps on an end
+        // before its start. So a change at or past midnight belongs to the next day, and one
+        // at or before the current segment's start only changes the phase.
+        for transition in transitions {
+            guard transition.date < dayEnd else {
+                break
+            }
+            guard transition.date > start else {
+                phase = transition.into
+                continue
+            }
+            append(until: transition.date, endsDay: false)
+            start = transition.date
+            phase = transition.into
+        }
+        append(until: dayEnd, endsDay: true)
+        return segments
+    }
+
+    /// The phases the day passes through, in order. Days that share one draw alike.
+    var phaseSequence: [DayPhase] {
+        segments.map(\.phase)
     }
 
     var events: [SolarEvent] {
-        [
-            SolarEvent(title: "Sunrise", date: sunrise),
-            SolarEvent(title: "Sunset", date: sunset)
-        ]
+        [("Sunrise", sunrise), ("Sunset", sunset)].compactMap { title, date in
+            date.map { SolarEvent(title: title, date: $0) }
+        }
     }
 
     /// Every whole hour between the day's midnights. Daylight saving changes make
@@ -139,30 +228,55 @@ struct SolarDay: Equatable {
     }
 }
 
-extension SolarDay {
-    /// Placeholder times for a late-September day, until real solar data is wired up.
-    static func mock(for date: Date = .now, calendar: Calendar = .current) -> SolarDay {
-        let dayStart = calendar.startOfDay(for: date)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)
-            ?? dayStart.addingTimeInterval(24 * 60 * 60)
+nonisolated extension SolarDay {
+    /// What outside data reports the sun doing around a day, before `make` checks it.
+    struct Readings: Sendable {
+        /// In any order, possibly doubled up or outside the day, as data windowed to a time zone arrives.
+        var transitions: [PhaseTransition]
+        /// The sun's altitude at solar noon, in degrees, which names the phase of a day with no changes.
+        var noonAltitude: Double
+        var sunrise: Date?
+        var sunset: Date?
+    }
 
-        func at(_ hour: Int, _ minute: Int) -> Date {
-            calendar.date(bySettingHour: hour, minute: minute, second: 0, of: dayStart)
-                ?? dayStart.addingTimeInterval(TimeInterval(hour * 60 * 60 + minute * 60))
+    /// Builds the day from `dayStart` to `dayEnd` out of `readings`, checking that its changes chain.
+    ///
+    /// A change at or before `dayStart` only sets the phase the day opens in, and one at
+    /// or after `dayEnd` is dropped. With no change inside the day, the sun stays in one
+    /// band all day, which the noon altitude names.
+    static func make(calendar: Calendar, dayStart: Date, dayEnd: Date, readings: Readings) throws -> SolarDay {
+        var chain: [PhaseTransition] = []
+        for transition in readings.transitions.sorted(by: { $0.date < $1.date }) {
+            // The sun touching a boundary and turning back crosses it twice at one instant.
+            if let last = chain.last, last.date == transition.date, last.from == transition.into, last.into == transition.from {
+                chain.removeLast()
+            } else {
+                chain.append(transition)
+            }
         }
 
+        let before = chain.last { $0.date <= dayStart }
+        let inside = chain.filter { dayStart < $0.date && $0.date < dayEnd }
+        let after = chain.first { $0.date >= dayEnd }
+
+        let initialPhase = before?.into ?? inside.first?.from ?? after?.from ?? DayPhase.band(forAltitude: readings.noonAltitude)
+        var phase = initialPhase
+        for transition in inside + [after].compactMap(\.self) {
+            guard transition.from == phase, transition.from.borders(transition.into) else {
+                throw SolarDayError.inconsistentPhases
+            }
+            phase = transition.into
+        }
+
+        let range = dayStart..<dayEnd
         return SolarDay(
             calendar: calendar,
             dayStart: dayStart,
             dayEnd: dayEnd,
-            morningBlueHourStart: at(6, 12),
-            morningGoldenHourStart: at(6, 38),
-            sunrise: at(6, 58),
-            morningGoldenHourEnd: at(7, 42),
-            eveningGoldenHourStart: at(18, 5),
-            sunset: at(18, 50),
-            eveningBlueHourStart: at(19, 10),
-            eveningBlueHourEnd: at(19, 36)
+            initialPhase: initialPhase,
+            transitions: inside,
+            sunrise: readings.sunrise.flatMap { range.contains($0) ? $0 : nil },
+            sunset: readings.sunset.flatMap { range.contains($0) ? $0 : nil }
         )
     }
 }

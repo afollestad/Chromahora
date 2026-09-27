@@ -13,19 +13,28 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct SnapshotTests {
-    /// A time on September 16, 2026, which has no daylight saving change in any time
-    /// zone. Built from local components, so the mock day's times and the labels
-    /// formatted from them read the same wherever the tests run.
-    func time(day: Int = 16, _ hour: Int, _ minute: Int = 0) throws -> Date {
-        let components = DateComponents(year: 2026, month: 9, day: day, hour: hour, minute: minute)
+    /// A time in 2026, on September 16 unless given another day. Callers pick days
+    /// with no daylight saving change in any time zone, like June 21 and December 21.
+    /// Built from local components, so the mock day's times and the labels formatted
+    /// from them read the same wherever the tests run.
+    func time(month: Int = 9, day: Int = 16, _ hour: Int, _ minute: Int = 0) throws -> Date {
+        let components = DateComponents(year: 2026, month: month, day: day, hour: hour, minute: minute)
         return try #require(Calendar.current.date(from: components))
     }
 
-    /// The timeline for September 16 at `now`. `ContentView` can't stand in, since its
-    /// `TimelineView` reads the real clock.
+    /// The timeline for September 16 at `now`, which may fall on another day. `ContentView`
+    /// can't stand in, since its `TimelineView` reads the real clock.
     func timeline(now: Date) throws -> some View {
-        let day = SolarDay.mock(for: try time(12))
-        return NavigationStack {
+        timeline(of: SolarDay.mock(for: try time(12)), now: now)
+    }
+
+    /// The timeline for `scenario` on the day containing `now`.
+    func timeline(_ scenario: MockScenario, now: Date) -> some View {
+        timeline(of: SolarDay.mock(scenario, for: now), now: now)
+    }
+
+    private func timeline(of day: SolarDay, now: Date) -> some View {
+        NavigationStack {
             DayTimeline(day: day, now: now, selectedDate: .constant(day.dayStart))
         }
     }

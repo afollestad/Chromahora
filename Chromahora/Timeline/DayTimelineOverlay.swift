@@ -191,9 +191,24 @@ struct DayTimelineOverlay: View {
     }
 
     private func text(for segment: DaySegment) -> String {
-        let range = (segment.interval.start..<segment.interval.end)
-            .formatted(date: .omitted, time: .shortened)
-        return "\(segment.phase.title) · \(range)"
+        "\(segment.phase.title) · \(rangeText(for: segment))"
+    }
+
+    /// A phase cut off by midnight began or ends on another day, so its label gives only
+    /// the side it has on this one.
+    private func rangeText(for segment: DaySegment) -> String {
+        let time = Date.FormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone)
+        switch segment.span {
+        case .range:
+            let range = Date.IntervalFormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone)
+            return (segment.interval.start..<segment.interval.end).formatted(range)
+        case .until:
+            return "until \(segment.interval.end.formatted(time))"
+        case .from:
+            return "from \(segment.interval.start.formatted(time))"
+        case .allDay:
+            return "all day"
+        }
     }
 
     /// Lays `content` across the full width, aligned to one edge, centered on `y`.
@@ -247,13 +262,19 @@ struct DayTimelineOverlay: View {
     private func placedPhases(size: CGSize) -> [PlacedPhase] {
         // Night goes unlabeled. Its band is unmistakable, midnight cuts its range
         // short, and the blue hour labels already mark where it begins and ends.
-        let segments = day.segments.filter { $0.phase != .night }
+        // A night that fills the day is the exception, since nothing else would.
+        let segments = day.segments.filter { $0.phase != .night || $0.span == .allDay }
         let labelYs = spaced(segments.map { y(for: $0.midpoint, in: size) })
 
         return segments.indices.map { index in
+            let segment = segments[index]
             let labelY = labelYs[index]
-            var highest = y(for: segments[index].interval.start, in: size) + labelSpacing / 2
-            var lowest = y(for: segments[index].interval.end, in: size) - labelSpacing / 2
+            // A phase cut off by midnight can be too short to show its label clear of the
+            // bar or home indicator, so its label may leave it toward the day's middle.
+            let startsDay = segment.span == .until || segment.span == .allDay
+            let endsDay = segment.span == .from || segment.span == .allDay
+            var highest = endsDay ? -.infinity : y(for: segment.interval.start, in: size) + labelSpacing / 2
+            var lowest = startsDay ? .infinity : y(for: segment.interval.end, in: size) - labelSpacing / 2
             if index > 0 {
                 highest = max(highest, labelYs[index - 1] + labelSpacing)
             }
@@ -261,7 +282,7 @@ struct DayTimelineOverlay: View {
                 lowest = min(lowest, labelYs[index + 1] - labelSpacing)
             }
             return PlacedPhase(
-                segment: segments[index],
+                segment: segment,
                 labelY: labelY,
                 slack: (min(highest, labelY) - labelY)...(max(lowest, labelY) - labelY)
             )

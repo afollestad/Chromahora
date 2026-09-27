@@ -32,14 +32,17 @@ final class DebugSettings {
     }
 
     var providerMode: ProviderMode
+    /// Replaces the app's provider with a fixed day shape, like a high-latitude day.
+    var scenario: MockScenario?
     /// Stands in for the clock everywhere the app asks what time it is.
     var nowOverride: Date?
     var opensPanelOnLaunch: Bool
 
-    /// Reads `-DebugProviderMode`, `-DebugNow` and `-DebugPanel` from `arguments`,
+    /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugNow` and `-DebugPanel` from `arguments`,
     /// ignoring values it can't parse. `-DebugNow` is local time, as in `2026-09-16T03:00:00`.
     init(arguments: [String: Any] = [:], timeZone: TimeZone = .current) {
         providerMode = (arguments["DebugProviderMode"] as? String).flatMap(ProviderMode.init(rawValue:)) ?? .live
+        scenario = (arguments["DebugScenario"] as? String).flatMap(MockScenario.init(rawValue:))
         nowOverride = (arguments["DebugNow"] as? String).flatMap { Self.localDate(from: $0, in: timeZone) }
         opensPanelOnLaunch = (arguments["DebugPanel"] as? String).map(Self.isTrue) ?? false
     }
