@@ -37,6 +37,8 @@
 		D98A871D30685002007D5F92 /* Exceptions for "Chromahora" folder in "Chromahora" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Debug/AGENTS.md,
+				Debug/CLAUDE.md,
 				SolarDay/AGENTS.md,
 				SolarDay/CLAUDE.md,
 				Timeline/AGENTS.md,

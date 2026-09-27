@@ -9,14 +9,23 @@ app_path="$repo_root/.build/xcode/Build/Products/Debug-iphonesimulator/Chromahor
 simulator_name=${SIMULATOR:-"iPhone 18 Pro"}
 
 build_first=0
-for arg in "$@"; do
-  case "$arg" in
+# Everything after `--` goes to the app as launch arguments, such as the debug drawer's
+# `-DebugNow 2026-09-16T03:00:00`.
+launch_args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
     -b|--build)
       build_first=1
+      shift
+      ;;
+    --)
+      shift
+      launch_args=("$@")
+      break
       ;;
     *)
-      echo "error: unknown argument: $arg" >&2
-      echo "usage: $0 [-b|--build]" >&2
+      echo "error: unknown argument: $1" >&2
+      echo "usage: $0 [-b|--build] [-- <launch arguments>]" >&2
       exit 1
       ;;
   esac
@@ -40,6 +49,7 @@ open -b com.apple.iphonesimulator --args -CurrentDeviceUDID "$udid" 2>/dev/null 
 
 xcrun simctl terminate "$udid" "$bundle_id" >/dev/null 2>&1 || true
 xcrun simctl install "$udid" "$app_path"
-xcrun simctl launch "$udid" "$bundle_id"
+# macOS ships bash 3.2, where `set -u` treats an empty array as unbound, so expand it only when set.
+xcrun simctl launch "$udid" "$bundle_id" ${launch_args[@]+"${launch_args[@]}"}
 
 echo "Launched $bundle_id on $simulator_name ($udid)."

@@ -27,9 +27,16 @@ final class SolarDayStore {
         }
     }
 
+    /// Identifies a load, so a view's `task(id:)` restarts whenever the day changes or `reload()` asks again.
+    struct LoadKey: Hashable {
+        let dayStart: Date
+        let reloadCount: Int
+    }
+
     /// The day to show. Any time within the day selects it.
     var selectedDate: Date
     private(set) var state: LoadState = .loading(nil)
+    private(set) var reloadCount = 0
 
     let calendar: Calendar
     private let provider: any SolarDayProvider
@@ -45,6 +52,26 @@ final class SolarDayStore {
     var selectedDayStart: Date {
         calendar.startOfDay(for: selectedDate)
     }
+
+    var loadKey: LoadKey {
+        LoadKey(dayStart: selectedDayStart, reloadCount: reloadCount)
+    }
+
+    /// Loads the selected day again through the view's task, keeping any day on screen
+    /// meanwhile. Restarting the task cancels a load still out, which an unstructured
+    /// `Task` would leave running.
+    func reload() {
+        state = .loading(state.day)
+        reloadCount += 1
+    }
+
+    #if DEBUG
+    /// Forgets every loaded day and clears the screen, so the next load starts cold.
+    func discardLoadedDays() {
+        loadedDays = [:]
+        state = .loading(nil)
+    }
+    #endif
 
     /// Shows the selected day, asking the provider only for days it hasn't loaded.
     ///

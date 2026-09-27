@@ -67,6 +67,35 @@ struct SolarDayStoreTests {
         #expect(store.state.loadedDay?.dayStart == dayStart(monday))
     }
 
+    /// Try Again reloads through the view's task, which restarts because the load key changes.
+    @Test func reloadAfterAFailureAsksAgain() async {
+        let store = makeStore()
+        provider.error = StubError()
+        await store.loadSelectedDay()
+        let failedKey = store.loadKey
+
+        store.reload()
+        #expect(store.loadKey != failedKey)
+        #expect(store.state.isLoading)
+        #expect(store.state.day == nil)
+
+        provider.error = nil
+        await store.loadSelectedDay()
+
+        #expect(provider.requestedDates == [dayStart(monday), dayStart(monday)])
+        #expect(store.state.loadedDay?.dayStart == dayStart(monday))
+    }
+
+    @Test func reloadKeepsTheDayOnScreen() async {
+        let store = makeStore()
+        await store.loadSelectedDay()
+
+        store.reload()
+
+        #expect(store.state.isLoading)
+        #expect(store.state.day?.dayStart == dayStart(monday))
+    }
+
     @Test func keepsThePreviousDayOnScreenWhileTheNextLoads() async throws {
         let store = makeStore()
         await store.loadSelectedDay()

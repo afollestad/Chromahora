@@ -10,6 +10,9 @@ import SwiftUI
 struct ContentView: View {
     /// One store per window, so each window can show its own day.
     @State private var store: SolarDayStore
+    #if DEBUG
+    @Environment(DebugSettings.self) private var debug: DebugSettings?
+    #endif
 
     init(provider: any SolarDayProvider, selectedDate: Date = .now) {
         _store = State(initialValue: SolarDayStore(provider: provider, selectedDate: selectedDate))
@@ -20,7 +23,7 @@ struct ContentView: View {
             switch store.state {
             case .loaded(let day), .loading(let day?):
                 TimelineView(.everyMinute) { context in
-                    DayTimeline(day: day, now: context.date, selectedDate: $store.selectedDate)
+                    DayTimeline(day: day, now: now(from: context.date), selectedDate: $store.selectedDate)
                 }
             case .loading(nil):
                 placeholder {
@@ -35,16 +38,28 @@ struct ContentView: View {
                         Text("Sun times for \(store.selectedDate, format: .dateTime.weekday(.wide).month(.wide).day()) aren't available.")
                     } actions: {
                         Button("Try Again") {
-                            Task { await store.loadSelectedDay() }
+                            store.reload()
                         }
                         .buttonStyle(.glass)
                     }
                 }
             }
         }
-        .task(id: store.selectedDayStart) {
+        .task(id: store.loadKey) {
             await store.loadSelectedDay()
         }
+        #if DEBUG
+        .debugDrawer(store: store, settings: debug)
+        #endif
+    }
+
+    /// The time the app shows as now, which the debug drawer can override.
+    private func now(from date: Date) -> Date {
+        #if DEBUG
+        debug?.nowOverride ?? date
+        #else
+        date
+        #endif
     }
 
     /// Sets placeholders on the night sky that surrounds the timeline, so moving

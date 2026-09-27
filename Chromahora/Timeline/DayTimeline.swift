@@ -120,7 +120,8 @@ struct DayTimeline: View {
                     .accessibilityHint("Opens a calendar to choose the day to show")
                     .popover(isPresented: $isChoosingDay, arrowEdge: .top) {
                         DayPicker(selection: $selectedDate) {
-                            selectedDate = .now
+                            // `now`, not `.now`, so Today follows the debug drawer's clock.
+                            selectedDate = now
                             withAnimation {
                                 proxy.scrollTo(focusAnchorID, anchor: .center)
                             }
