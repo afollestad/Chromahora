@@ -36,6 +36,10 @@ struct DayTimeline: View {
                 ZStack {
                     SkyGradient(day: day)
                     DayTimelineOverlay(day: day, now: now, safeAreaInsets: safeAreaInsets)
+                        // Past accessibility1, even a shortened phase label wraps beside a marker
+                        // on a 390pt-wide phone. Applied out here so the overlay's scaled
+                        // spacing stops growing at the same size.
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 }
                 .frame(height: contentHeight)
                 .overlay(alignment: .top) {
@@ -159,9 +163,10 @@ private struct TitlePill: View {
         VStack(spacing: 1) {
             Text("Chromahora")
                 .font(.headline)
+            // Primary rather than secondary, which drops below 3:1 on the tinted glass.
+            // The smaller, lighter font already ranks it below the title.
             Text(day.dayStart, format: .dateTime.weekday(.wide).month(.wide).day())
                 .font(.caption)
-                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)

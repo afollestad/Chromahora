@@ -32,6 +32,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - To see the loading or failed placeholders, temporarily hand `ContentView` a provider that never answers or always throws.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.
 - Check anything in the navigation bar over three backdrops: around 3 AM (night), mid afternoon (daylight), and with `now` near 11:35 AM, which puts the title over the sunrise blend where the bar's scheme flips.
+- Check timeline label changes with `SIMULATOR="iPhone 17e"` at `xcrun simctl ui <udid> content_size accessibility-medium`, then reset it to `large`. The 17e is the narrowest iPhone simulator at 390pt and AX1 is the labels' size cap, so labels collide there first.
 - Check edge-hugging changes in landscape too: call `requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight))` on the window scene from a temporary `.task`, and capture with `--mask=black` to see the Dynamic Island.
 
 ## Design rules

@@ -27,11 +27,19 @@ struct DayTimelineOverlay: View {
     /// Minimum vertical distance between neighboring labels on the same edge.
     /// Labels that would sit closer than this are pushed down; marker lines stay
     /// put. It leaves a gap wider than the glass container's merge distance, so
-    /// stacked capsules stay separate.
-    private let labelSpacing: CGFloat = 28
+    /// stacked capsules stay separate, and grows with the labels' text.
+    @ScaledMetric(relativeTo: .caption2) private var labelSpacing: CGFloat = 28
 
     /// Hour labels within this distance of a marker label are hidden so they don't collide.
-    private let hourLabelClearance: CGFloat = 30
+    @ScaledMetric(relativeTo: .caption2) private var hourLabelClearance: CGFloat = 30
+
+    /// Keeps a phase label visibly apart from a marker label on the same row, and
+    /// wider than the glass container's merge distance so the two never fuse.
+    private let sideBySideGap: CGFloat = 8
+
+    /// Each marker label's width, so a phase label that can land beside it knows
+    /// how much of the row is left.
+    @State private var markerLabelWidths: [String: CGFloat] = [:]
 
     private struct Marker: Identifiable {
         let title: String
@@ -68,7 +76,7 @@ struct DayTimelineOverlay: View {
                     rulerScrim
                     hourRuler(size: size, avoiding: markers)
                     markerLayer(markers, size: size)
-                    phaseLabels(size: size)
+                    phaseLabels(size: size, beside: markers)
                 }
                 .frame(width: size.width, height: size.height)
             }
@@ -128,26 +136,41 @@ struct DayTimelineOverlay: View {
 
             row(at: placed.labelY, alignment: .leading, size: size) {
                 label("\(placed.marker.title) · \(placed.marker.date.formatted(date: .omitted, time: .shortened))")
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.width
+                    } action: { width in
+                        markerLabelWidths[placed.marker.id] = width
+                    }
                     .padding(.leading, safeAreaInsets.leading + horizontalPadding)
             }
         }
     }
 
-    private func phaseLabels(size: CGSize) -> some View {
+    /// Phase labels drop their time range when the full text won't fit beside a marker
+    /// label, which happens at large text sizes. VoiceOver still reads the range.
+    private func phaseLabels(size: CGSize, beside markers: [PlacedMarker]) -> some View {
         ForEach(placedPhases(size: size)) { placed in
+            let glass = Glass.regular.tint(placed.segment.phase.color.opacity(0.5))
             row(at: placed.labelY, alignment: .trailing, size: size) {
-                label(text(for: placed.segment), glass: .regular.tint(placed.segment.phase.color.opacity(0.5)))
-                    .padding(.trailing, safeAreaInsets.trailing + horizontalPadding)
-                    .visualEffect { [safeAreaInsets, heldLabelInset, slack = placed.slack] content, proxy in
-                        // The scroll view's bounds in the label's own space, where the label spans 0 to its height.
-                        guard let visible = proxy.bounds(of: .scrollView) else {
-                            return content.offset(y: 0)
-                        }
-                        let top = visible.minY + safeAreaInsets.top + heldLabelInset
-                        let bottom = visible.maxY - safeAreaInsets.bottom - heldLabelInset - proxy.size.height
-                        let onScreen = min(max(0, top), bottom)
-                        return content.offset(y: min(max(onScreen, slack.lowerBound), slack.upperBound))
+                ViewThatFits(in: .horizontal) {
+                    label(text(for: placed.segment), glass: glass)
+                    label(placed.segment.phase.title, glass: glass)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(text(for: placed.segment))
+                .accessibilityAddTraits(.isStaticText)
+                .frame(maxWidth: phaseLabelWidth(for: placed, beside: markers, size: size), alignment: .trailing)
+                .padding(.trailing, safeAreaInsets.trailing + horizontalPadding)
+                .visualEffect { [safeAreaInsets, heldLabelInset, slack = placed.slack] content, proxy in
+                    // The scroll view's bounds in the label's own space, where the label spans 0 to its height.
+                    guard let visible = proxy.bounds(of: .scrollView) else {
+                        return content.offset(y: 0)
                     }
+                    let top = visible.minY + safeAreaInsets.top + heldLabelInset
+                    let bottom = visible.maxY - safeAreaInsets.bottom - heldLabelInset - proxy.size.height
+                    let onScreen = min(max(0, top), bottom)
+                    return content.offset(y: min(max(onScreen, slack.lowerBound), slack.upperBound))
+                }
             }
         }
     }
@@ -178,6 +201,21 @@ struct DayTimelineOverlay: View {
     }
 
     // MARK: Geometry
+
+    /// The row's width left for a phase label after the widest marker label it can
+    /// land beside, anywhere its label may slide to while scrolling.
+    private func phaseLabelWidth(for placed: PlacedPhase, beside markers: [PlacedMarker], size: CGSize) -> CGFloat {
+        let reach = (placed.labelY + placed.slack.lowerBound - labelSpacing)...(placed.labelY + placed.slack.upperBound + labelSpacing)
+        let widestMarker = markers
+            .filter { reach.contains($0.labelY) }
+            .compactMap { markerLabelWidths[$0.id] }
+            .max()
+        let row = size.width - safeAreaInsets.leading - safeAreaInsets.trailing - 2 * horizontalPadding
+        guard let widestMarker else {
+            return row
+        }
+        return max(row - widestMarker - sideBySideGap, 0)
+    }
 
     private func y(for date: Date, in size: CGSize) -> CGFloat {
         size.height * day.fraction(of: date)

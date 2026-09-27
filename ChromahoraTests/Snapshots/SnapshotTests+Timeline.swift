@@ -3,6 +3,7 @@
 //  ChromahoraTests
 //
 
+import SwiftUI
 import Testing
 
 extension SnapshotTests {
@@ -29,6 +30,12 @@ extension SnapshotTests {
 
     @Test func titleOverDawnAfterFlip() async throws {
         try await assertScreenSnapshot(of: timeline(now: time(11, 55)))
+    }
+
+    /// The labels stop growing at accessibility1, and phase labels that can land beside a
+    /// marker drop their time range to fit.
+    @Test func largestTextSize() async throws {
+        try await assertScreenSnapshot(of: timeline(now: time(7)).environment(\.dynamicTypeSize, .accessibility5))
     }
 
     /// With now on another day there's no now marker, and the timeline centers on daylight.
