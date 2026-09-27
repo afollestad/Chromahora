@@ -51,7 +51,19 @@ struct DayTimeline: View {
                         .padding(.top, contentHeight * day.fraction(of: focusDate))
                 }
             }
-            .background(DayPhase.night.color)
+            // Overscrolling past either end uncovers this, so each half continues the sky at
+            // its end and the scrim runs on without a seam. The opaque sky covers it otherwise.
+            .background {
+                ZStack {
+                    VStack(spacing: 0) {
+                        SkyGradient.color(at: 0, in: day)
+                        SkyGradient.color(at: 1, in: day)
+                    }
+                    RulerScrim(leadingInset: safeAreaInsets.leading)
+                }
+                .ignoresSafeArea()
+                .accessibilityHidden(true)
+            }
             .ignoresSafeArea()
             // Measured outside `ignoresSafeArea`, since the scroll content sees no insets at all.
             .onGeometryChange(for: EdgeInsets.self) { proxy in

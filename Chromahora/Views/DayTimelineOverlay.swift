@@ -5,6 +5,31 @@
 
 import SwiftUI
 
+/// The darkened gutter behind the hour ruler, which keeps its white labels legible
+/// over the bright daylight band. `DayTimeline` also paints it past the day's ends,
+/// so overscrolling doesn't cut it off.
+struct RulerScrim: View {
+    let leadingInset: CGFloat
+
+    private let width: CGFloat = 112
+
+    var body: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .black.opacity(0.38), location: 0),
+                .init(color: .black.opacity(0.2), location: 0.35),
+                .init(color: .black.opacity(0.06), location: 0.7),
+                .init(color: .clear, location: 1)
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(width: width + leadingInset)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityHidden(true)
+    }
+}
+
 /// Annotates the sky gradient: an hour ruler on the leading edge, sunrise,
 /// sunset and "now" markers, and a label for each phase but night on the trailing edge.
 struct DayTimelineOverlay: View {
@@ -19,10 +44,6 @@ struct DayTimelineOverlay: View {
     /// Keeps a phase label held at the screen's edge visibly apart from the
     /// navigation bar's glass and the home indicator.
     private let heldLabelInset: CGFloat = 8
-
-    /// Width of the darkened gutter behind the hour ruler, which keeps its
-    /// white labels legible over the bright daylight band.
-    private let rulerScrimWidth: CGFloat = 112
 
     /// Minimum vertical distance between neighboring labels on the same edge.
     /// Labels that would sit closer than this are pushed down; marker lines stay
@@ -73,7 +94,7 @@ struct DayTimelineOverlay: View {
 
             GlassEffectContainer(spacing: 4) {
                 ZStack {
-                    rulerScrim
+                    RulerScrim(leadingInset: safeAreaInsets.leading)
                     hourRuler(size: size, avoiding: markers)
                     markerLayer(markers, size: size)
                     phaseLabels(size: size, beside: markers)
@@ -84,22 +105,6 @@ struct DayTimelineOverlay: View {
     }
 
     // MARK: Layers
-
-    private var rulerScrim: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .black.opacity(0.38), location: 0),
-                .init(color: .black.opacity(0.2), location: 0.35),
-                .init(color: .black.opacity(0.06), location: 0.7),
-                .init(color: .clear, location: 1)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .frame(width: rulerScrimWidth + safeAreaInsets.leading)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityHidden(true)
-    }
 
     private func hourRuler(size: CGSize, avoiding markers: [PlacedMarker]) -> some View {
         ForEach(day.hourMarks) { mark in
