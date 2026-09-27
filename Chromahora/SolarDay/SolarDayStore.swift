@@ -49,6 +49,9 @@ final class SolarDayStore {
     private(set) var reloadCount = 0
     /// Keys the view's locate task, so `reload()` can locate again when there's no place.
     private(set) var locateCount = 0
+    /// Counts lookups that finished, found or not. Weather waits for one, so it never spends
+    /// a request on the stored place the device may have left.
+    private(set) var locatedCount = 0
 
     let calendar: Calendar
     private let provider: any SolarDayProvider
@@ -87,6 +90,10 @@ final class SolarDayStore {
             if place == nil, !Task.isCancelled {
                 state = .failed(error)
             }
+        }
+        // A cancelled lookup isn't finished, since whatever cancelled it starts the next one.
+        if !Task.isCancelled {
+            locatedCount += 1
         }
     }
 

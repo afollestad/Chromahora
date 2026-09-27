@@ -44,5 +44,4 @@ run_and_format xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath .build/xcode \
   build \
-  CODE_SIGNING_ALLOWED=NO \
   "$@"

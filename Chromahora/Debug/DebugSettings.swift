@@ -31,7 +31,25 @@ final class DebugSettings {
         }
     }
 
+    /// Where `DebugWeatherProvider` gets forecasts.
+    enum WeatherMode: String, CaseIterable, Identifiable {
+        case live
+        case mock
+        case off
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .live: "Live"
+            case .mock: "Mock day"
+            case .off: "None"
+            }
+        }
+    }
+
     var providerMode: ProviderMode
+    var weatherMode: WeatherMode
     /// Replaces the app's provider with a fixed day shape, like a high-latitude day.
     var scenario: MockScenario?
     /// Stands in for the clock everywhere the app asks what time it is.
@@ -43,13 +61,16 @@ final class DebugSettings {
     var cache: SolarDayCache?
     /// The app's place provider, whose stored fix the drawer can forget.
     var devicePlaces: DevicePlaceProvider?
+    /// The app's forecast cache, whose last request the drawer shows and clears.
+    var forecastCache: ForecastCache?
 
-    /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugNow`, `-DebugPlace` and `-DebugPanel`
-    /// from `arguments`, ignoring values it can't parse. `-DebugNow` is local time, as in
+    /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugWeather`, `-DebugNow`, `-DebugPlace` and
+    /// `-DebugPanel` from `arguments`, ignoring values it can't parse. `-DebugNow` is local time, as in
     /// `2026-09-16T03:00:00`, and `-DebugPlace` is as in `59.9N,30.3E`.
     init(arguments: [String: Any] = [:], timeZone: TimeZone = .current) {
         providerMode = (arguments["DebugProviderMode"] as? String).flatMap(ProviderMode.init(rawValue:)) ?? .live
         scenario = (arguments["DebugScenario"] as? String).flatMap(MockScenario.init(rawValue:))
+        weatherMode = (arguments["DebugWeather"] as? String).flatMap(WeatherMode.init(rawValue:)) ?? .live
         nowOverride = (arguments["DebugNow"] as? String).flatMap { Self.localDate(from: $0, in: timeZone) }
         placeOverride = (arguments["DebugPlace"] as? String).flatMap(Self.place(from:))
         opensPanelOnLaunch = (arguments["DebugPanel"] as? String).map(Self.isTrue) ?? false

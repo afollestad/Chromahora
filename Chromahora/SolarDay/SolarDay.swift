@@ -221,6 +221,11 @@ nonisolated struct SolarDay: Equatable, Sendable {
         dayStart <= date && date < dayEnd
     }
 
+    /// The phase at `date`: the day's first phase before it starts, and its last after it ends.
+    func phase(at date: Date) -> DayPhase {
+        segments.last { $0.interval.start <= date }?.phase ?? initialPhase
+    }
+
     /// Where `date` falls within the day, from 0 at the start to 1 at the end.
     func fraction(of date: Date) -> Double {
         let offset = date.timeIntervalSince(dayStart)

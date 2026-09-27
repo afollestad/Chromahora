@@ -91,8 +91,7 @@ run_snapshot_tests() {
     -parallel-testing-enabled NO \
     -collect-test-diagnostics never \
     "${only_testing[@]}" \
-    test \
-    CODE_SIGNING_ALLOWED=NO
+    test
 }
 
 run_verify() {

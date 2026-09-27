@@ -204,6 +204,29 @@ struct SolarDayStoreTests {
         #expect(store.state.isLoading)
     }
 
+    /// Weather waits for a finished lookup, found or not, while a cancelled one waits for the
+    /// lookup that replaces it.
+    @Test func onlyFinishedLookupsCount() async throws {
+        let store = makeStore()
+        #expect(store.locatedCount == 0)
+
+        await store.locate()
+        places.error = PlaceError.unavailable(timeZone: "GMT")
+        await store.locate()
+        #expect(store.locatedCount == 2)
+
+        places.error = nil
+        places.holdsResponses = true
+        var requests = places.heldRequests.makeAsyncIterator()
+        let locating = Task { await store.locate() }
+        let request = try #require(await requests.next())
+        locating.cancel()
+        request.fail(with: CancellationError())
+        await locating.value
+
+        #expect(store.locatedCount == 2)
+    }
+
     /// Try Again without a place locates again, since there's nothing to load yet.
     @Test func reloadWithoutAPlaceLocatesAgain() {
         places.lastKnown = nil

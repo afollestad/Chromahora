@@ -49,6 +49,8 @@
 				SunriseSunset/CLAUDE.md,
 				Timeline/AGENTS.md,
 				Timeline/CLAUDE.md,
+				Weather/AGENTS.md,
+				Weather/CLAUDE.md,
 			);
 			target = D98A86EF30685001007D5F92 /* Chromahora */;
 		};
@@ -356,6 +358,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Chromahora/App/Chromahora.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DHWPN889K5;
@@ -389,6 +392,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Chromahora/App/Chromahora.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DHWPN889K5;

@@ -19,7 +19,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Xcode 27 project with an iOS 27 deployment target. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely.
 - Source folders are synchronized groups. New files under `Chromahora/` or `ChromahoraTests/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint` and `xcsift` and a pre-commit hook that lints.
-- Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on.
+- Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.
 - Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).
 - Tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`. It includes the snapshot suite except on another `SIMULATOR`.
 - Snapshots: `./scripts/snapshots.sh verify`, or `record` to rewrite baselines and then verify them. `ChromahoraTests/Snapshots/AGENTS.md` covers the suite.
@@ -37,10 +37,11 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 ## Design rules
 
-- `SolarDay` is the single contract for a day's data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` builds the real ones once; the mocks serve previews, tests and the debug drawer.
+- `SolarDay` is the single contract for a day's sun data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` builds the real ones once; the mocks serve previews, tests and the debug drawer.
+- Keep weather out of `SolarDay`, since forecasts change and fail while sun times don't. `WeatherStore` loads `WeatherSpell`s through a `WeatherProvider`, and a failure only leaves the timeline without them.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. No scroll edge effects, since the soft style blurs hours of timeline and the hard style paints a dark band.
 - Hide decorative shapes from accessibility. Every control needs a label, and the calendar button also exposes the selected day as its value.
-- Keep the sunrise-sunset.org attribution link in the day picker; the API's terms require one.
+- Keep the sunrise-sunset.org link and `AppleWeatherCredit` in the day picker, and `AppleWeatherCredit` in the weather popover; both services' terms require them.
 
 ## Code conventions
 

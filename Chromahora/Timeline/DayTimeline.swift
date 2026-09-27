@@ -11,6 +11,8 @@ import SwiftUI
 struct DayTimeline: View {
     let day: SolarDay
     let now: Date
+    /// The forecast's spells, which the overlay marks where they fall on this day.
+    var weather: [WeatherSpell] = []
     /// The sky behind the title, which `DayScreen` tints the title and picks the bar's scheme with.
     @Binding var skyBehindTitle: Color
     /// The title's center in global coordinates, which places that sky sample.
@@ -45,7 +47,7 @@ struct DayTimeline: View {
                     SkyGradient(day: day)
                         .id(day.phaseSequence)
                         .transition(.opacity)
-                    DayTimelineOverlay(day: day, now: now, safeAreaInsets: safeAreaInsets)
+                    DayTimelineOverlay(day: day, now: now, safeAreaInsets: safeAreaInsets, weather: weather)
                         // Past accessibility1, even a shortened phase label wraps beside a marker
                         // on a 390pt-wide phone. Applied out here so the overlay's scaled
                         // spacing stops growing at the same size.
@@ -168,5 +170,5 @@ struct DayTimeline: View {
 
 #Preview {
     @Previewable @State var sky = DayPhase.night.color
-    DayTimeline(day: .mock(), now: .now, skyBehindTitle: $sky)
+    DayTimeline(day: .mock(), now: .now, weather: WeatherSpell.mock(), skyBehindTitle: $sky)
 }

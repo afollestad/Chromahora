@@ -30,14 +30,16 @@ struct RulerScrim: View {
     }
 }
 
-/// Annotates the sky gradient: an hour ruler on the leading edge, sunrise,
-/// sunset and "now" markers, and a label for each phase but night on the trailing edge.
+/// Annotates the sky gradient: an hour ruler on the leading edge, sunrise, sunset, "now"
+/// and weather markers, and a label for each phase but night on the trailing edge.
 struct DayTimelineOverlay: View {
     let day: SolarDay
     let now: Date
     /// The screen's safe area. The timeline scrolls edge to edge, so this view sees
     /// no insets of its own, and each edge differs by device and orientation.
     let safeAreaInsets: EdgeInsets
+    /// The forecast's spells, of any day. Those overlapping this one get a marker each.
+    var weather: [WeatherSpell] = []
 
     private let horizontalPadding: CGFloat = 16
 
@@ -62,12 +64,18 @@ struct DayTimelineOverlay: View {
     /// how much of the row is left.
     @State private var markerLabelWidths: [String: CGFloat] = [:]
 
-    private struct Marker: Identifiable {
-        let title: String
-        let date: Date
-        let isNow: Bool
+    private enum MarkerKind {
+        /// Sunrise or sunset, by title.
+        case event(String)
+        case now
+        /// A weather spell, with when it runs as the day words it, and whether its icon shows the sun.
+        case weather(WeatherSpell, range: String, inDaylight: Bool)
+    }
 
-        var id: String { title }
+    private struct Marker: Identifiable {
+        let id: String
+        let date: Date
+        let kind: MarkerKind
     }
 
     private struct PlacedMarker: Identifiable {
@@ -136,14 +144,12 @@ struct DayTimelineOverlay: View {
 
     private func markerLayer(_ markers: [PlacedMarker], size: CGSize) -> some View {
         ForEach(markers) { placed in
-            Rectangle()
-                .fill(.white.opacity(placed.marker.isNow ? 0.9 : 0.35))
-                .frame(height: 1)
+            markerLine(for: placed.marker)
                 .position(x: size.width / 2, y: placed.lineY)
                 .accessibilityHidden(true)
 
             row(at: placed.labelY, alignment: .leading, size: size) {
-                label("\(placed.marker.title) · \(placed.marker.date.formatted(date: .omitted, time: .shortened))")
+                markerLabel(for: placed.marker)
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.size.width
                     } action: { width in
@@ -185,6 +191,42 @@ struct DayTimelineOverlay: View {
 
     // MARK: Pieces
 
+    /// Sunrise, sunset and now draw a solid line across the day. Precipitation draws a dashed
+    /// one where it begins, since it's the weather worth lining up against the phases, with
+    /// short even dashes that read as a forecast beside the sun's firm lines. Sky changes draw
+    /// none, which would stripe the whole day, and neither does a spell carried over from the night before.
+    @ViewBuilder
+    private func markerLine(for marker: Marker) -> some View {
+        switch marker.kind {
+        case .event:
+            Rectangle()
+                .fill(.white.opacity(0.35))
+                .frame(height: 1)
+        case .now:
+            Rectangle()
+                .fill(.white.opacity(0.9))
+                .frame(height: 1)
+        case .weather(let spell, _, _):
+            if spell.condition.isPrecipitation, spell.interval.start > day.dayStart {
+                HorizontalRule()
+                    .stroke(.white.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    .frame(height: 1)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func markerLabel(for marker: Marker) -> some View {
+        switch marker.kind {
+        case .event(let title):
+            label("\(title) · \(marker.date.formatted(date: .omitted, time: .shortened))")
+        case .now:
+            label("Now · \(marker.date.formatted(date: .omitted, time: .shortened))")
+        case .weather(let spell, let range, let inDaylight):
+            WeatherButton(spell: spell, range: range, inDaylight: inDaylight)
+        }
+    }
+
     private func label(_ text: String, glass: Glass = .regular) -> some View {
         Text(text)
             .font(.caption2.weight(.semibold).monospacedDigit())
@@ -194,21 +236,21 @@ struct DayTimelineOverlay: View {
     }
 
     private func text(for segment: DaySegment) -> String {
-        "\(segment.phase.title) · \(rangeText(for: segment))"
+        "\(segment.phase.title) · \(rangeText(segment.interval, span: segment.span))"
     }
 
-    /// A phase cut off by midnight began or ends on another day, so its label gives only
-    /// the side it has on this one.
-    private func rangeText(for segment: DaySegment) -> String {
+    /// A phase or spell cut off by midnight began or ends on another day, so its text gives
+    /// only the side it has on this one.
+    private func rangeText(_ interval: DateInterval, span: DaySegment.Span) -> String {
         let time = Date.FormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone)
-        switch segment.span {
+        switch span {
         case .range:
             let range = Date.IntervalFormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone)
-            return (segment.interval.start..<segment.interval.end).formatted(range)
+            return (interval.start..<interval.end).formatted(range)
         case .until:
-            return "until \(segment.interval.end.formatted(time))"
+            return "until \(interval.end.formatted(time))"
         case .from:
-            return "from \(segment.interval.start.formatted(time))"
+            return "from \(interval.start.formatted(time))"
         case .allDay:
             return "all day"
         }
@@ -244,14 +286,28 @@ struct DayTimelineOverlay: View {
         size.height * day.fraction(of: date)
     }
 
-    /// Sunrise, sunset and "now" in time order, with labels nudged apart when
-    /// they'd overlap. "Now" only appears when the current time falls on this day.
+    /// Sunrise, sunset, "now" and weather in time order, with labels nudged apart when
+    /// they'd overlap. "Now" only appears when the current time falls on this day, and a
+    /// spell under way at midnight is marked there.
     private func placedMarkers(size: CGSize) -> [PlacedMarker] {
-        var markers = day.events.map { Marker(title: $0.title, date: $0.date, isNow: false) }
+        var markers = day.events.map { Marker(id: $0.title, date: $0.date, kind: .event($0.title)) }
         if day.contains(now) {
-            markers.append(Marker(title: "Now", date: now, isNow: true))
+            markers.append(Marker(id: "Now", date: now, kind: .now))
         }
-        markers.sort { $0.date < $1.date }
+        for spell in weather {
+            guard let span = spell.span(within: day) else {
+                continue
+            }
+            let date = max(spell.interval.start, day.dayStart)
+            let phase = day.phase(at: date)
+            markers.append(Marker(
+                id: "weather-\(spell.interval.start.timeIntervalSinceReferenceDate)",
+                date: date,
+                kind: .weather(spell, range: rangeText(spell.interval, span: span), inDaylight: phase == .daylight || phase == .goldenHour)
+            ))
+        }
+        // Ties break by id, so markers at the same instant keep one order.
+        markers.sort { ($0.date, $0.id) < ($1.date, $1.id) }
         let lineYs = markers.map { y(for: $0.date, in: size) }
 
         return zip(zip(markers, lineYs), spaced(lineYs)).map { pair, labelY in
@@ -306,8 +362,19 @@ struct DayTimelineOverlay: View {
     }
 }
 
+/// A horizontal line through the middle of its frame, for a stroke style to dash.
+/// `Rectangle` would stroke both edges of its one-point frame.
+private struct HorizontalRule: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        }
+    }
+}
+
 #Preview {
-    DayTimelineOverlay(day: .mock(), now: .now, safeAreaInsets: EdgeInsets())
+    DayTimelineOverlay(day: .mock(), now: .now, safeAreaInsets: EdgeInsets(), weather: WeatherSpell.mock())
         .frame(height: 24 * 72)
         .background(SkyGradient(day: .mock()))
 }

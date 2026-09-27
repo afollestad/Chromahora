@@ -22,10 +22,11 @@ struct SnapshotTests {
         return try #require(Calendar.current.date(from: components))
     }
 
-    /// The timeline for September 16 at `now`, which may fall on another day. `ContentView`
-    /// can't stand in, since its `TimelineView` reads the real clock and its store loads.
-    func timeline(now: Date) throws -> some View {
-        timeline(of: SolarDay.mock(for: try time(12)), now: now)
+    /// The timeline for September 16 at `now`, which may fall on another day, marked with
+    /// `weather`. `ContentView` can't stand in, since its `TimelineView` reads the real clock
+    /// and its stores load.
+    func timeline(now: Date, weather: [WeatherSpell] = []) throws -> some View {
+        timeline(of: SolarDay.mock(for: try time(12)), now: now, weather: weather)
     }
 
     /// The timeline for `scenario` on the day containing `now`.
@@ -33,14 +34,14 @@ struct SnapshotTests {
         timeline(of: SolarDay.mock(scenario, for: now), now: now)
     }
 
-    private func timeline(of day: SolarDay, now: Date) -> some View {
-        screen(.loaded(day), selectedDate: day.dayStart, now: now)
+    private func timeline(of day: SolarDay, now: Date, weather: [WeatherSpell] = []) -> some View {
+        screen(.loaded(day), selectedDate: day.dayStart, now: now, weather: weather)
     }
 
     /// The screen in `state`, with `selectedDate` chosen, at `now`.
-    func screen(_ state: SolarDayStore.LoadState, selectedDate: Date, now: Date) -> some View {
+    func screen(_ state: SolarDayStore.LoadState, selectedDate: Date, now: Date, weather: [WeatherSpell] = []) -> some View {
         NavigationStack {
-            DayScreen(state: state, now: now, selectedDate: .constant(selectedDate)) {}
+            DayScreen(state: state, now: now, selectedDate: .constant(selectedDate), weather: weather) {}
         }
     }
 }

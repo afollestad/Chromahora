@@ -17,13 +17,20 @@ struct ContentView: View {
 
     /// One store per window, so each window can show its own day.
     @State private var store: SolarDayStore
+    @State private var weather: WeatherStore
     @Environment(\.scenePhase) private var scenePhase
     #if DEBUG
     @Environment(DebugSettings.self) private var debug: DebugSettings?
     #endif
 
-    init(provider: any SolarDayProvider, placeProvider: any PlaceProvider, selectedDate: Date = .now) {
+    init(
+        provider: any SolarDayProvider,
+        placeProvider: any PlaceProvider,
+        weatherProvider: any WeatherProvider,
+        selectedDate: Date = .now
+    ) {
         _store = State(initialValue: SolarDayStore(provider: provider, placeProvider: placeProvider, selectedDate: selectedDate))
+        _weather = State(initialValue: WeatherStore(provider: weatherProvider))
     }
 
     var body: some View {
@@ -34,6 +41,7 @@ struct ContentView: View {
                     now: now(from: context.date),
                     selectedDate: $store.selectedDate,
                     place: store.place,
+                    weather: weather.spells,
                     onRetry: store.reload
                 )
             }
@@ -48,6 +56,13 @@ struct ContentView: View {
         }
         .task(id: store.loadKey) {
             await store.loadSelectedDay()
+        }
+        // Waits for each location lookup, so no request goes to a stored place the device has
+        // left, and only asks WeatherKit when its throttle allows.
+        .task(id: WeatherStore.Trigger(locatedCount: store.locatedCount, reloadCount: store.reloadCount)) {
+            if store.locatedCount > 0, scenePhase != .background {
+                await weather.load(at: store.place, now: now(from: .now))
+            }
         }
         #if DEBUG
         .debugDrawer(store: store, settings: debug)
@@ -65,5 +80,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(provider: MockSolarDayProvider(), placeProvider: MockPlaceProvider())
+    ContentView(provider: MockSolarDayProvider(), placeProvider: MockPlaceProvider(), weatherProvider: MockWeatherProvider())
 }

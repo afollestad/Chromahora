@@ -93,6 +93,19 @@ struct SolarDayTests {
         #expect(SolarDay.mock(.midnightSun, for: date, calendar: calendar).segments.map(\.span) == [.allDay])
     }
 
+    /// The typical mock's night gives way to blue hour at 6:12 AM.
+    @Test func phaseAtFollowsTheSegmentsAndClampsToTheDay() throws {
+        let blueHour = try #require(day.transitions.first).date
+
+        #expect(day.phase(at: day.dayStart) == .night)
+        #expect(day.phase(at: blueHour.addingTimeInterval(-1)) == .night)
+        #expect(day.phase(at: blueHour) == .blueHour)
+        #expect(day.phase(at: day.dayStart.addingTimeInterval(12 * 60 * 60)) == .daylight)
+        #expect(day.phase(at: day.dayStart.addingTimeInterval(-60 * 60)) == .night)
+        #expect(day.phase(at: day.dayEnd.addingTimeInterval(60 * 60)) == .night)
+        #expect(SolarDay.mock(.midnightSun, for: date, calendar: calendar).phase(at: date) == .daylight)
+    }
+
     @Test func heldColorRangeNarrowsToTheMidpointForShortPhases() {
         let start = date
         func held(minutes: Double) -> ClosedRange<Date> {

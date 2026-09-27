@@ -15,6 +15,8 @@ struct DayScreen: View {
     @Binding var selectedDate: Date
     /// Where the day is for, which the day picker names.
     var place: Place?
+    /// The forecast's spells, which the timeline marks on the day they fall on.
+    var weather: [WeatherSpell] = []
     let onRetry: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -29,7 +31,14 @@ struct DayScreen: View {
             // Inserted under the placeholder, which reveals it by leaving, so nothing
             // masks the timeline or disturbs its first scroll.
             if let day = state.day {
-                DayTimeline(day: day, now: now, skyBehindTitle: $skyBehindTitle, titleMidY: titleMidY, focusRequests: focusRequests)
+                DayTimeline(
+                    day: day,
+                    now: now,
+                    weather: weather,
+                    skyBehindTitle: $skyBehindTitle,
+                    titleMidY: titleMidY,
+                    focusRequests: focusRequests
+                )
                     .transition(.identity)
             }
             if state.day == nil {
@@ -86,7 +95,12 @@ struct DayScreen: View {
 #Preview("Loaded") {
     @Previewable @State var selectedDate = Date.now
     NavigationStack {
-        DayScreen(state: .loaded(.mock(for: selectedDate)), now: .now, selectedDate: $selectedDate) {}
+        DayScreen(
+            state: .loaded(.mock(for: selectedDate)),
+            now: .now,
+            selectedDate: $selectedDate,
+            weather: WeatherSpell.mock(for: selectedDate)
+        ) {}
     }
 }
 

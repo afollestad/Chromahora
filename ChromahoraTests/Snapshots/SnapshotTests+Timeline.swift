@@ -44,6 +44,39 @@ extension SnapshotTests {
         try await assertScreenSnapshot(of: timeline(now: time(day: 17, 9)))
     }
 
+    // MARK: Weather
+
+    /// Rain at 3 PM draws a dashed line, and the clear sky after it shows the sun just below Now.
+    @Test func weatherThisAfternoon() async throws {
+        try await assertScreenSnapshot(of: timeline(now: time(16, 30), weather: WeatherSpell.mock(for: time(12))))
+    }
+
+    /// The clear night under way at midnight is marked there with the moon, clear of the
+    /// bar, above the clouds that arrive at 4 AM.
+    @Test func weatherBeforeDawn() async throws {
+        try await assertScreenSnapshot(of: timeline(now: time(3), weather: WeatherSpell.mock(for: time(12))))
+    }
+
+    /// Now, Sunset and rain starting ten minutes after it stack in time order, and the
+    /// clear night after the rain shows the moon.
+    @Test func rainJustAfterSunset() async throws {
+        func spell(_ condition: SkyCondition, _ start: Date, _ end: Date, chance: Double = 0, cover: Double) -> WeatherSpell {
+            WeatherSpell(condition: condition, interval: DateInterval(start: start, end: end), precipitationChance: chance, cloudCover: cover)
+        }
+        let weather = [
+            spell(.partlyCloudy, try time(12), try time(19), cover: 0.5),
+            spell(.rain, try time(19), try time(21), chance: 0.7, cover: 1),
+            spell(.clear, try time(21), try time(day: 17, 0), cover: 0.1)
+        ]
+        try await assertScreenSnapshot(of: timeline(now: time(18, 40), weather: weather))
+    }
+
+    /// Weather icons keep their place among marker labels that have grown.
+    @Test func weatherAtLargestTextSize() async throws {
+        let timeline = try timeline(now: time(7), weather: WeatherSpell.mock(for: time(12)))
+        await assertScreenSnapshot(of: timeline.environment(\.dynamicTypeSize, .accessibility5))
+    }
+
     // MARK: High-latitude days, on the dates their scenarios come from
 
     /// Reykjavík's December golden hour lasts all day and holds its color, with no daylight.

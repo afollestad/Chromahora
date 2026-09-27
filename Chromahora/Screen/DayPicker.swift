@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Calendar for choosing which day the timeline shows, with a shortcut back to today,
-/// and a note of where the times are for and where they come from.
+/// and a note of where the times are for and where they and the weather come from.
 struct DayPicker: View {
     @Binding var selection: Date
     var place: Place?
@@ -37,6 +37,7 @@ struct DayPicker: View {
                 if let source = Self.source {
                     Link("Sun times by sunrise-sunset.org", destination: source)
                 }
+                AppleWeatherCredit()
             }
             .font(.footnote)
             .multilineTextAlignment(.center)

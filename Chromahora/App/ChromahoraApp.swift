@@ -19,6 +19,7 @@ struct ChromahoraApp: App {
     private let cache = SolarDayCache()
     private let provider: any SolarDayProvider
     private let placeProvider: any PlaceProvider
+    private let weatherProvider: any WeatherProvider
     #if DEBUG
     @State private var debug: DebugSettings
     #endif
@@ -26,16 +27,21 @@ struct ChromahoraApp: App {
     init() {
         let provider = SunriseSunsetProvider(cache: cache)
         let placeProvider = DevicePlaceProvider()
+        let forecastCache = ForecastCache()
+        let weatherProvider = ThrottledWeatherProvider(base: WeatherKitProvider(), cache: forecastCache)
         #if DEBUG
         let debug = DebugSettings.fromLaunchArguments()
         debug.cache = cache
         debug.devicePlaces = placeProvider
+        debug.forecastCache = forecastCache
         _debug = State(initialValue: debug)
         self.provider = DebugSolarDayProvider(base: provider, settings: debug)
         self.placeProvider = DebugPlaceProvider(base: placeProvider, settings: debug)
+        self.weatherProvider = DebugWeatherProvider(base: weatherProvider, settings: debug)
         #else
         self.provider = provider
         self.placeProvider = placeProvider
+        self.weatherProvider = weatherProvider
         #endif
     }
 
@@ -55,10 +61,10 @@ struct ChromahoraApp: App {
     @ViewBuilder
     private var content: some View {
         #if DEBUG
-        ContentView(provider: provider, placeProvider: placeProvider, selectedDate: debug.nowOverride ?? .now)
+        ContentView(provider: provider, placeProvider: placeProvider, weatherProvider: weatherProvider, selectedDate: debug.nowOverride ?? .now)
             .environment(debug)
         #else
-        ContentView(provider: provider, placeProvider: placeProvider)
+        ContentView(provider: provider, placeProvider: placeProvider, weatherProvider: weatherProvider)
         #endif
     }
 }

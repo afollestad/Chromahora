@@ -52,8 +52,7 @@ run_and_format xcodebuild \
   -parallel-testing-enabled NO \
   -collect-test-diagnostics never \
   "${only_testing[@]}" \
-  test \
-  CODE_SIGNING_ALLOWED=NO
+  test
 
 require_every_test_ran "$raw_log"
 echo "Tests passed."

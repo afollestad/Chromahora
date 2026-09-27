@@ -107,10 +107,17 @@ private struct DebugPanel: View {
                     }
                     // The store keeps loaded days, so a new shape only shows once they're gone.
                     .onChange(of: settings.scenario, reloadFromScratch)
+                    Picker("Weather", selection: $settings.weatherMode) {
+                        ForEach(DebugSettings.WeatherMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    // A reload asks for weather again, while the days come back from memory.
+                    .onChange(of: settings.weatherMode) { store.reload() }
                     Button("Reload from scratch", action: reloadFromScratch)
                 }
 
-                DebugCacheSection(store: store, cache: settings.cache)
+                DebugCacheSection(store: store, cache: settings.cache, forecastCache: settings.forecastCache)
 
                 Section("Place") {
                     if let place = store.place {
@@ -188,12 +195,15 @@ private struct DebugPanel: View {
     }
 }
 
-/// The cache's size, and a way to empty it and reload as if launching cold.
+/// The cache's size and the last forecast request, and a way to empty both and reload as
+/// if launching cold, which also lets the next load ask WeatherKit at once.
 private struct DebugCacheSection: View {
     let store: SolarDayStore
     let cache: SolarDayCache?
+    let forecastCache: ForecastCache?
 
     @State private var summary: SolarDayCache.Summary?
+    @State private var forecast: ForecastRecord?
 
     var body: some View {
         Section("Cache") {
@@ -201,9 +211,11 @@ private struct DebugCacheSection: View {
                 LabeledContent("Months", value: "\(summary.fileNames.count)")
                 LabeledContent("Size", value: summary.byteCount.formatted(.byteCount(style: .file)))
             }
+            LabeledContent("Forecast requested", value: forecastSummary)
             Button("Clear cache", role: .destructive) {
                 Task {
                     await cache?.removeAll()
+                    await forecastCache?.removeAll()
                     store.discardLoadedDays()
                     store.reload()
                     await refresh()
@@ -216,8 +228,18 @@ private struct DebugCacheSection: View {
         }
     }
 
+    /// When WeatherKit was last asked, and what came back: a spell count, or nothing when it failed or is still out.
+    private var forecastSummary: String {
+        guard let forecast else {
+            return "Never"
+        }
+        let time = forecast.attemptedAt.formatted(date: .omitted, time: .standard)
+        return forecast.spells.map { "\(time), \($0.count) spells" } ?? "\(time), no answer"
+    }
+
     private func refresh() async {
         summary = await cache?.summary()
+        forecast = await forecastCache?.record()
     }
 }
 
