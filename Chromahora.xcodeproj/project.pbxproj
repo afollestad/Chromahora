@@ -39,6 +39,8 @@
 			membershipExceptions = (
 				Debug/AGENTS.md,
 				Debug/CLAUDE.md,
+				Screen/AGENTS.md,
+				Screen/CLAUDE.md,
 				SolarDay/AGENTS.md,
 				SolarDay/CLAUDE.md,
 				Timeline/AGENTS.md,

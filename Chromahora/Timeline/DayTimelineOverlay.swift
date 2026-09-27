@@ -97,7 +97,10 @@ struct DayTimelineOverlay: View {
                     RulerScrim(leadingInset: safeAreaInsets.leading)
                     hourRuler(size: size, avoiding: markers)
                     markerLayer(markers, size: size)
+                    // Labels are keyed by segment index, so a new phase sequence gets new
+                    // labels rather than morphing one phase's capsule into another's.
                     phaseLabels(size: size, beside: markers)
+                        .id(day.phaseSequence)
                 }
                 .frame(width: size.width, height: size.height)
             }
@@ -304,8 +307,7 @@ struct DayTimelineOverlay: View {
 }
 
 #Preview {
-    @Previewable @State var selectedDate = Date.now
-    NavigationStack {
-        DayTimeline(day: .mock(for: selectedDate), now: .now, selectedDate: $selectedDate)
-    }
+    DayTimelineOverlay(day: .mock(), now: .now, safeAreaInsets: EdgeInsets())
+        .frame(height: 24 * 72)
+        .background(SkyGradient(day: .mock()))
 }

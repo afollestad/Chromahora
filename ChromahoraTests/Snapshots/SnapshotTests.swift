@@ -23,7 +23,7 @@ struct SnapshotTests {
     }
 
     /// The timeline for September 16 at `now`, which may fall on another day. `ContentView`
-    /// can't stand in, since its `TimelineView` reads the real clock.
+    /// can't stand in, since its `TimelineView` reads the real clock and its store loads.
     func timeline(now: Date) throws -> some View {
         timeline(of: SolarDay.mock(for: try time(12)), now: now)
     }
@@ -34,8 +34,13 @@ struct SnapshotTests {
     }
 
     private func timeline(of day: SolarDay, now: Date) -> some View {
+        screen(.loaded(day), selectedDate: day.dayStart, now: now)
+    }
+
+    /// The screen in `state`, with `selectedDate` chosen, at `now`.
+    func screen(_ state: SolarDayStore.LoadState, selectedDate: Date, now: Date) -> some View {
         NavigationStack {
-            DayTimeline(day: day, now: now, selectedDate: .constant(day.dayStart))
+            DayScreen(state: state, now: now, selectedDate: .constant(selectedDate)) {}
         }
     }
 }

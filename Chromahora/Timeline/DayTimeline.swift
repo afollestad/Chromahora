@@ -7,11 +7,16 @@ import SwiftUI
 
 /// A scrolling, top-to-bottom view of one day. `pointsPerHour` sets the zoom
 /// level. The view opens centered on the current time when showing today, and
-/// on the middle of daylight otherwise.
+/// on the middle of its brightest phase otherwise.
 struct DayTimeline: View {
     let day: SolarDay
     let now: Date
-    @Binding var selectedDate: Date
+    /// The sky behind the title, which `DayScreen` tints the title and picks the bar's scheme with.
+    @Binding var skyBehindTitle: Color
+    /// The title's center in global coordinates, which places that sky sample.
+    var titleMidY: CGFloat = 0
+    /// Scrolls back to the focus time whenever it changes, as Today does.
+    var focusRequests = 0
     var pointsPerHour: CGFloat = 72
 
     private let focusAnchorID = "focus"
@@ -21,26 +26,27 @@ struct DayTimeline: View {
     /// it, so scrolling slowly across the crossover doesn't flicker the title.
     private static let darkBarLuminance = 0.17...0.19
 
-    @State private var isBarDark = true
-    @State private var skyBehindTitle = DayPhase.night.color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var safeAreaInsets = EdgeInsets()
-    /// The timeline's top edge and the title's center, in global coordinates, which
-    /// place the sky sample behind the title.
+    /// The timeline's top edge in global coordinates, which places the sky sample behind the title.
     @State private var timelineMinY: CGFloat = 0
-    @State private var titleMidY: CGFloat = 0
-    @State private var isChoosingDay = false
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 ZStack {
+                    // Days with the same phase sequence glide between each other's stops.
+                    // Others can't pair up their stops, so they crossfade.
                     SkyGradient(day: day)
+                        .id(day.phaseSequence)
+                        .transition(.opacity)
                     DayTimelineOverlay(day: day, now: now, safeAreaInsets: safeAreaInsets)
                         // Past accessibility1, even a shortened phase label wraps beside a marker
                         // on a 390pt-wide phone. Applied out here so the overlay's scaled
                         // spacing stops growing at the same size.
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 }
+                .animation(reduceMotion ? nil : .smooth, value: day)
                 .frame(height: contentHeight)
                 .overlay(alignment: .top) {
                     // Invisible scroll target. The padding keeps its one-point
@@ -81,54 +87,27 @@ struct DayTimeline: View {
             .onAppear {
                 proxy.scrollTo(focusAnchorID, anchor: .center)
             }
-            .onChange(of: day) {
+            // Only a new day moves the focus. The same day with new times, as after a
+            // relocation, keeps the scroll where the reader left it.
+            .onChange(of: day.dayStart) {
                 withAnimation {
                     proxy.scrollTo(focusAnchorID, anchor: .center)
                 }
             }
-            .onChange(of: selectedDate) {
-                isChoosingDay = false
+            // Today on another day scrolls once that day loads, through the change above.
+            .onChange(of: focusRequests) {
+                guard day.contains(now) else {
+                    return
+                }
+                withAnimation {
+                    proxy.scrollTo(focusAnchorID, anchor: .center)
+                }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
                 let y = geometry.visibleRect.minY + titleMidY - timelineMinY
                 return SkyGradient.color(at: y / contentHeight, in: day)
             } action: { _, color in
                 skyBehindTitle = color
-                isBarDark = Self.prefersDarkBar(over: color, wasDark: isBarDark)
-            }
-            .toolbarColorScheme(isBarDark ? .dark : .light, for: .navigationBar)
-            .navigationTitle("Chromahora")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    TitlePill(day: day, skyColor: $skyBehindTitle)
-                        .onGeometryChange(for: CGFloat.self) { proxy in
-                            proxy.frame(in: .global).midY
-                        } action: { midY in
-                            titleMidY = midY
-                        }
-                }
-
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isChoosingDay = true
-                    } label: {
-                        Label("Choose day", systemImage: "calendar")
-                    }
-                    .accessibilityLabel("Choose day")
-                    .accessibilityValue(Text(day.dayStart, format: .dateTime.weekday(.wide).month(.wide).day()))
-                    .accessibilityHint("Opens a calendar to choose the day to show")
-                    .popover(isPresented: $isChoosingDay, arrowEdge: .top) {
-                        DayPicker(selection: $selectedDate) {
-                            // `now`, not `.now`, so Today follows the debug drawer's clock.
-                            selectedDate = now
-                            withAnimation {
-                                proxy.scrollTo(focusAnchorID, anchor: .center)
-                            }
-                        }
-                        .presentationCompactAdaptation(.popover)
-                    }
-                }
             }
         }
     }
@@ -171,32 +150,7 @@ struct DayTimeline: View {
     }
 }
 
-/// The title and day on glass tinted with the sky behind it, so the glass carries
-/// its backdrop's hue through the blended phases. It takes the color as a binding
-/// so that only this view, not the whole timeline, redraws on each frame of a scroll.
-private struct TitlePill: View {
-    let day: SolarDay
-    @Binding var skyColor: Color
-
-    var body: some View {
-        VStack(spacing: 1) {
-            Text("Chromahora")
-                .font(.headline)
-            // Primary rather than secondary, which drops below 3:1 on the tinted glass.
-            // The smaller, lighter font already ranks it below the title.
-            Text(day.dayStart, format: .dateTime.weekday(.wide).month(.wide).day())
-                .font(.caption)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .glassEffect(.regular.tint(skyColor.opacity(0.5)), in: Capsule())
-        .accessibilityElement(children: .combine)
-    }
-}
-
 #Preview {
-    @Previewable @State var selectedDate = Date.now
-    NavigationStack {
-        DayTimeline(day: .mock(for: selectedDate), now: .now, selectedDate: $selectedDate)
-    }
+    @Previewable @State var sky = DayPhase.night.color
+    DayTimeline(day: .mock(), now: .now, skyBehindTitle: $sky)
 }

@@ -7,9 +7,14 @@ import Testing
 @testable import Chromahora
 
 extension SnapshotTests {
+    /// The dawn glow, which the harness's transaction stops at its end state: gold.
+    @Test func loading() async throws {
+        let noon = try time(12)
+        await assertScreenSnapshot(of: screen(.loading(nil), selectedDate: noon, now: noon))
+    }
+
     @Test func failedToLoad() async throws {
-        let provider = StubSolarDayProvider()
-        provider.error = StubError()
-        try await assertScreenSnapshot(of: ContentView(provider: provider, selectedDate: time(12)))
+        let noon = try time(12)
+        await assertScreenSnapshot(of: screen(.failed(StubError()), selectedDate: noon, now: noon))
     }
 }

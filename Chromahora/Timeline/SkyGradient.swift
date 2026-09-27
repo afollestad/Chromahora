@@ -6,16 +6,30 @@
 import SwiftUI
 
 /// Paints the day top to bottom, with each phase's color placed by its time.
+///
+/// Animating to another day with the same phase sequence glides each stop to its new
+/// place. Callers give each sequence its own identity, since other days' stops don't pair up.
+@Animatable
 struct SkyGradient: View {
-    let day: SolarDay
+    @AnimatableIgnored let day: SolarDay
+    private var locations: StopLocations
 
     /// Blue and golden hours are near-complementary, so they blend through a
     /// dusky mauve rather than a muddy olive.
-    private static let duskBridge = Color(red: 0.55, green: 0.33, blue: 0.48)
+    static let duskBridge = Color(red: 0.55, green: 0.33, blue: 0.48)
+
+    init(day: SolarDay) {
+        self.day = day
+        locations = StopLocations(Self.stops(for: day).map { Double($0.location) })
+    }
 
     var body: some View {
+        let stops = Self.stops(for: day)
+        let placed: [Gradient.Stop] = stops.count == locations.values.count
+            ? zip(stops, locations.values).map { stop, location in Gradient.Stop(color: stop.color, location: CGFloat(location)) }
+            : stops
         Rectangle()
-            .fill(.linearGradient(Gradient(stops: Self.stops(for: day)).colorSpace(.perceptual), startPoint: .top, endPoint: .bottom))
+            .fill(.linearGradient(Gradient(stops: placed).colorSpace(.perceptual), startPoint: .top, endPoint: .bottom))
             .accessibilityHidden(true)
     }
 
@@ -64,6 +78,46 @@ struct SkyGradient: View {
 
     private static func needsBridge(_ lhs: DayPhase, _ rhs: DayPhase) -> Bool {
         Set([lhs, rhs]) == [.blueHour, .goldenHour]
+    }
+}
+
+/// Gradient stop locations as one animatable value. Only same-length lists are animated
+/// between, so entries missing from either side, as in `zero`, count as 0.
+nonisolated struct StopLocations: VectorArithmetic {
+    var values: [Double]
+
+    init(_ values: [Double]) {
+        self.values = values
+    }
+
+    static var zero: StopLocations {
+        StopLocations([])
+    }
+
+    var magnitudeSquared: Double {
+        values.reduce(0) { $0 + $1 * $1 }
+    }
+
+    mutating func scale(by rhs: Double) {
+        values = values.map { $0 * rhs }
+    }
+
+    static func + (lhs: StopLocations, rhs: StopLocations) -> StopLocations {
+        combine(lhs, rhs, +)
+    }
+
+    static func - (lhs: StopLocations, rhs: StopLocations) -> StopLocations {
+        combine(lhs, rhs, -)
+    }
+
+    private static func combine(_ lhs: StopLocations, _ rhs: StopLocations, _ operation: (Double, Double) -> Double) -> StopLocations {
+        let count = max(lhs.values.count, rhs.values.count)
+        return StopLocations((0..<count).map { index in
+            operation(
+                index < lhs.values.count ? lhs.values[index] : 0,
+                index < rhs.values.count ? rhs.values[index] : 0
+            )
+        })
     }
 }
 
