@@ -4,6 +4,7 @@
 //
 
 #if DEBUG
+import CoreLocation
 import SwiftUI
 
 extension View {
@@ -119,6 +120,12 @@ private struct DebugPanel: View {
                         Text("None yet")
                     }
                     LabeledContent("Time zone", value: store.calendar.timeZone.identifier)
+                    LabeledContent("Permission", value: Self.authorization)
+                    Button("Relocate", action: store.relocate)
+                    Button("Forget last device fix") {
+                        settings.devicePlaces?.forgetLastFix()
+                    }
+                    .disabled(settings.devicePlaces == nil)
                 }
 
                 Section {
@@ -140,6 +147,17 @@ private struct DebugPanel: View {
                     Button("Done", action: onDone)
                 }
             }
+        }
+    }
+
+    private static var authorization: String {
+        switch CLLocationManager().authorizationStatus {
+        case .notDetermined: "Not asked"
+        case .restricted: "Restricted"
+        case .denied: "Denied"
+        case .authorizedAlways: "Always"
+        case .authorizedWhenInUse: "When in use"
+        @unknown default: "Unknown"
         }
     }
 

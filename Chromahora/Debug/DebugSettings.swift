@@ -41,6 +41,8 @@ final class DebugSettings {
     var opensPanelOnLaunch: Bool
     /// The app's sun-time cache, which the drawer summarizes and clears.
     var cache: SolarDayCache?
+    /// The app's place provider, whose stored fix the drawer can forget.
+    var devicePlaces: DevicePlaceProvider?
 
     /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugNow`, `-DebugPlace` and `-DebugPanel`
     /// from `arguments`, ignoring values it can't parse. `-DebugNow` is local time, as in

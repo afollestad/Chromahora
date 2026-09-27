@@ -25,10 +25,11 @@ struct ChromahoraApp: App {
 
     init() {
         let provider = SunriseSunsetProvider(cache: cache)
-        let placeProvider = TimeZonePlaceProvider()
+        let placeProvider = DevicePlaceProvider()
         #if DEBUG
         let debug = DebugSettings.fromLaunchArguments()
         debug.cache = cache
+        debug.devicePlaces = placeProvider
         _debug = State(initialValue: debug)
         self.provider = DebugSolarDayProvider(base: provider, settings: debug)
         self.placeProvider = DebugPlaceProvider(base: placeProvider, settings: debug)

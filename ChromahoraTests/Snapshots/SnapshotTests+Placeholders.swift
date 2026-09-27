@@ -17,4 +17,10 @@ extension SnapshotTests {
         let noon = try time(12)
         await assertScreenSnapshot(of: screen(.failed(StubError()), selectedDate: noon, now: noon))
     }
+
+    /// Location is off and the zone has no city to stand in, so only Settings can help.
+    @Test func locationNeeded() async throws {
+        let noon = try time(12)
+        await assertScreenSnapshot(of: screen(.failed(PlaceError.unavailable(timeZone: "GMT")), selectedDate: noon, now: noon))
+    }
 }

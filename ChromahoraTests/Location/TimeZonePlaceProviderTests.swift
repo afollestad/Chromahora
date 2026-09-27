@@ -55,7 +55,8 @@ struct TimeZonePlaceProviderTests {
     }
 
     @Test func summariesNameTheCity() {
-        #expect(Place(latitude: 34, longitude: -118, source: .timeZone("America/Los_Angeles")).summary == "Near Los Angeles, from your time zone")
+        let losAngeles = Place(latitude: 34, longitude: -118, source: .timeZone("America/Los_Angeles"))
+        #expect(losAngeles.summary == "Approximate, from your time zone (Los Angeles)")
         #expect(Place(latitude: 34, longitude: -118, source: .device).summary == "At your location")
     }
 

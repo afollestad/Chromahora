@@ -14,6 +14,7 @@ struct DayPicker: View {
 
     /// sunrise-sunset.org's terms ask for a link back.
     private static let source = URL(string: "https://sunrise-sunset.org")
+    private static let settings = URL(string: UIApplication.openSettingsURLString)
 
     var body: some View {
         VStack(spacing: 8) {
@@ -28,6 +29,10 @@ struct DayPicker: View {
                 if let place {
                     Text(place.summary)
                         .foregroundStyle(.secondary)
+                    // An approximate place usually means location is off for the app.
+                    if case .timeZone = place.source, let settings = Self.settings {
+                        Link("Use Your Location in Settings", destination: settings)
+                    }
                 }
                 if let source = Self.source {
                     Link("Sun times by sunrise-sunset.org", destination: source)

@@ -103,6 +103,11 @@ final class SolarDayStore {
     }
 
     #if DEBUG
+    /// Asks where the device is again, as returning to the app does.
+    func relocate() {
+        locateCount += 1
+    }
+
     /// Forgets every loaded day and clears the screen, so the next load starts cold.
     func discardLoadedDays() {
         loadedDays = [:]

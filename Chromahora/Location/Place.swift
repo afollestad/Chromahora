@@ -42,7 +42,7 @@ nonisolated struct Place: Hashable, Codable, Sendable {
         case .device:
             "At your location"
         case .timeZone(let identifier):
-            "Near \(Self.cityName(of: identifier)), from your time zone"
+            "Approximate, from your time zone (\(Self.cityName(of: identifier)))"
         }
     }
 
