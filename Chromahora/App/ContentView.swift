@@ -41,7 +41,7 @@ struct ContentView: View {
                     now: now(from: context.date),
                     selectedDate: $store.selectedDate,
                     place: store.place,
-                    weather: weather.spells,
+                    weather: weather.spells(at: store.place),
                     onRetry: store.reload
                 )
             }
@@ -57,11 +57,17 @@ struct ContentView: View {
         .task(id: store.loadKey) {
             await store.loadSelectedDay()
         }
+        // Travel can change the device's zone while the app is suspended, and days are windowed to it.
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: .NSSystemTimeZoneDidChange) {
+                store.changeTimeZone(to: Calendar.current.timeZone)
+            }
+        }
         // Waits for each location lookup, so no request goes to a stored place the device has
         // left, and only asks WeatherKit when its throttle allows.
         .task(id: WeatherStore.Trigger(locatedCount: store.locatedCount, reloadCount: store.reloadCount)) {
             if store.locatedCount > 0, scenePhase != .background {
-                await weather.load(at: store.place, now: now(from: .now))
+                await weather.load(at: store.place, now: now(from: .now), calendar: store.calendar)
             }
         }
         #if DEBUG

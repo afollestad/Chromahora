@@ -28,6 +28,8 @@ final class StubPlaceProvider: PlaceProvider {
     /// Thrown for every request while set.
     var error: (any Error)?
     var holdsResponses = false
+    /// The zone of each `currentPlace` request, in order.
+    private(set) var requestedTimeZones: [TimeZone] = []
     let heldRequests: AsyncStream<Request>
     private let heldRequestsContinuation: AsyncStream<Request>.Continuation
 
@@ -40,6 +42,7 @@ final class StubPlaceProvider: PlaceProvider {
     }
 
     func currentPlace(in timeZone: TimeZone) async throws -> Place {
+        requestedTimeZones.append(timeZone)
         if let error {
             throw error
         }

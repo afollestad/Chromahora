@@ -27,18 +27,21 @@ final class SolarDayStore {
         }
     }
 
-    /// Identifies a load, so a view's `task(id:)` restarts whenever the place or day
-    /// changes, or `reload()` asks again.
+    /// Identifies a load, so a view's `task(id:)` restarts whenever the place, day or time
+    /// zone changes, or `reload()` asks again.
     struct LoadKey: Hashable {
         let place: Place?
         let dayStart: Date
+        let timeZone: TimeZone
         let reloadCount: Int
     }
 
-    /// A day's times depend on where they're for as well as the date.
+    /// A day's times depend on where they're for and the zone they're windowed to, as well
+    /// as the date. Zones can share a day's start, so the start alone can't tell them apart.
     private struct DayKey: Hashable {
         let place: Place
         let dayStart: Date
+        let timeZone: TimeZone
     }
 
     /// The day to show. Any time within the day selects it.
@@ -47,13 +50,15 @@ final class SolarDayStore {
     /// Where days are loaded for. Nil until the place provider has anything to go on.
     private(set) var place: Place?
     private(set) var reloadCount = 0
-    /// Keys the view's locate task, so `reload()` can locate again when there's no place.
+    /// Keys the view's locate task, so `reload()` can locate again when there's no place,
+    /// and a time zone change can locate in the new zone.
     private(set) var locateCount = 0
     /// Counts lookups that finished, found or not. Weather waits for one, so it never spends
     /// a request on the stored place the device may have left.
     private(set) var locatedCount = 0
 
-    let calendar: Calendar
+    /// Days are windowed to its time zone, which follows the device's through `changeTimeZone(to:)`.
+    private(set) var calendar: Calendar
     private let provider: any SolarDayProvider
     private let placeProvider: any PlaceProvider
     @ObservationIgnored private var loadedDays: [DayKey: SolarDay] = [:]
@@ -77,7 +82,7 @@ final class SolarDayStore {
     }
 
     var loadKey: LoadKey {
-        LoadKey(place: place, dayStart: selectedDayStart, reloadCount: reloadCount)
+        LoadKey(place: place, dayStart: selectedDayStart, timeZone: calendar.timeZone, reloadCount: reloadCount)
     }
 
     /// Asks the place provider where the device is. A new place changes `loadKey`, which
@@ -95,6 +100,20 @@ final class SolarDayStore {
         if !Task.isCancelled {
             locatedCount += 1
         }
+    }
+
+    /// Windows days to `timeZone` after the device's zone changes, as travel can while the app
+    /// is suspended. The place restarts from what the provider knows in the new zone,
+    /// since a fix from the old one is likely far behind, and a lookup still running in the old
+    /// zone restarts too, so its fix isn't remembered under the wrong zone.
+    func changeTimeZone(to timeZone: TimeZone) {
+        guard timeZone.identifier != calendar.timeZone.identifier else {
+            return
+        }
+        calendar.timeZone = timeZone
+        place = placeProvider.lastKnownPlace(in: timeZone)
+        state = .loading(state.day)
+        locateCount += 1
     }
 
     /// Loads the selected day again through the view's task, keeping any day on screen
@@ -131,7 +150,7 @@ final class SolarDayStore {
         guard let place else {
             return
         }
-        let key = DayKey(place: place, dayStart: selectedDayStart)
+        let key = DayKey(place: place, dayStart: selectedDayStart, timeZone: calendar.timeZone)
         if let day = loadedDays[key] {
             state = .loaded(day)
             return
@@ -152,6 +171,6 @@ final class SolarDayStore {
     }
 
     private var currentKey: DayKey? {
-        place.map { DayKey(place: $0, dayStart: selectedDayStart) }
+        place.map { DayKey(place: $0, dayStart: selectedDayStart, timeZone: calendar.timeZone) }
     }
 }

@@ -238,6 +238,64 @@ struct SolarDayStoreTests {
         #expect(store.reloadCount == 0)
     }
 
+    // MARK: Time zones
+
+    /// Travel changes the zone, which days are windowed to, and leaves the old zone's place behind.
+    @Test func aTimeZoneChangeRelocatesThere() async throws {
+        let tokyo = try #require(TimeZone(identifier: "Asia/Tokyo"))
+        let tokyoCity = Place(latitude: 35.65, longitude: 139.73, source: .timeZone("Asia/Tokyo"))
+        let tokyoFix = Place(latitude: 35.68, longitude: 139.77, source: .device)
+        let store = makeStore()
+        await store.loadSelectedDay()
+        places.lastKnown = tokyoCity
+        places.current = tokyoFix
+
+        store.changeTimeZone(to: tokyo)
+
+        #expect(store.calendar.timeZone == tokyo)
+        #expect(store.place == tokyoCity)
+        #expect(store.locateCount == 1)
+        #expect(store.state.isLoading)
+        #expect(store.state.day != nil)
+
+        await store.locate()
+        await store.loadSelectedDay()
+
+        var tokyoCalendar = calendar
+        tokyoCalendar.timeZone = tokyo
+        #expect(places.requestedTimeZones == [tokyo])
+        #expect(provider.requestedPlaces.last == tokyoFix)
+        #expect(store.state.loadedDay?.dayStart == tokyoCalendar.startOfDay(for: monday))
+        #expect(store.state.loadedDay?.calendar.timeZone == tokyo)
+    }
+
+    @Test func theSameTimeZoneChangesNothing() async throws {
+        let store = makeStore()
+        await store.loadSelectedDay()
+        let key = store.loadKey
+
+        store.changeTimeZone(to: try #require(TimeZone(identifier: calendar.timeZone.identifier)))
+
+        #expect(store.loadKey == key)
+        #expect(store.locateCount == 0)
+        #expect(store.state.loadedDay != nil)
+    }
+
+    /// Reykjavik keeps GMT's offset all year, so its days start when GMT's do.
+    @Test func aDayFromAnotherZoneIsntReused() async throws {
+        let reykjavik = try #require(TimeZone(identifier: "Atlantic/Reykjavik"))
+        let store = makeStore()
+        await store.loadSelectedDay()
+        let key = store.loadKey
+
+        store.changeTimeZone(to: reykjavik)
+        await store.loadSelectedDay()
+
+        #expect(store.loadKey != key)
+        #expect(provider.requestedDates == [dayStart(monday), dayStart(monday)])
+        #expect(store.state.loadedDay?.calendar.timeZone == reykjavik)
+    }
+
     // MARK: Days
 
     @Test func keepsThePreviousDayOnScreenWhileTheNextLoads() async throws {

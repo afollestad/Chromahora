@@ -22,22 +22,28 @@ final class WeatherStore {
     /// WeatherKit forecasts hourly about ten days out, so one request covers every day it can.
     static let forecastDays = 10
 
-    /// Every spell in the forecast, which the timeline filters to its day.
-    private(set) var spells: [WeatherSpell] = []
+    /// Every spell in the forecast, which the timeline filters to its day. Read through
+    /// `spells(at:)`, which checks they're for the place on screen.
+    private var spells: [WeatherSpell] = []
     /// Where `spells` are for.
     private var place: Place?
 
-    private let calendar: Calendar
     private let provider: any WeatherProvider
 
-    init(provider: any WeatherProvider, calendar: Calendar = .current) {
+    init(provider: any WeatherProvider) {
         self.provider = provider
-        self.calendar = calendar
     }
 
-    /// Loads the forecast from the start of `now`'s day. A new place clears the spells at once,
-    /// and an answer for a place that has since changed is dropped.
-    func load(at place: Place?, now: Date) async {
+    /// The spells, while they're for `place`. A time zone change moves the day store's place
+    /// before a finished lookup lets weather follow, and another place's spells mustn't show.
+    func spells(at place: Place?) -> [WeatherSpell] {
+        place == self.place ? spells : []
+    }
+
+    /// Loads the forecast from the start of `now`'s day in `calendar`, which is the day store's,
+    /// so the window follows the device's time zone. A new place clears the spells at once, and
+    /// an answer for a place that has since changed is dropped.
+    func load(at place: Place?, now: Date, calendar: Calendar) async {
         if place != self.place {
             self.place = place
             spells = []
