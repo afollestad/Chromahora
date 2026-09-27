@@ -22,9 +22,11 @@ struct SolarDayStoreTests {
     private var tuesday: Date { monday.addingTimeInterval(24 * 60 * 60) }
 
     private let provider = StubSolarDayProvider()
+    private let places = StubPlaceProvider()
+    private let chicago = Place(latitude: 41.85, longitude: -87.65, source: .device)
 
     private func makeStore() -> SolarDayStore {
-        SolarDayStore(provider: provider, calendar: calendar, selectedDate: monday)
+        SolarDayStore(provider: provider, placeProvider: places, calendar: calendar, selectedDate: monday)
     }
 
     private func dayStart(_ date: Date) -> Date {
@@ -95,6 +97,125 @@ struct SolarDayStoreTests {
         #expect(store.state.isLoading)
         #expect(store.state.day?.dayStart == dayStart(monday))
     }
+
+    // MARK: Places
+
+    @Test func withoutAPlaceNothingLoads() async {
+        places.lastKnown = nil
+        let store = makeStore()
+
+        await store.loadSelectedDay()
+
+        #expect(provider.requestedDates.isEmpty)
+        #expect(store.state.isLoading)
+        #expect(store.state.day == nil)
+    }
+
+    @Test func aNewPlaceReloadsWhileKeepingTheDayOnScreen() async throws {
+        let store = makeStore()
+        await store.loadSelectedDay()
+        let oldKey = store.loadKey
+        places.current = chicago
+
+        await store.locate()
+
+        #expect(store.place == chicago)
+        #expect(store.loadKey != oldKey)
+
+        provider.holdsResponses = true
+        var requests = provider.heldRequests.makeAsyncIterator()
+        let loading = Task { await store.loadSelectedDay() }
+        let request = try #require(await requests.next())
+
+        #expect(store.state.isLoading)
+        #expect(store.state.day?.dayStart == dayStart(monday))
+
+        request.answer()
+        await loading.value
+
+        #expect(provider.requestedPlaces == [MockPlaceProvider.sanFrancisco, chicago])
+        #expect(store.state.loadedDay != nil)
+    }
+
+    /// A relocation while a load is out: the old place's late answer is kept, but not shown.
+    @Test func aStalePlacesResponseIsCachedButNotShown() async throws {
+        provider.scenarios[chicago] = .allDayGolden
+        let store = makeStore()
+        provider.holdsResponses = true
+        var requests = provider.heldRequests.makeAsyncIterator()
+
+        let loadingOld = Task { await store.loadSelectedDay() }
+        let oldRequest = try #require(await requests.next())
+        places.current = chicago
+        await store.locate()
+        let loadingNew = Task { await store.loadSelectedDay() }
+        let newRequest = try #require(await requests.next())
+
+        newRequest.answer()
+        await loadingNew.value
+        oldRequest.answer()
+        await loadingOld.value
+
+        #expect(store.state.loadedDay?.phaseSequence == SolarDay.mock(.allDayGolden).phaseSequence)
+        #expect(provider.requestedPlaces == [MockPlaceProvider.sanFrancisco, chicago])
+
+        provider.holdsResponses = false
+        places.current = MockPlaceProvider.sanFrancisco
+        await store.locate()
+        await store.loadSelectedDay()
+
+        #expect(provider.requestedPlaces.count == 2)
+        #expect(store.state.loadedDay?.phaseSequence == SolarDay.mock().phaseSequence)
+    }
+
+    @Test func failingToLocateWithoutAPlaceFails() async {
+        places.lastKnown = nil
+        places.error = PlaceError.unavailable(timeZone: "GMT")
+        let store = makeStore()
+
+        await store.locate()
+
+        #expect(store.state.failure as? PlaceError == .unavailable(timeZone: "GMT"))
+    }
+
+    @Test func failingToLocateWithAPlaceKeepsIt() async {
+        places.error = PlaceError.unavailable(timeZone: "GMT")
+        let store = makeStore()
+        await store.loadSelectedDay()
+
+        await store.locate()
+
+        #expect(store.place == MockPlaceProvider.sanFrancisco)
+        #expect(store.state.loadedDay != nil)
+    }
+
+    @Test func aCancelledLocateReportsNoFailure() async throws {
+        places.lastKnown = nil
+        places.holdsResponses = true
+        var requests = places.heldRequests.makeAsyncIterator()
+        let store = makeStore()
+
+        let locating = Task { await store.locate() }
+        let request = try #require(await requests.next())
+        locating.cancel()
+        request.fail(with: CancellationError())
+        await locating.value
+
+        #expect(store.state.isLoading)
+    }
+
+    /// Try Again without a place locates again, since there's nothing to load yet.
+    @Test func reloadWithoutAPlaceLocatesAgain() {
+        places.lastKnown = nil
+        let store = makeStore()
+
+        store.reload()
+
+        #expect(store.locateCount == 1)
+        #expect(store.reloadCount == 0)
+    }
+
+    // MARK: Days
 
     @Test func keepsThePreviousDayOnScreenWhileTheNextLoads() async throws {
         let store = makeStore()

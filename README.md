@@ -2,6 +2,8 @@
 
 Chromahora is an iOS app designed to show photographers when blue hour and golden hour are in a given day.
 
+Sun times come from [sunrise-sunset.org](https://sunrise-sunset.org).
+
 ## Development
 
 ```sh

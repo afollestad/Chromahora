@@ -31,15 +31,16 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 - Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh -b` and capture with `xcrun simctl io <udid> screenshot`.
 - Every visible change also runs `./scripts/snapshots.sh verify`. When the change is intended, `record` the affected baselines and look at the new images.
-- Reach other states with debug launch arguments after `--`, e.g. `./scripts/run.sh -b -- -DebugNow 2026-09-16T03:00:00 -DebugProviderMode hang`. `-DebugProviderMode` takes `live`, `slow`, `hang` or `fail`, and `-DebugPanel YES` opens the debug drawer.
+- Reach other states with debug launch arguments after `--`, e.g. `./scripts/run.sh -b -- -DebugNow 2026-09-16T03:00:00 -DebugProviderMode hang`. `DebugSettings` documents each one; give `-DebugPlace` hemisphere letters (`33.9S,151.2E`), since the argument domain drops a value starting with `-`.
 - `simctl` cannot scroll or tap. To open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.
 
 ## Design rules
 
-- `SolarDay` is the single contract for a day's data, which `SolarDayStore` loads through a `SolarDayProvider`. `MockSolarDayProvider` is a placeholder, and `ChromahoraApp` is the one place to swap in a real provider.
+- `SolarDay` is the single contract for a day's data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` builds the real ones once; the mocks serve previews, tests and the debug drawer.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. No scroll edge effects, since the soft style blurs hours of timeline and the hard style paints a dark band.
 - Hide decorative shapes from accessibility. Every control needs a label, and the calendar button also exposes the selected day as its value.
+- Keep the sunrise-sunset.org attribution link in the day picker; the API's terms require one.
 
 ## Code conventions
 

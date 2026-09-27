@@ -31,7 +31,7 @@ final class DebugSolarDayProvider: SolarDayProvider {
         self.sleep = sleep
     }
 
-    func solarDay(for date: Date, calendar: Calendar) async throws -> SolarDay {
+    func solarDay(for date: Date, at place: Place, calendar: Calendar) async throws -> SolarDay {
         switch settings.providerMode {
         case .live:
             break
@@ -44,7 +44,7 @@ final class DebugSolarDayProvider: SolarDayProvider {
             throw SimulatedFailure()
         }
         let provider = settings.scenario.map { MockSolarDayProvider(scenario: $0) } ?? base
-        return try await provider.solarDay(for: date, calendar: calendar)
+        return try await provider.solarDay(for: date, at: place, calendar: calendar)
     }
 }
 #endif

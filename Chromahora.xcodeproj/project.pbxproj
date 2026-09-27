@@ -39,10 +39,14 @@
 			membershipExceptions = (
 				Debug/AGENTS.md,
 				Debug/CLAUDE.md,
+				Location/AGENTS.md,
+				Location/CLAUDE.md,
 				Screen/AGENTS.md,
 				Screen/CLAUDE.md,
 				SolarDay/AGENTS.md,
 				SolarDay/CLAUDE.md,
+				SunriseSunset/AGENTS.md,
+				SunriseSunset/CLAUDE.md,
 				Timeline/AGENTS.md,
 				Timeline/CLAUDE.md,
 			);

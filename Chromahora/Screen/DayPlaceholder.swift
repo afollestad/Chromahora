@@ -19,20 +19,38 @@ struct DayPlaceholder: View {
             DayPhase.night.color
                 .ignoresSafeArea()
 
-            if case .failed = state {
-                ContentUnavailableView {
-                    Label("Couldn't Load This Day", systemImage: "sun.horizon")
-                } description: {
-                    Text("Sun times for \(date, format: .dateTime.weekday(.wide).month(.wide).day()) aren't available.")
-                } actions: {
-                    Button("Try Again", action: onRetry)
-                        .buttonStyle(.glass)
-                }
+            if case .failed(let error) = state {
+                failure(error)
             } else {
                 LoadingSky(isShown: $isGlowShown)
             }
         }
         .environment(\.colorScheme, .dark)
+    }
+
+    @ViewBuilder
+    private func failure(_ error: any Error) -> some View {
+        if case PlaceError.unavailable(let timeZone) = error {
+            // Retrying can't help: the zone has no city, and nothing else places the device.
+            ContentUnavailableView {
+                Label("Location Unknown", systemImage: "location.slash")
+            } description: {
+                Text("Chromahora can't tell where you are from the \(timeZone) time zone.")
+            }
+        } else {
+            ContentUnavailableView {
+                Label("Couldn't Load This Day", systemImage: "sun.horizon")
+            } description: {
+                if case SunriseSunsetError.rateLimited = error {
+                    Text("Sun times are busy right now. Try again in a moment.")
+                } else {
+                    Text("Sun times for \(date, format: .dateTime.weekday(.wide).month(.wide).day()) aren't available.")
+                }
+            } actions: {
+                Button("Try Again", action: onRetry)
+                    .buttonStyle(.glass)
+            }
+        }
     }
 }
 

@@ -14,15 +14,24 @@ struct ContentView: View {
     @Environment(DebugSettings.self) private var debug: DebugSettings?
     #endif
 
-    init(provider: any SolarDayProvider, selectedDate: Date = .now) {
-        _store = State(initialValue: SolarDayStore(provider: provider, selectedDate: selectedDate))
+    init(provider: any SolarDayProvider, placeProvider: any PlaceProvider, selectedDate: Date = .now) {
+        _store = State(initialValue: SolarDayStore(provider: provider, placeProvider: placeProvider, selectedDate: selectedDate))
     }
 
     var body: some View {
         NavigationStack {
             TimelineView(.everyMinute) { context in
-                DayScreen(state: store.state, now: now(from: context.date), selectedDate: $store.selectedDate, onRetry: store.reload)
+                DayScreen(
+                    state: store.state,
+                    now: now(from: context.date),
+                    selectedDate: $store.selectedDate,
+                    place: store.place,
+                    onRetry: store.reload
+                )
             }
+        }
+        .task(id: store.locateCount) {
+            await store.locate()
         }
         .task(id: store.loadKey) {
             await store.loadSelectedDay()
@@ -43,5 +52,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(provider: MockSolarDayProvider())
+    ContentView(provider: MockSolarDayProvider(), placeProvider: MockPlaceProvider())
 }

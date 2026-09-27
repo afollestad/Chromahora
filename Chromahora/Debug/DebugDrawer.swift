@@ -109,6 +109,18 @@ private struct DebugPanel: View {
                     Button("Reload from scratch", action: reloadFromScratch)
                 }
 
+                DebugCacheSection(store: store, cache: settings.cache)
+
+                Section("Place") {
+                    if let place = store.place {
+                        LabeledContent("Coordinates", value: "\(place.latitude), \(place.longitude)")
+                        LabeledContent("Source", value: place.summary)
+                    } else {
+                        Text("None yet")
+                    }
+                    LabeledContent("Time zone", value: store.calendar.timeZone.identifier)
+                }
+
                 Section {
                     Toggle("Override now", isOn: isOverridingNow)
                     if let override = settings.nowOverride {
@@ -158,10 +170,43 @@ private struct DebugPanel: View {
     }
 }
 
+/// The cache's size, and a way to empty it and reload as if launching cold.
+private struct DebugCacheSection: View {
+    let store: SolarDayStore
+    let cache: SolarDayCache?
+
+    @State private var summary: SolarDayCache.Summary?
+
+    var body: some View {
+        Section("Cache") {
+            if let summary {
+                LabeledContent("Months", value: "\(summary.fileNames.count)")
+                LabeledContent("Size", value: summary.byteCount.formatted(.byteCount(style: .file)))
+            }
+            Button("Clear cache", role: .destructive) {
+                Task {
+                    await cache?.removeAll()
+                    store.discardLoadedDays()
+                    store.reload()
+                    await refresh()
+                }
+            }
+            .disabled(cache == nil)
+        }
+        .task {
+            await refresh()
+        }
+    }
+
+    private func refresh() async {
+        summary = await cache?.summary()
+    }
+}
+
 #Preview {
     Color.clear
         .debugDrawer(
-            store: SolarDayStore(provider: MockSolarDayProvider()),
+            store: SolarDayStore(provider: MockSolarDayProvider(), placeProvider: MockPlaceProvider()),
             settings: DebugSettings(arguments: ["DebugPanel": "YES"])
         )
 }

@@ -13,6 +13,8 @@ struct DayScreen: View {
     let state: SolarDayStore.LoadState
     let now: Date
     @Binding var selectedDate: Date
+    /// Where the day is for, which the day picker names.
+    var place: Place?
     let onRetry: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -54,6 +56,7 @@ struct DayScreen: View {
                 skyColor: $skyBehindTitle,
                 selectedDate: $selectedDate,
                 now: now,
+                place: place,
                 onTitleMidY: { titleMidY = $0 },
                 onToday: { focusRequests += 1 }
             )

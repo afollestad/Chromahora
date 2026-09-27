@@ -12,6 +12,7 @@ struct DayToolbar: ToolbarContent {
     @Binding var skyColor: Color
     @Binding var selectedDate: Date
     let now: Date
+    var place: Place?
     let onTitleMidY: (CGFloat) -> Void
     let onToday: () -> Void
 
@@ -26,7 +27,7 @@ struct DayToolbar: ToolbarContent {
         }
 
         ToolbarItem(placement: .primaryAction) {
-            DayPickerButton(selection: $selectedDate, now: now, onToday: onToday)
+            DayPickerButton(selection: $selectedDate, now: now, place: place, onToday: onToday)
         }
     }
 }
@@ -68,6 +69,7 @@ private struct TitlePill: View {
 private struct DayPickerButton: View {
     @Binding var selection: Date
     let now: Date
+    let place: Place?
     let onToday: () -> Void
 
     @State private var isChoosingDay = false
@@ -82,7 +84,7 @@ private struct DayPickerButton: View {
         .accessibilityValue(Text(selection, format: .dateTime.weekday(.wide).month(.wide).day()))
         .accessibilityHint("Opens a calendar to choose the day to show")
         .popover(isPresented: $isChoosingDay, arrowEdge: .top) {
-            DayPicker(selection: $selection) {
+            DayPicker(selection: $selection, place: place) {
                 // `now`, not `.now`, so Today follows the debug drawer's clock.
                 selection = now
                 isChoosingDay = false
