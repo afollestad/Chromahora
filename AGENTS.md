@@ -31,7 +31,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - `simctl` cannot scroll or tap. To inspect another part of the timeline, temporarily override `now` in `ContentView`, or pass it a `selectedDate` from `ChromahoraApp`; to open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render.
 - To see the loading or failed placeholders, temporarily hand `ContentView` a provider that never answers or always throws.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.
-- Check anything in the navigation bar over both backdrops: the same view around 3 AM (night) and mid afternoon (daylight).
+- Check anything in the navigation bar over three backdrops: around 3 AM (night), mid afternoon (daylight), and with `now` near 11:35 AM, which puts the title over the sunrise blend where the bar's scheme flips.
 - Check edge-hugging changes in landscape too: call `requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight))` on the window scene from a temporary `.task`, and capture with `--mask=black` to see the Dynamic Island.
 
 ## Design rules
@@ -41,7 +41,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - All positions come from `SolarDay.fraction(of:)`. Never hard-code hours or minutes in views.
 - The sky gradient interpolates in perceptual color space, holds color across night and daylight, peaks at the midpoint of blue and golden hours, and crosses a mauve stop between them. Blue and golden are near-complementary and blend to mud otherwise.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. No scroll edge effects, since the soft style blurs hours of timeline and the hard style paints a dark band.
-- The navigation bar's color scheme follows the phase under it via `DayPhase.isDark`, which keeps the status bar and title legible over night and daylight.
+- The title's glass is tinted with `SkyGradient.color(at:in:)` behind its center, and the navigation bar's color scheme follows that color's luminance, not the phase, since phases blend into each other.
 - The timeline draws edge to edge, so its content sees zero safe-area insets. Inset labels by the per-edge `safeAreaInsets` that `DayTimeline` measures outside `ignoresSafeArea`, never by a fixed padding alone.
 - Keep `labelSpacing` in `DayTimelineOverlay` larger than the glass container's merge distance so stacked capsules never fuse.
 - Hide decorative shapes from accessibility. Every control needs a label, and the calendar button also exposes the selected day as its value.

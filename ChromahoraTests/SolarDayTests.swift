@@ -44,18 +44,6 @@ struct SolarDayTests {
         #expect(abs(day.fraction(of: noon) - 0.5) < 0.0001)
     }
 
-    @Test func phaseAtDateFollowsSegmentsAndTreatsOutsideAsNight() {
-        #expect(day.phase(at: day.dayStart) == .night)
-        #expect(day.phase(at: day.morningBlueHourStart) == .blueHour)
-        #expect(day.phase(at: day.sunrise) == .goldenHour)
-        #expect(day.phase(at: day.morningGoldenHourEnd) == .daylight)
-        #expect(day.phase(at: day.sunset) == .goldenHour)
-        #expect(day.phase(at: day.eveningBlueHourStart) == .blueHour)
-        #expect(day.phase(at: day.eveningBlueHourEnd) == .night)
-        #expect(day.phase(at: day.dayStart.addingTimeInterval(-60)) == .night)
-        #expect(day.phase(at: day.dayEnd) == .night)
-    }
-
     @Test func containsOnlyDatesFromStartUpToButExcludingEnd() {
         #expect(day.contains(day.dayStart))
         #expect(day.contains(day.sunrise))

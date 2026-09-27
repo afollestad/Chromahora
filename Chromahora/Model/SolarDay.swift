@@ -39,14 +39,6 @@ nonisolated enum DayPhase {
         case .blueHour, .goldenHour: false
         }
     }
-
-    /// Whether text over this phase needs to be light to stay legible.
-    var isDark: Bool {
-        switch self {
-        case .night, .blueHour: true
-        case .goldenHour, .daylight: false
-        }
-    }
 }
 
 /// A contiguous span of the day spent in a single phase.
@@ -144,12 +136,6 @@ struct SolarDay: Equatable {
     func fraction(of date: Date) -> Double {
         let offset = date.timeIntervalSince(dayStart)
         return min(max(offset / duration, 0), 1)
-    }
-
-    /// The phase in effect at `date`. Times outside the day count as night.
-    func phase(at date: Date) -> DayPhase {
-        guard date < dayEnd else { return .night }
-        return segments.last { $0.interval.start <= date }?.phase ?? .night
     }
 }
 
