@@ -31,6 +31,11 @@ protocol LocationSource {
 struct DevicePlaceProvider: PlaceProvider {
     /// Once permission is settled, how long to wait for a fix before falling back.
     static let fixTimeout: Duration = .seconds(10)
+    /// A fix nearer than this to the stored place keeps it. Every fix lies within 7.9 km of its
+    /// cell's center, so a couple of km more stops a fix wavering over an edge or corner from
+    /// swapping places, which reloads the day and spends a forecast request. It shifts sun times
+    /// by about a minute, even at 60° N in June.
+    static let moveThreshold: CLLocationDistance = 10_000
 
     private static let storageKey = "lastDevicePlace"
 
@@ -51,7 +56,13 @@ struct DevicePlaceProvider: PlaceProvider {
     }
 
     func currentPlace(in timeZone: TimeZone) async throws -> Place {
-        if let place = await fix() {
+        if let fix = await fix() {
+            // Measured from the stored place's center, not the last fix, so small moves can't add up.
+            if let stored = storedFix(in: timeZone),
+               CLLocation(latitude: stored.latitude, longitude: stored.longitude).distance(from: fix) < Self.moveThreshold {
+                return stored
+            }
+            let place = Place(latitude: fix.coordinate.latitude, longitude: fix.coordinate.longitude, source: .device)
             store(place, in: timeZone)
             return place
         }
@@ -70,12 +81,12 @@ struct DevicePlaceProvider: PlaceProvider {
     }
     #endif
 
-    /// The first fix, or nil if permission is denied or no fix arrives within `fixTimeout`
-    /// of permission settling.
-    private func fix() async -> Place? {
+    /// The first fix, unrounded, or nil if permission is denied or no fix arrives within
+    /// `fixTimeout` of permission settling.
+    private func fix() async -> CLLocation? {
         let (settled, settle) = AsyncStream<Void>.makeStream()
         let updates = source.updates()
-        return await withTaskGroup(of: Place?.self) { group in
+        return await withTaskGroup(of: CLLocation?.self) { group in
             group.addTask {
                 for await update in updates {
                     switch update {
@@ -86,7 +97,7 @@ struct DevicePlaceProvider: PlaceProvider {
                     case .noFix:
                         settle.yield()
                     case let .fix(latitude, longitude):
-                        return Place(latitude: latitude, longitude: longitude, source: .device)
+                        return CLLocation(latitude: latitude, longitude: longitude)
                     }
                 }
                 return nil

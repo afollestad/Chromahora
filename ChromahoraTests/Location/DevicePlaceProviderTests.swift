@@ -43,6 +43,29 @@ struct DevicePlaceProviderTests {
         #expect(provider.lastKnownPlace(in: chicago) == sanFrancisco)
     }
 
+    /// A fix wavering over a cell's edge would otherwise reload the day and spend a forecast request.
+    @Test func aNearbyFixKeepsTheStoredPlace() async throws {
+        defer { removeDefaults() }
+        source.script = [.fix(latitude: 37.77, longitude: -122.42)]
+        _ = try await makeProvider().currentPlace(in: chicago)
+
+        // Rounds to the next cell south, about 7 km from the stored place's center.
+        source.script = [.fix(latitude: 37.74, longitude: -122.42)]
+        #expect(try await makeProvider().currentPlace(in: chicago) == sanFrancisco)
+        #expect(try makeProvider().lastKnownPlace(in: chicago) == sanFrancisco)
+    }
+
+    @Test func aDistantFixReplacesTheStoredPlace() async throws {
+        defer { removeDefaults() }
+        source.script = [.fix(latitude: 37.77, longitude: -122.42)]
+        _ = try await makeProvider().currentPlace(in: chicago)
+
+        source.script = [.fix(latitude: 37.34, longitude: -121.89)]
+        let sanJose = Place(latitude: 37.34, longitude: -121.89, source: .device)
+        #expect(try await makeProvider().currentPlace(in: chicago) == sanJose)
+        #expect(try makeProvider().lastKnownPlace(in: chicago) == sanJose)
+    }
+
     /// Windowed to another zone, a remembered fix would describe a day off the device's clock.
     @Test func aFixFromAnotherZoneIsntReused() async throws {
         defer { removeDefaults() }
