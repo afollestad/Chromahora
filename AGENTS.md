@@ -38,7 +38,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 ## Design rules
 
 - `SolarDay` is the single contract for a day's sun and moon data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` builds the real ones once; the mocks serve previews, tests and the debug drawer.
-- Keep weather out of `SolarDay`, since forecasts change and fail while sun times don't. `WeatherStore` loads `WeatherSpell`s through a `WeatherProvider`, and a failure only leaves the timeline without them.
+- Keep weather out of `SolarDay`, since forecasts change and fail while sun times don't. `WeatherStore` loads a `Forecast` of `WeatherSpell`s and `SkyHour`s through a `WeatherProvider`, and a failure only leaves the timeline without them.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. The top edge, and the bottom under `SourcesButton`, use the soft scroll edge effect, which blurs labels and lines under the bars so they don't run through the clock or the button; the hard style would paint a dark band.
 - A regular-width window with room for a 390pt timeline beside it (iPad, an opened foldable, a Pro Max in landscape) floats the glass `DayPanel` on the trailing side in place of the calendar button. Size class and width alone decide, with no control to hide it.
 - Popovers and the day panel keep the default Liquid Glass like the rest of the floating chrome, not a material background, so give them primary text and underlined links; a bright sky through the glass washes out gray and tinted text. Cap their content at `accessibility1`, since at their width larger text breaks to a word a line.

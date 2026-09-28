@@ -11,12 +11,26 @@ import WeatherKit
 /// quota, so the app only asks through `ThrottledWeatherProvider`.
 ///
 /// The only file that imports WeatherKit: its types have no public initializers, so
-/// everything past here works with `WeatherHour` and `WeatherSpell`, which tests can build.
+/// everything past here works with `WeatherHour`, `WeatherSpell` and `SkyHour`, which tests can build.
 struct WeatherKitProvider: WeatherProvider {
-    func spells(from start: Date, to end: Date, at place: Place) async throws -> [WeatherSpell] {
+    func forecast(from start: Date, to end: Date, at place: Place) async throws -> Forecast {
         let location = CLLocation(latitude: place.latitude, longitude: place.longitude)
         let hours = try await WeatherService.shared.weather(for: location, including: .hourly(startDate: start, endDate: end))
-        return WeatherSpell.spells(from: hours.map(WeatherHour.init))
+        return Forecast(spells: WeatherSpell.spells(from: hours.map(WeatherHour.init)), hours: hours.map(SkyHour.init))
+    }
+}
+
+private extension SkyHour {
+    init(_ hour: HourWeather) {
+        let clouds = hour.cloudCoverByAltitude
+        self.init(
+            date: hour.date,
+            uvIndex: hour.uvIndex.value,
+            lowCloud: clouds.low,
+            midCloud: clouds.medium,
+            highCloud: clouds.high,
+            visibility: hour.visibility.converted(to: .meters).value
+        )
     }
 }
 

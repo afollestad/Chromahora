@@ -24,7 +24,7 @@ final class ThrottledWeatherProvider: WeatherProvider {
     private let base: any WeatherProvider
     private let cache: ForecastCache
     private let now: () -> Date
-    private var inFlight: (key: ForecastKey, task: Task<[WeatherSpell], any Error>)?
+    private var inFlight: (key: ForecastKey, task: Task<Forecast, any Error>)?
 
     /// `now` times the interval, and tests replace it so they never wait for real.
     init(base: any WeatherProvider, cache: ForecastCache, now: @escaping () -> Date = { .now }) {
@@ -33,7 +33,7 @@ final class ThrottledWeatherProvider: WeatherProvider {
         self.now = now
     }
 
-    func spells(from start: Date, to end: Date, at place: Place) async throws -> [WeatherSpell] {
+    func forecast(from start: Date, to end: Date, at place: Place) async throws -> Forecast {
         let key = ForecastKey(place: place, start: start, end: end)
         if let inFlight, inFlight.key == key {
             return try await inFlight.task.value
@@ -44,16 +44,16 @@ final class ThrottledWeatherProvider: WeatherProvider {
             // correction costs no request, and a clock set back far can't hold one for hours.
             if let record = await cache.record(), record.key == key,
                abs(attemptedAt.timeIntervalSince(record.attemptedAt)) < Self.minimumInterval {
-                guard let spells = record.spells else {
+                guard let forecast = record.forecast else {
                     throw ForecastThrottled()
                 }
-                return spells
+                return forecast
             }
             // Stored before asking, so an attempt counts even if the app quits before it answers.
-            await cache.store(ForecastRecord(key: key, attemptedAt: attemptedAt, spells: nil))
-            let spells = try await base.spells(from: start, to: end, at: place)
-            await cache.store(ForecastRecord(key: key, attemptedAt: attemptedAt, spells: spells))
-            return spells
+            await cache.store(ForecastRecord(key: key, attemptedAt: attemptedAt, forecast: nil))
+            let forecast = try await base.forecast(from: start, to: end, at: place)
+            await cache.store(ForecastRecord(key: key, attemptedAt: attemptedAt, forecast: forecast))
+            return forecast
         }
         inFlight = (key, task)
         defer {

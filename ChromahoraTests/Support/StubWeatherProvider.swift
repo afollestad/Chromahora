@@ -6,15 +6,15 @@
 import Foundation
 @testable import Chromahora
 
-/// Stands in for WeatherKit. It answers with `spells` right away, or while `holdsResponses`
+/// Stands in for WeatherKit. It answers with `forecast` right away, or while `holdsResponses`
 /// is set, parks each request until the test answers it.
 @MainActor
 final class StubWeatherProvider: WeatherProvider {
     struct Request {
-        fileprivate let continuation: CheckedContinuation<[WeatherSpell], any Error>
+        fileprivate let continuation: CheckedContinuation<Forecast, any Error>
 
-        func answer(_ spells: [WeatherSpell]) {
-            continuation.resume(returning: spells)
+        func answer(_ forecast: Forecast) {
+            continuation.resume(returning: forecast)
         }
 
         func fail(with error: any Error) {
@@ -22,7 +22,7 @@ final class StubWeatherProvider: WeatherProvider {
         }
     }
 
-    var spells: [WeatherSpell] = []
+    var forecast = Forecast()
     /// Thrown for every request while set.
     var error: (any Error)?
     var holdsResponses = false
@@ -38,14 +38,14 @@ final class StubWeatherProvider: WeatherProvider {
         (heldRequests, heldRequestsContinuation) = AsyncStream.makeStream()
     }
 
-    func spells(from start: Date, to end: Date, at place: Place) async throws -> [WeatherSpell] {
+    func forecast(from start: Date, to end: Date, at place: Place) async throws -> Forecast {
         requestedWindows.append(DateInterval(start: start, end: end))
         requestedPlaces.append(place)
         if let error {
             throw error
         }
         guard holdsResponses else {
-            return spells
+            return forecast
         }
         return try await withCheckedThrowingContinuation { continuation in
             heldRequestsContinuation.yield(Request(continuation: continuation))

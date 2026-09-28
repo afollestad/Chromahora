@@ -35,24 +35,28 @@ struct ThrottledWeatherProviderTests {
         start.addingTimeInterval(10 * 24 * 60 * 60)
     }
 
+    private var mock: Forecast {
+        Forecast(spells: WeatherSpell.mock(for: start), hours: SkyHour.mock(for: start))
+    }
+
     private func makeProvider() -> ThrottledWeatherProvider {
         ThrottledWeatherProvider(base: base, cache: cache) { [clock] in clock.now }
     }
 
-    private func ask(_ provider: ThrottledWeatherProvider, at place: Place? = nil, from start: Date? = nil) async throws -> [WeatherSpell] {
+    private func ask(_ provider: ThrottledWeatherProvider, at place: Place? = nil, from start: Date? = nil) async throws -> Forecast {
         let start = start ?? self.start
-        return try await provider.spells(from: start, to: start.addingTimeInterval(10 * 24 * 60 * 60), at: place ?? self.place)
+        return try await provider.forecast(from: start, to: start.addingTimeInterval(10 * 24 * 60 * 60), at: place ?? self.place)
     }
 
     @Test func anAnswerIsReusedWithinTheInterval() async throws {
-        base.spells = WeatherSpell.mock(for: start)
+        base.forecast = mock
         let provider = makeProvider()
         _ = try await ask(provider)
 
         clock.now = start.addingTimeInterval(ThrottledWeatherProvider.minimumInterval - 1)
-        let spells = try await ask(provider)
+        let forecast = try await ask(provider)
 
-        #expect(spells == base.spells)
+        #expect(forecast == base.forecast)
         #expect(base.requestedPlaces == [place])
     }
 
@@ -116,28 +120,27 @@ struct ThrottledWeatherProviderTests {
 
     /// A relaunch makes a new provider, which reads the last request from disk.
     @Test func aNewProviderReusesTheStoredAnswer() async throws {
-        base.spells = WeatherSpell.mock(for: start)
+        base.forecast = mock
         _ = try await ask(makeProvider())
 
-        let spells = try await ask(makeProvider())
+        let forecast = try await ask(makeProvider())
 
-        #expect(spells == base.spells)
+        #expect(forecast == base.forecast)
         #expect(base.requestedPlaces == [place])
     }
 
     /// Both requests start before WeatherKit answers, so the second can only join the first.
     @Test func concurrentRequestsShareOneCall() async throws {
         let provider = makeProvider()
-        let spells = WeatherSpell.mock(for: start)
         base.holdsResponses = true
         var requests = base.heldRequests.makeAsyncIterator()
 
         let first = Task { try await ask(provider) }
         let second = Task { try await ask(provider) }
-        try #require(await requests.next()).answer(spells)
+        try #require(await requests.next()).answer(mock)
 
-        #expect(try await first.value == spells)
-        #expect(try await second.value == spells)
+        #expect(try await first.value == mock)
+        #expect(try await second.value == mock)
         #expect(base.requestedPlaces == [place])
     }
 }

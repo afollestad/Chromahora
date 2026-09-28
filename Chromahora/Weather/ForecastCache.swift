@@ -23,10 +23,22 @@ nonisolated struct ForecastKey: Hashable, Codable, Sendable {
 
 /// The last request made for a forecast, and its answer.
 nonisolated struct ForecastRecord: Codable, Equatable, Sendable {
+    /// Bump it when the record's shape changes. Stored and required, so a record in any other
+    /// shape reads as none, even one whose missing answer would decode as nil and read as a failure.
+    static let formatVersion = 2
+
+    let formatVersion: Int
     let key: ForecastKey
     let attemptedAt: Date
     /// Nil while the request is out, and after it failed.
-    let spells: [WeatherSpell]?
+    let forecast: Forecast?
+
+    init(key: ForecastKey, attemptedAt: Date, forecast: Forecast?) {
+        formatVersion = Self.formatVersion
+        self.key = key
+        self.attemptedAt = attemptedAt
+        self.forecast = forecast
+    }
 }
 
 /// The last forecast request, on disk, so `ThrottledWeatherProvider` holds its pace across
@@ -44,7 +56,11 @@ actor ForecastCache {
         guard let data = try? Data(contentsOf: file) else {
             return nil
         }
-        return try? JSONDecoder().decode(ForecastRecord.self, from: data)
+        guard let record = try? JSONDecoder().decode(ForecastRecord.self, from: data),
+              record.formatVersion == ForecastRecord.formatVersion else {
+            return nil
+        }
+        return record
     }
 
     /// Replaces the stored record. A failed write only costs a request later.

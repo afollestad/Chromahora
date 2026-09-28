@@ -5,28 +5,37 @@
 
 import Foundation
 
+/// What one forecast request brings back: the spells the timeline marks, and the hours the
+/// day's light and sky readings come from.
+nonisolated struct Forecast: Codable, Equatable, Sendable {
+    var spells: [WeatherSpell] = []
+    var hours: [SkyHour] = []
+}
+
 /// A source of forecasts. Weather only adds to the timeline, so callers treat a failure as
 /// no weather, never as a failed day.
 protocol WeatherProvider {
-    /// The weather spells at `place` from `start` to `end`, in time order.
-    func spells(from start: Date, to end: Date, at place: Place) async throws -> [WeatherSpell]
+    /// The forecast at `place` from `start` to `end`, its spells and hours each in time order.
+    func forecast(from start: Date, to end: Date, at place: Place) async throws -> Forecast
 }
 
-/// Serves `WeatherSpell.mock`'s day for every day in the range, for previews and the debug drawer.
+/// Serves `WeatherSpell.mock`'s and `SkyHour.mock`'s day for every day in the range, for
+/// previews and the debug drawer.
 struct MockWeatherProvider: WeatherProvider {
     var calendar: Calendar = .current
 
-    func spells(from start: Date, to end: Date, at place: Place) async throws -> [WeatherSpell] {
-        var spells: [WeatherSpell] = []
+    func forecast(from start: Date, to end: Date, at place: Place) async throws -> Forecast {
+        var forecast = Forecast()
         var day = calendar.startOfDay(for: start)
         while day < end {
-            spells += WeatherSpell.mock(for: day, calendar: calendar)
+            forecast.spells += WeatherSpell.mock(for: day, calendar: calendar)
+            forecast.hours += SkyHour.mock(for: day, calendar: calendar)
             guard let next = calendar.date(byAdding: .day, value: 1, to: day) else {
                 break
             }
             day = next
         }
-        return spells
+        return forecast
     }
 }
 

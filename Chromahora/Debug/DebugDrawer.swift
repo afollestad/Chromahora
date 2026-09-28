@@ -203,7 +203,7 @@ private struct DebugCacheSection: View {
     let forecastCache: ForecastCache?
 
     @State private var summary: SolarDayCache.Summary?
-    @State private var forecast: ForecastRecord?
+    @State private var lastRequest: ForecastRecord?
 
     var body: some View {
         Section("Cache") {
@@ -228,18 +228,18 @@ private struct DebugCacheSection: View {
         }
     }
 
-    /// When WeatherKit was last asked, and what came back: a spell count, or nothing when it failed or is still out.
+    /// When WeatherKit was last asked, and what came back: spell and hour counts, or nothing when it failed or is still out.
     private var forecastSummary: String {
-        guard let forecast else {
+        guard let lastRequest else {
             return "Never"
         }
-        let time = forecast.attemptedAt.formatted(date: .omitted, time: .standard)
-        return forecast.spells.map { "\(time), \($0.count) spells" } ?? "\(time), no answer"
+        let time = lastRequest.attemptedAt.formatted(date: .omitted, time: .standard)
+        return lastRequest.forecast.map { "\(time), \($0.spells.count) spells, \($0.hours.count) hours" } ?? "\(time), no answer"
     }
 
     private func refresh() async {
         summary = await cache?.summary()
-        forecast = await forecastCache?.record()
+        lastRequest = await forecastCache?.record()
     }
 }
 
