@@ -33,12 +33,20 @@ if [ "$#" -gt 0 ]; then
   done
 fi
 
-# Snapshot baselines only hold on the device they were recorded on (`snapshotDeviceName`),
-# and fail anywhere else, so another SIMULATOR leaves them out.
-if [ "$simulator_name" != "iPhone 18 Pro" ]; then
-  echo "Skipping ChromahoraTests/SnapshotTests: baselines are recorded on iPhone 18 Pro, not $simulator_name."
-  only_testing+=(-skip-testing:ChromahoraTests/SnapshotTests)
-fi
+# Snapshot baselines only hold on the device they were recorded on (`SnapshotDevice`), and
+# fail anywhere else, so each suite runs only on its own device.
+case "$simulator_name" in
+  "iPhone 18 Pro")
+    only_testing+=(-skip-testing:ChromahoraTests/WideSnapshotTests)
+    ;;
+  "iPad mini (A17 Pro)")
+    only_testing+=(-skip-testing:ChromahoraTests/SnapshotTests)
+    ;;
+  *)
+    echo "Skipping snapshot tests: baselines are recorded on iPhone 18 Pro and iPad mini (A17 Pro), not $simulator_name."
+    only_testing+=(-skip-testing:ChromahoraTests/SnapshotTests -skip-testing:ChromahoraTests/WideSnapshotTests)
+    ;;
+esac
 
 # Parallel testing runs on simulator clones, which boot slowly and shut the original down.
 # Failure diagnostics take a sysdiagnose that stalls every failing run for about ten minutes.

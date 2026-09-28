@@ -7,7 +7,8 @@ import SwiftUI
 
 /// Calendar for choosing which day the timeline shows, with a shortcut back to today,
 /// and a note of where the times are for. Where they and the weather come from is under
-/// the timeline's `SourcesButton`.
+/// the timeline's `SourcesButton`. It fills the calendar button's popover, and tops the
+/// day panel in a wide window.
 struct DayPicker: View {
     @Binding var selection: Date
     var place: Place?

@@ -17,11 +17,17 @@ struct DayTimeline: View {
     @Binding var skyBehindTitle: Color
     /// The title's center in global coordinates, which places that sky sample.
     var titleMidY: CGFloat = 0
-    /// Scrolls back to the focus time whenever it changes, as Today does.
-    var focusRequests = 0
+    /// Scrolls whenever it changes: to the focus time for Today, or to a phase or spell the
+    /// day panel asks for.
+    var focus = Focus()
+    /// The day panel's footprint on the trailing edge, zero without one. Labels clear it, and
+    /// lines and the sources button stop short of it, since its glass would show a line through
+    /// its text. It isn't safe area, which would reach the lines only mixed with the device's.
+    var panelInset: CGFloat = 0
     var pointsPerHour: CGFloat = 72
 
     private let focusAnchorID = "focus"
+    private let requestAnchorID = "request"
 
     /// Room past the bars at each end of the day, so a label centered on a line near
     /// midnight scrolls clear of them: half the tallest label, at the accessibility1
@@ -58,7 +64,13 @@ struct DayTimeline: View {
                     SkyGradient(day: day)
                         .id(day.phaseSequence)
                         .transition(.opacity)
-                    DayTimelineOverlay(day: day, now: now, safeAreaInsets: safeAreaInsets, weather: weather)
+                    DayTimelineOverlay(
+                        day: day,
+                        now: now,
+                        safeAreaInsets: labelInsets,
+                        weather: weather,
+                        lineTrailingInset: panelInset > 0 ? labelInsets.trailing : 0
+                    )
                         // Past accessibility1, even a shortened phase label wraps beside a marker
                         // on a 390pt-wide phone. Applied out here so the overlay's scaled
                         // spacing stops growing at the same size.
@@ -73,6 +85,13 @@ struct DayTimeline: View {
                         .frame(height: 1)
                         .id(focusAnchorID)
                         .padding(.top, contentHeight * day.fraction(of: focusDate))
+                }
+                .overlay(alignment: .top) {
+                    // The same for the time the day panel last asked for.
+                    Color.clear
+                        .frame(height: 1)
+                        .id(requestAnchorID)
+                        .padding(.top, contentHeight * day.fraction(of: requestedDate))
                 }
                 // Without this the day ends flush with the screen, under the bars, where a scroll
                 // view can't reach past it. Padding rather than content margins, so centering on
@@ -128,12 +147,12 @@ struct DayTimeline: View {
                 }
             }
             // Today on another day scrolls once that day loads, through the change above.
-            .onChange(of: focusRequests) {
-                guard day.contains(now) else {
+            .onChange(of: focus) {
+                guard day.contains(focus.date ?? now) else {
                     return
                 }
                 withAnimation {
-                    proxy.scrollTo(focusAnchorID, anchor: .center)
+                    proxy.scrollTo(focus.date == nil ? focusAnchorID : requestAnchorID, anchor: .center)
                 }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
@@ -165,6 +184,8 @@ struct DayTimeline: View {
                     } action: { midY in
                         sourcesMidY = midY
                     }
+                    // Centered under the timeline rather than the window, clear of the day panel.
+                    .padding(.trailing, panelInset)
             }
         }
     }
@@ -172,6 +193,13 @@ struct DayTimeline: View {
     /// Whether any spell reaches this day, which is when the overlay marks weather and the sources button credits it.
     private var showsWeather: Bool {
         weather.contains { $0.span(within: day) != nil }
+    }
+
+    /// The insets labels keep from each edge: the device's, and the day panel's on the trailing one.
+    private var labelInsets: EdgeInsets {
+        var insets = safeAreaInsets
+        insets.trailing += panelInset
+        return insets
     }
 
     private var contentHeight: CGFloat {
@@ -227,6 +255,26 @@ struct DayTimeline: View {
             }
         }
         return day.dayStart.addingTimeInterval(day.duration / 2)
+    }
+
+    /// The time the day panel last asked for, or the focus time once the day no longer holds it.
+    private var requestedDate: Date {
+        focus.date.flatMap { day.contains($0) ? $0 : nil } ?? focusDate
+    }
+}
+
+extension DayTimeline {
+    /// A request to scroll, as Today and the day panel's rows make. Each gets a new `id`, so
+    /// asking for the same time again scrolls back to it.
+    struct Focus: Equatable {
+        private(set) var id = 0
+        /// The time to center on, or nil for the view's own focus time.
+        private(set) var date: Date?
+
+        mutating func request(_ date: Date? = nil) {
+            id += 1
+            self.date = date
+        }
     }
 }
 

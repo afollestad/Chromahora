@@ -6,13 +6,15 @@
 import SwiftUI
 
 /// The title and calendar button, shared by the timeline and its placeholders so they
-/// stay put while a day loads, and so the calendar can leave a day that failed.
+/// stay put while a day loads, and so the calendar can leave a day that failed. A wide
+/// window drops the button, since the day panel shows the calendar.
 struct DayToolbar: ToolbarContent {
     let isLoading: Bool
     @Binding var skyColor: Color
     @Binding var selectedDate: Date
     let now: Date
     var place: Place?
+    var showsDayPicker = true
     let onTitleMidY: (CGFloat) -> Void
     let onToday: () -> Void
 
@@ -26,8 +28,11 @@ struct DayToolbar: ToolbarContent {
                 }
         }
 
-        ToolbarItem(placement: .primaryAction) {
-            DayPickerButton(selection: $selectedDate, now: now, place: place, onToday: onToday)
+        // An `if` rather than `hidden(_:)`, which iOS doesn't offer for toolbar content.
+        if showsDayPicker {
+            ToolbarItem(placement: .primaryAction) {
+                DayPickerButton(selection: $selectedDate, now: now, place: place, onToday: onToday)
+            }
         }
     }
 }

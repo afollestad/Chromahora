@@ -123,6 +123,8 @@ nonisolated struct DaySegment: Identifiable, Sendable {
 nonisolated struct SolarEvent: Identifiable, Sendable {
     let title: String
     let date: Date
+    /// The SF Symbol the day panel lists it with.
+    let symbolName: String
 
     var id: String { title }
 }
@@ -196,8 +198,8 @@ nonisolated struct SolarDay: Equatable, Sendable {
     }
 
     var events: [SolarEvent] {
-        [("Sunrise", sunrise), ("Sunset", sunset)].compactMap { title, date in
-            date.map { SolarEvent(title: title, date: $0) }
+        [("Sunrise", "sunrise.fill", sunrise), ("Sunset", "sunset.fill", sunset)].compactMap { title, symbolName, date in
+            date.map { SolarEvent(title: title, date: $0, symbolName: symbolName) }
         }
     }
 
@@ -224,6 +226,15 @@ nonisolated struct SolarDay: Equatable, Sendable {
     /// The phase at `date`: the day's first phase before it starts, and its last after it ends.
     func phase(at date: Date) -> DayPhase {
         segments.last { $0.interval.start <= date }?.phase ?? initialPhase
+    }
+
+    /// The segment under way at `date`, or nil outside the day. At a change of phase it's the
+    /// one starting, so only one segment ever holds a given instant.
+    func segment(at date: Date) -> DaySegment? {
+        guard contains(date) else {
+            return nil
+        }
+        return segments.last { $0.interval.start <= date }
     }
 
     /// Where `date` falls within the day, from 0 at the start to 1 at the end.

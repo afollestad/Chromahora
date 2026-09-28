@@ -126,6 +126,22 @@ nonisolated struct WeatherSpell: Identifiable, Equatable, Codable, Sendable {
         return condition == .fog ? nil : "\(cloudCover.formatted(percent)) cloud cover"
     }
 
+    /// Where the spell begins on `day`: its start, or midnight for one already under way.
+    func start(on day: SolarDay) -> Date {
+        max(interval.start, day.dayStart)
+    }
+
+    /// Whether the sky is lit where the spell begins on `day`, which shows the sun rather than the moon.
+    func startsInDaylight(on day: SolarDay) -> Bool {
+        let phase = day.phase(at: start(on: day))
+        return phase == .daylight || phase == .goldenHour
+    }
+
+    /// What VoiceOver reads for the spell, with `range` as the day words it.
+    func description(range: String) -> String {
+        [title, range, summary].compactMap(\.self).joined(separator: ", ")
+    }
+
     /// How the spell sits in `day`, or nil when it only touches the day at midnight or misses it.
     func span(within day: SolarDay) -> DaySegment.Span? {
         guard interval.start < day.dayEnd, interval.end > day.dayStart else {

@@ -117,6 +117,24 @@ struct WeatherSpellTests {
         #expect(spell(.fog, 0..<2).summary == nil)
     }
 
+    @Test func descriptionsReadTheTitleRangeAndSummary() {
+        #expect(spell(.rain, 0..<2, chance: 0.8).description(range: "3:00 – 5:00 PM") == "Rain, 3:00 – 5:00 PM, 80% chance")
+        #expect(spell(.fog, 0..<2).description(range: "all day") == "Fog, all day")
+    }
+
+    /// The typical mock in GMT is night until 6:12 AM, golden hour from 6:38 to 7:42, and
+    /// night again from 7:36 PM.
+    @Test func aSpellUnderWayAtMidnightStartsThereAndShowsTheSunOnlyInLight() {
+        let day = SolarDay.mock(for: start, calendar: calendar)
+
+        #expect(spell(.clear, -2..<3).start(on: day) == day.dayStart)
+        #expect(spell(.clear, 3..<5).start(on: day) == date(3))
+        #expect(!spell(.clear, -2..<3).startsInDaylight(on: day))
+        #expect(spell(.clear, 7..<9).startsInDaylight(on: day))
+        #expect(spell(.clear, 12..<14).startsInDaylight(on: day))
+        #expect(!spell(.clear, 20..<22).startsInDaylight(on: day))
+    }
+
     /// A spell under way at midnight shows on the day it continues into, but not on a day
     /// it only touches.
     @Test func spanSaysWhichEndsMidnightCutsOff() {

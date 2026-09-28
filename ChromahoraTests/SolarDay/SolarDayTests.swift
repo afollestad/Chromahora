@@ -81,6 +81,7 @@ struct SolarDayTests {
 
     @Test func eventsListOnlyTheSunrisesAndSunsetsThatHappen() {
         #expect(day.events.map(\.title) == ["Sunrise", "Sunset"])
+        #expect(day.events.map(\.symbolName) == ["sunrise.fill", "sunset.fill"])
         #expect(SolarDay.mock(.polarTwilight, for: date, calendar: calendar).events.isEmpty)
     }
 
@@ -104,6 +105,19 @@ struct SolarDayTests {
         #expect(day.phase(at: day.dayStart.addingTimeInterval(-60 * 60)) == .night)
         #expect(day.phase(at: day.dayEnd.addingTimeInterval(60 * 60)) == .night)
         #expect(SolarDay.mock(.midnightSun, for: date, calendar: calendar).phase(at: date) == .daylight)
+    }
+
+    /// At a change of phase the segment starting holds the instant, and the day's end belongs
+    /// to the next day.
+    @Test func segmentAtFindsTheOneUnderWayOnlyWithinTheDay() throws {
+        let blueHour = try #require(day.transitions.first).date
+
+        #expect(day.segment(at: day.dayStart)?.phase == .night)
+        #expect(day.segment(at: blueHour.addingTimeInterval(-1))?.phase == .night)
+        #expect(day.segment(at: blueHour)?.phase == .blueHour)
+        #expect(day.segment(at: day.dayEnd.addingTimeInterval(-1))?.phase == .night)
+        #expect(day.segment(at: day.dayEnd) == nil)
+        #expect(day.segment(at: day.dayStart.addingTimeInterval(-1)) == nil)
     }
 
     @Test func heldColorRangeNarrowsToTheMidpointForShortPhases() {

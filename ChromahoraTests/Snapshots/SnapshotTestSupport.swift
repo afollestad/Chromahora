@@ -8,14 +8,27 @@ import SwiftUI
 import Testing
 import UIKit
 
-/// The simulator every baseline is recorded on. Screen size, safe areas and the
-/// system's glass rendering differ between devices, so a baseline only holds on
-/// this one. The scripts default to it; change them together.
-let snapshotDeviceName = "iPhone 18 Pro"
+/// A simulator baselines are recorded on. Screen size, safe areas and the system's glass
+/// rendering differ between devices, so a baseline only holds on its suite's device. The
+/// scripts pin each suite to it; change them together.
+struct SnapshotDevice: Sendable {
+    let name: String
+    /// The hardware model, checked instead of the name, since parallel test runs, like Xcode's
+    /// default, use clones named "Clone 1 of …". `plutil -extract modelIdentifier raw` reads
+    /// it from a device type's `profile.plist`, under `<name>.simdevicetype/Contents/Resources/`
+    /// in `/Library/Developer/CoreSimulator/Profiles/DeviceTypes/`.
+    let modelIdentifier: String
+    /// Names this device's baselines apart from the phone's, as in `afternoon.wide.png`. The test
+    /// bundle copies every baseline into one folder, where two suites' same-named tests would collide.
+    let baselineName: String?
 
-/// `snapshotDeviceName`'s hardware model. Checked instead of the name, since
-/// parallel test runs, like Xcode's default, use clones named "Clone 1 of …".
-private let snapshotModelIdentifier = "iPhone19,2"
+    /// `SnapshotTests`' device.
+    static let phone = SnapshotDevice(name: "iPhone 18 Pro", modelIdentifier: "iPhone19,2", baselineName: nil)
+
+    /// `WideSnapshotTests`' device. The narrowest regular width, where the day panel first
+    /// shows, and the closest stand-in for an opened foldable iPhone, which has no simulator.
+    static let wide = SnapshotDevice(name: "iPad mini (A17 Pro)", modelIdentifier: "iPad16,2", baselineName: "wide")
+}
 
 /// `0.99` for both knobs is the Delta-E threshold SnapshotTesting documents as
 /// matching the human eye, with up to 1% of pixels allowed past it. Glass and the
@@ -34,6 +47,9 @@ private let snapshotScale: CGFloat = 2
 private let settleTimeout: Duration = .seconds(3)
 private let settleInterval: Duration = .milliseconds(100)
 
+/// Whether this test process has rendered a screen yet.
+@MainActor private var hasRenderedScreen = false
+
 /// Renders `view` full screen in its own window on the host app's scene, waits for it
 /// to settle, and compares it against the stored baseline.
 ///
@@ -44,6 +60,7 @@ private let settleInterval: Duration = .milliseconds(100)
 @MainActor
 func assertScreenSnapshot<V: View>(
     of view: V,
+    on device: SnapshotDevice = .phone,
     named name: String? = nil,
     precision: Float = defaultPixelPrecision,
     perceptualPrecision: Float = defaultPerceptualPrecision,
@@ -56,31 +73,37 @@ func assertScreenSnapshot<V: View>(
     let sourceLocation = SourceLocation(
         fileID: "\(fileID)", filePath: "\(filePath)", line: Int(line), column: Int(column)
     )
-    let model = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"]
-    guard model == snapshotModelIdentifier else {
-        Issue.record(
-            """
-            Snapshots are recorded on \(snapshotDeviceName) (\(snapshotModelIdentifier)), not \(model ?? "an unknown device"). \
-            Run them through ./scripts/snapshots.sh.
-            """,
-            sourceLocation: sourceLocation
-        )
-        return
-    }
-    // Time labels format with the process locale rather than the SwiftUI environment,
-    // so the locale can't be pinned from here; the scripts launch tests with it.
-    guard Locale.current.language.languageCode == .english, Locale.current.region == .unitedStates else {
-        Issue.record(
-            "Snapshots are recorded in en_US, not \(Locale.current.identifier). Run them through ./scripts/snapshots.sh.",
-            sourceLocation: sourceLocation
-        )
-        return
-    }
     guard let scene = UIApplication.shared.connectedScenes.lazy.compactMap({ $0 as? UIWindowScene }).first else {
         Issue.record("Snapshots need the host app's window scene.", sourceLocation: sourceLocation)
         return
     }
+    if let mismatch = mismatch(with: device, in: scene) {
+        Issue.record(Comment(rawValue: mismatch), sourceLocation: sourceLocation)
+        return
+    }
 
+    // The first screen a test process renders can lay the day panel's calendar out at either
+    // of two heights, while every later one takes the same, so it renders once to throw away.
+    if !hasRenderedScreen {
+        hasRenderedScreen = true
+        _ = await render(view, on: scene)
+    }
+    let image = await render(view, on: scene)
+    assertSnapshot(
+        of: image,
+        as: .image(precision: precision, perceptualPrecision: perceptualPrecision),
+        named: name ?? device.baselineName,
+        fileID: fileID,
+        file: filePath,
+        testName: testName,
+        line: line,
+        column: column
+    )
+}
+
+/// Shows `view` full screen in its own window on `scene` until it settles, and captures it.
+@MainActor
+private func render<V: View>(_ view: V, on scene: UIWindowScene) async -> UIImage {
     let window = UIWindow(windowScene: scene)
     window.frame = scene.effectiveGeometry.coordinateSpace.bounds
     // Above the host app's own window, which keeps running underneath.
@@ -95,18 +118,31 @@ func assertScreenSnapshot<V: View>(
         window.isHidden = true
         window.rootViewController = nil
     }
+    return await settledImage(of: window)
+}
 
-    let image = await settledImage(of: window)
-    assertSnapshot(
-        of: image,
-        as: .image(precision: precision, perceptualPrecision: perceptualPrecision),
-        named: name,
-        fileID: fileID,
-        file: filePath,
-        testName: testName,
-        line: line,
-        column: column
-    )
+/// Why this run can't take `device`'s snapshots, or nil when it can.
+@MainActor
+private func mismatch(with device: SnapshotDevice, in scene: UIWindowScene) -> String? {
+    let model = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"]
+    guard model == device.modelIdentifier else {
+        return """
+            This snapshot is recorded on \(device.name) (\(device.modelIdentifier)), not \(model ?? "an unknown device"). \
+            Run it through ./scripts/snapshots.sh.
+            """
+    }
+    // Time labels format with the process locale rather than the SwiftUI environment,
+    // so the locale can't be pinned from here; the scripts launch tests with it.
+    guard Locale.current.language.languageCode == .english, Locale.current.region == .unitedStates else {
+        return "Snapshots are recorded in en_US, not \(Locale.current.identifier). Run them through ./scripts/snapshots.sh."
+    }
+    // A simulator left rotated, or an iPad app in a window, lays every screen out anew, and a
+    // narrow window can even change the size class.
+    let bounds = scene.effectiveGeometry.coordinateSpace.bounds
+    guard bounds.size == scene.screen.bounds.size, bounds.height > bounds.width else {
+        return "Snapshots are recorded full screen in portrait, not in a \(Int(bounds.width))×\(Int(bounds.height)) scene."
+    }
+    return nil
 }
 
 /// Captures `window` until two captures in a row match, so the baseline shows the

@@ -40,6 +40,9 @@ struct DayTimelineOverlay: View {
     let safeAreaInsets: EdgeInsets
     /// The forecast's spells, of any day. Those overlapping this one get a marker each.
     var weather: [WeatherSpell] = []
+    /// How far short of the trailing edge marker lines stop, so they end at the day panel
+    /// rather than showing through its glass. Zero runs them edge to edge.
+    var lineTrailingInset: CGFloat = 0
 
     private let horizontalPadding: CGFloat = 16
 
@@ -155,7 +158,9 @@ struct DayTimelineOverlay: View {
             }
         }
         .mask {
+            // Padded before the cutouts, which lay out across the full width like the labels.
             Rectangle()
+                .padding(.trailing, lineTrailingInset)
                 .overlay {
                     labels(markers, size: size, style: .cutout)
                         .blendMode(.destinationOut)
@@ -280,24 +285,7 @@ struct DayTimelineOverlay: View {
     }
 
     private func text(for segment: DaySegment) -> String {
-        "\(segment.phase.title) · \(rangeText(segment.interval, span: segment.span))"
-    }
-
-    /// A phase or spell cut off by midnight began or ends on another day, so its text gives
-    /// only the side it has on this one.
-    private func rangeText(_ interval: DateInterval, span: DaySegment.Span) -> String {
-        let time = Date.FormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone)
-        switch span {
-        case .range:
-            let range = Date.IntervalFormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone)
-            return (interval.start..<interval.end).formatted(range)
-        case .until:
-            return "until \(interval.end.formatted(time))"
-        case .from:
-            return "from \(interval.start.formatted(time))"
-        case .allDay:
-            return "all day"
-        }
+        "\(segment.phase.title) · \(day.rangeText(of: segment))"
     }
 
     /// Lays `content` across the full width, aligned to one edge, centered on `y`.
@@ -346,12 +334,10 @@ struct DayTimelineOverlay: View {
             guard let span = spell.span(within: day) else {
                 continue
             }
-            let date = max(spell.interval.start, day.dayStart)
-            let phase = day.phase(at: date)
             markers.append(Marker(
                 id: "weather-\(spell.interval.start.timeIntervalSinceReferenceDate)",
-                date: date,
-                kind: .weather(spell, range: rangeText(spell.interval, span: span), inDaylight: phase == .daylight || phase == .goldenHour)
+                date: spell.start(on: day),
+                kind: .weather(spell, range: day.rangeText(spell.interval, span: span), inDaylight: spell.startsInDaylight(on: day))
             ))
         }
         // Ties break by id, so markers at the same instant keep one order.

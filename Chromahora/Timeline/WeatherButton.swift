@@ -31,7 +31,7 @@ struct WeatherButton: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(description)
+        .accessibilityLabel(spell.description(range: range))
         .popover(isPresented: $isPresented, arrowEdge: .leading) {
             WeatherDetails(spell: spell, range: range, inDaylight: inDaylight)
                 .presentationCompactAdaptation(.popover)
@@ -46,10 +46,6 @@ struct WeatherButton: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 7)
             .padding(.vertical, 5)
-    }
-
-    private var description: String {
-        [spell.title, range, spell.summary].compactMap(\.self).joined(separator: ", ")
     }
 }
 

@@ -8,14 +8,16 @@ usage() {
   cat <<'USAGE'
 Usage: ./scripts/snapshots.sh [--no-xcsift] <verify|record> [test_identifier ...]
 
-Defaults to the full `ChromahoraTests/SnapshotTests` suite when no test identifiers are provided.
+Each suite runs on its own device: `ChromahoraTests/SnapshotTests` on iPhone 18 Pro, and
+`ChromahoraTests/WideSnapshotTests` on iPad mini (A17 Pro). Defaults to both suites when no
+test identifiers are provided.
 Failed comparisons write the new image to `.build/snapshot-failures` (override with SNAPSHOT_ARTIFACTS).
 
 Examples:
   ./scripts/snapshots.sh verify
   ./scripts/snapshots.sh verify 'ChromahoraTests/SnapshotTests/afternoon()'
   ./scripts/snapshots.sh record
-  ./scripts/snapshots.sh record 'ChromahoraTests/SnapshotTests/afternoon()'
+  ./scripts/snapshots.sh record 'ChromahoraTests/WideSnapshotTests/afternoon()'
 USAGE
 }
 
@@ -46,17 +48,31 @@ case "$mode" in
 esac
 
 if [ "$#" -eq 0 ]; then
-  set -- "ChromahoraTests/SnapshotTests"
+  set -- "ChromahoraTests/SnapshotTests" "ChromahoraTests/WideSnapshotTests"
 fi
 
-only_testing=()
-for test_name in "$@"; do
-  only_testing+=("-only-testing:$test_name")
-done
-
 # Pinned rather than read from SIMULATOR: baselines only hold on the device they were
-# recorded on, and fail anywhere else. Matches `snapshotDeviceName`.
-snapshot_device="iPhone 18 Pro"
+# recorded on, and fail anywhere else. Matches `SnapshotDevice`.
+phone_device="iPhone 18 Pro"
+wide_device="iPad mini (A17 Pro)"
+
+# Sorted by suite, since each suite runs on its own device.
+phone_tests=()
+wide_tests=()
+for test_name in "$@"; do
+  case "$test_name" in
+    ChromahoraTests/SnapshotTests|ChromahoraTests/SnapshotTests/*)
+      phone_tests+=("-only-testing:$test_name")
+      ;;
+    ChromahoraTests/WideSnapshotTests|ChromahoraTests/WideSnapshotTests/*)
+      wide_tests+=("-only-testing:$test_name")
+      ;;
+    *)
+      echo "error: $test_name isn't in ChromahoraTests/SnapshotTests or ChromahoraTests/WideSnapshotTests." >&2
+      exit 1
+      ;;
+  esac
+done
 
 # shellcheck source=lib/testing.sh
 source "$repo_root/scripts/lib/testing.sh"
@@ -77,27 +93,36 @@ run_and_format() {
   return "$status"
 }
 
-# Time labels format with the process locale, so tests launch in the one the baselines use.
-# Parallel testing boots slow simulator clones, and failure diagnostics take a sysdiagnose
-# that stalls every failing run for about ten minutes.
+# Runs the `-only-testing` flags after the device on it. Time labels format with the process
+# locale, so tests launch in the one the baselines use. Parallel testing boots slow simulator
+# clones, and failure diagnostics take a sysdiagnose that stalls every failing run for about
+# ten minutes.
 run_snapshot_tests() {
+  local device=$1
+  shift
   run_and_format xcodebuild \
     -project Chromahora.xcodeproj \
     -scheme Chromahora \
-    -destination "platform=iOS Simulator,name=$snapshot_device" \
+    -destination "platform=iOS Simulator,name=$device" \
     -derivedDataPath .build/xcode \
     -testLanguage en \
     -testRegion US \
     -parallel-testing-enabled NO \
     -collect-test-diagnostics never \
-    "${only_testing[@]}" \
+    "$@" \
     test
 }
 
 run_verify() {
   export TEST_RUNNER_SNAPSHOT_TESTING_RECORD=missing
-  run_snapshot_tests
-  require_every_test_ran "$raw_log"
+  if [ "${#phone_tests[@]}" -gt 0 ]; then
+    run_snapshot_tests "$phone_device" "${phone_tests[@]}"
+    require_every_test_ran "$raw_log"
+  fi
+  if [ "${#wide_tests[@]}" -gt 0 ]; then
+    run_snapshot_tests "$wide_device" "${wide_tests[@]}"
+    require_every_test_ran "$raw_log"
+  fi
 }
 
 if [ "$mode" = "verify" ]; then
@@ -111,8 +136,13 @@ fi
 # be the judge, which is what makes `record` safe to trust as a single command.
 export TEST_RUNNER_SNAPSHOT_TESTING_RECORD=all
 set +e
-run_snapshot_tests
-record_status=$?
+record_status=0
+if [ "${#phone_tests[@]}" -gt 0 ]; then
+  run_snapshot_tests "$phone_device" "${phone_tests[@]}" || record_status=$?
+fi
+if [ "${#wide_tests[@]}" -gt 0 ]; then
+  run_snapshot_tests "$wide_device" "${wide_tests[@]}" || record_status=$?
+fi
 set -e
 
 if [ "$record_status" -ne 0 ]; then
