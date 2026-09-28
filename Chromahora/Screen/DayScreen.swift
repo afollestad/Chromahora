@@ -19,9 +19,9 @@ struct DayScreen: View {
     /// The forecast's spells, which the timeline marks on the day they fall on.
     var weather: [WeatherSpell] = []
     let onRetry: () -> Void
-    /// Selects the day a pull through the timeline's end leads to, and answers whether it's
-    /// on hand to page to at once.
-    var onPage: (Date) -> Bool = { _ in false }
+    /// Selects the day a pull through the timeline's end leads to, a number of days from the
+    /// one pulled, and answers whether it's on hand to page to at once.
+    var onPage: (Int, SolarDay) -> Bool = { _, _ in false }
 
     /// The iPhone 17e's width, the narrowest the timeline's labels fit at their size cap.
     private static let minimumTimelineWidth: CGFloat = 390

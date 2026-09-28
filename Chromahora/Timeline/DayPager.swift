@@ -25,9 +25,10 @@ struct DayPager: View {
     var focus = DayTimeline.Focus()
     /// The day panel's footprint on the trailing edge, zero without one.
     var panelInset: CGFloat = 0
-    /// Selects the day containing a date, and answers whether it's on hand to show at once.
-    /// When it isn't, the selection still moves, and the day loads and glides in as from the calendar.
-    var onPage: (Date) -> Bool = { _ in false }
+    /// Selects the day a number of days from the one given, and answers whether it's on hand to
+    /// show at once. When it isn't, the selection still moves, and the day loads and glides in
+    /// as from the calendar.
+    var onPage: (Int, SolarDay) -> Bool = { _, _ in false }
 
     private struct Page: Identifiable {
         let id: Int
@@ -139,7 +140,7 @@ struct DayPager: View {
     /// day and pushes off the far edge, while the new one comes in from `edge`'s side.
     /// Otherwise the selection still moves, and the day loads and glides in as from the calendar.
     private func pull(through edge: VerticalEdge) {
-        guard let target = EdgePull.dayStart(beyond: edge, of: day), let live = pages.last else {
+        guard let live = pages.last else {
             return
         }
         let index = pages.count - 1
@@ -147,7 +148,7 @@ struct DayPager: View {
         // would glide its sky there and scroll it to that day's focus.
         pages[index].frozenDay = day
         // Unanimated, so the title and day panel change days at once, as from the calendar.
-        guard onPage(target) else {
+        guard onPage(EdgePull.dayOffset(beyond: edge), day) else {
             pages[index].frozenDay = nil
             return
         }
@@ -185,7 +186,10 @@ struct DayPager: View {
 #Preview {
     @Previewable @State var day = SolarDay.mock()
     @Previewable @State var sky = DayPhase.night.color
-    DayPager(day: day, now: .now, weather: WeatherSpell.mock(), skyBehindTitle: $sky) { date in
+    DayPager(day: day, now: .now, weather: WeatherSpell.mock(), skyBehindTitle: $sky) { offset, shown in
+        guard let date = shown.calendar.date(byAdding: .day, value: offset, to: shown.dayStart) else {
+            return false
+        }
         day = .mock(for: date)
         return true
     }

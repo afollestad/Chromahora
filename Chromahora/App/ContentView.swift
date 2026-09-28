@@ -43,7 +43,7 @@ struct ContentView: View {
                     place: store.place,
                     weather: weather.spells(at: store.place),
                     onRetry: store.reload,
-                    onPage: store.selectDay(containing:)
+                    onPage: store.selectDay(offsetBy:from:)
                 )
             }
         }

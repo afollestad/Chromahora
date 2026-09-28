@@ -191,15 +191,28 @@ final class SolarDayStore {
         }
     }
 
-    /// Selects the day containing `date`, and shows it at once if it's already loaded, so a
-    /// page change and the day it shows can share one transaction. Returns whether it was;
+    /// Selects the day `offset` days from `day`, and shows it at once if it's already loaded, so
+    /// a page change and the day it shows can share one transaction. Returns whether it was;
     /// if not, `loadSelectedDay()` loads it as for any other selection.
-    func selectDay(containing date: Date) -> Bool {
-        selectedDate = date
-        guard let key = currentKey, let day = loadedDays[key] else {
+    ///
+    /// It goes by the date `day` reads in its own calendar. After `changeTimeZone(to:)`, a day
+    /// from the old zone stays on screen until the new zone's loads, and in a zone to the west
+    /// the midnight that ends it still falls on that same date.
+    func selectDay(offsetBy offset: Int, from day: SolarDay) -> Bool {
+        guard let date = day.calendar.date(byAdding: .day, value: offset, to: day.dayStart) else {
             return false
         }
-        state = .loaded(day)
+        var components = day.calendar.dateComponents([.era, .year, .month, .isLeapMonth, .day], from: date)
+        // Noon, since some zones skip midnight when daylight saving time starts.
+        components.hour = 12
+        guard let target = calendar.date(from: components) else {
+            return false
+        }
+        selectedDate = target
+        guard let key = currentKey, let loaded = loadedDays[key] else {
+            return false
+        }
+        state = .loaded(loaded)
         return true
     }
 

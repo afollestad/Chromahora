@@ -78,8 +78,14 @@ nonisolated struct EdgePull: Equatable, Sendable {
         distance >= Self.threshold
     }
 
-    /// The start of the day beyond `edge` of `day`: the day before past the top, and after past the bottom.
+    /// How many days the day beyond `edge` is from the one pulled: the day before past the top,
+    /// and after past the bottom.
+    static func dayOffset(beyond edge: VerticalEdge) -> Int {
+        edge == .top ? -1 : 1
+    }
+
+    /// The start of the day beyond `edge` of `day`, in the day's own calendar.
     static func dayStart(beyond edge: VerticalEdge, of day: SolarDay) -> Date? {
-        day.calendar.date(byAdding: .day, value: edge == .top ? -1 : 1, to: day.dayStart)
+        day.calendar.date(byAdding: .day, value: dayOffset(beyond: edge), to: day.dayStart)
     }
 }

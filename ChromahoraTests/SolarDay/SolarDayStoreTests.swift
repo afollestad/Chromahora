@@ -410,12 +410,12 @@ struct SolarDayStoreTests {
         #expect(provider.requestedDates == [dayStart(monday)])
     }
 
-    @Test func pagingToAHeldDayShowsItAtOnce() async {
+    @Test func pagingToAHeldDayShowsItAtOnce() async throws {
         let store = makeStore()
         await store.loadSelectedDay()
         await store.loadAdjacentDays()
 
-        #expect(store.selectDay(containing: dayStart(tuesday)))
+        #expect(store.selectDay(offsetBy: 1, from: try #require(store.state.day)))
         #expect(store.selectedDayStart == dayStart(tuesday))
         #expect(store.state.loadedDay?.dayStart == dayStart(tuesday))
 
@@ -425,11 +425,11 @@ struct SolarDayStoreTests {
         #expect(store.state.loadedDay?.dayStart == dayStart(tuesday))
     }
 
-    @Test func pagingToADayNotHeldLeavesItToLoad() async {
+    @Test func pagingToADayNotHeldLeavesItToLoad() async throws {
         let store = makeStore()
         await store.loadSelectedDay()
 
-        #expect(!store.selectDay(containing: dayStart(tuesday)))
+        #expect(!store.selectDay(offsetBy: 1, from: try #require(store.state.day)))
         #expect(store.selectedDayStart == dayStart(tuesday))
         #expect(store.state.loadedDay?.dayStart == dayStart(monday))
 
@@ -444,11 +444,31 @@ struct SolarDayStoreTests {
         let store = makeStore()
         await store.loadSelectedDay()
         await store.loadAdjacentDays()
+        let shown = try #require(store.state.day)
 
         store.changeTimeZone(to: try #require(TimeZone(identifier: "Atlantic/Reykjavik")))
 
-        #expect(!store.selectDay(containing: dayStart(tuesday)))
+        #expect(!store.selectDay(offsetBy: 1, from: shown))
         #expect(store.state.isLoading)
+    }
+
+    /// GMT's Monday stays on screen while Los Angeles's loads. The midnights that start GMT's
+    /// Tuesday and Sunday fall on Monday and Saturday there, so paging by their instants would
+    /// stay put or skip a day.
+    @Test func pagingGoesByTheDateOnScreenAfterAZoneChange() async throws {
+        let losAngeles = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        var losAngelesCalendar = calendar
+        losAngelesCalendar.timeZone = losAngeles
+        let store = makeStore()
+        await store.loadSelectedDay()
+        let shown = try #require(store.state.day)
+
+        store.changeTimeZone(to: losAngeles)
+
+        #expect(!store.selectDay(offsetBy: 1, from: shown))
+        #expect(losAngelesCalendar.dateComponents([.month, .day], from: store.selectedDayStart) == DateComponents(month: 9, day: 22))
+        #expect(!store.selectDay(offsetBy: -1, from: shown))
+        #expect(losAngelesCalendar.dateComponents([.month, .day], from: store.selectedDayStart) == DateComponents(month: 9, day: 20))
     }
 }
 
