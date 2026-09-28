@@ -77,6 +77,17 @@ extension SnapshotTests {
         await assertScreenSnapshot(of: timeline.environment(\.dynamicTypeSize, .accessibility5))
     }
 
+    /// The sunset line passes behind the Apple Weather mark near the sky's scheme crossover,
+    /// blurred by the bottom edge effect rather than showing through the mark's text.
+    @Test func sunsetUnderWeatherMark() async throws {
+        try await assertScreenSnapshot(of: timeline(now: time(13, 25), weather: WeatherSpell.mock(for: time(12))))
+    }
+
+    /// A forecast that misses the day marks no weather, so the sources button reads Sources.
+    @Test func weatherOnAnotherDay() async throws {
+        try await assertScreenSnapshot(of: timeline(now: time(16, 30), weather: WeatherSpell.mock(for: time(day: 17, 12))))
+    }
+
     // MARK: High-latitude days, on the dates their scenarios come from
 
     /// Reykjavík's December golden hour lasts all day and holds its color, with no daylight.

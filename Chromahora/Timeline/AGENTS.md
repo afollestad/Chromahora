@@ -13,6 +13,7 @@ These rules cover `Chromahora/Timeline/` and its tests in `ChromahoraTests/Timel
 - The soft scroll edge effect fades the content toward whatever is behind the scroll view, so its background carries a copy of the sky in step with the scroll. Paint anything new onto that copy too, or the bars tint what's under them.
 - Each label takes the color scheme of the sky behind it from `DayTimeline.labelScheme(over:)`, since white text on daylight contrasts at 1.5:1. Keep labels out of a `GlassEffectContainer`, which renders every capsule in the container's scheme.
 - Weather spells are markers in the leading column, so the overlay's spacing keeps them off every label; never position them separately. Only precipitation draws a line, since sky lines would stripe the whole day.
+- Keep `SourcesButton`'s `safeAreaBar` outside the `onGeometryChange` that measures `safeAreaInsets`, so the bottom inset clears it. It stays put while the sky scrolls, so it takes its scheme through `prefersDarkBar(over:wasDark:)`, like the bar, not `labelScheme(over:)`.
 
 ### Verifying
 

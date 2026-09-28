@@ -111,7 +111,12 @@ func assertScreenSnapshot<V: View>(
 
 /// Captures `window` until two captures in a row match, so the baseline shows the
 /// screen after its first-frame work has landed. A screen that never settles, such
-/// as one with a spinner, yields its last capture at the timeout.
+/// as one with a spinner, yields its frame at the timeout.
+///
+/// The settling captures force a render so each one waits for pending updates, but the
+/// image returned is the frame already on screen. A forced render draws the timeline's
+/// bottom scroll edge effect in either of two faintly different tints at random, while
+/// the screen holds one.
 @MainActor
 private func settledImage(of window: UIWindow) async -> UIImage {
     let format = UIGraphicsImageRendererFormat()
@@ -120,23 +125,21 @@ private func settledImage(of window: UIWindow) async -> UIImage {
     // 8-bit pixels, and reports most of a 16-bit image as mismatched even when it's identical.
     format.preferredRange = .standard
     let renderer = UIGraphicsImageRenderer(bounds: window.bounds, format: format)
-    func capture() -> UIImage {
+    func capture(afterScreenUpdates: Bool = true) -> UIImage {
         renderer.image { _ in
-            _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            _ = window.drawHierarchy(in: window.bounds, afterScreenUpdates: afterScreenUpdates)
         }
     }
 
-    var image = capture()
-    var previous = image.pngData()
+    var previous = capture().pngData()
     let deadline = ContinuousClock.now + settleTimeout
     while ContinuousClock.now < deadline {
         try? await Task.sleep(for: settleInterval)
-        image = capture()
-        let data = image.pngData()
+        let data = capture().pngData()
         if data == previous {
             break
         }
         previous = data
     }
-    return image
+    return capture(afterScreenUpdates: false)
 }

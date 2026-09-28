@@ -44,7 +44,7 @@ struct DayTimelineOverlay: View {
     private let horizontalPadding: CGFloat = 16
 
     /// Keeps a phase label held at the screen's edge visibly apart from the
-    /// navigation bar's glass and the home indicator.
+    /// navigation bar's glass, and from the home indicator or the sources button.
     private let heldLabelInset: CGFloat = 8
 
     /// Minimum vertical distance between neighboring labels on the same edge.

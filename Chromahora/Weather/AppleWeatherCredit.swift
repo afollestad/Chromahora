@@ -12,10 +12,16 @@ struct AppleWeatherCredit: View {
     /// credit needs no request and shows offline.
     private static let legalPage = URL(string: "https://weatherkit.apple.com/legal-attribution.html")
 
+    /// The mark itself, shared with `SourcesButton` so both read the same. A `Text`, so the
+    /// button can swap it for another label inside one capsule.
+    static var mark: Text {
+        Text("\(Image(systemName: "apple.logo")) Weather")
+            .accessibilityLabel("Apple Weather")
+    }
+
     var body: some View {
         HStack(spacing: 6) {
-            Text("\(Image(systemName: "apple.logo")) Weather")
-                .accessibilityLabel("Apple Weather")
+            Self.mark
             if let legalPage = Self.legalPage {
                 // Primary and underlined, since a bright sky through a popover's glass washes
                 // out tinted text.

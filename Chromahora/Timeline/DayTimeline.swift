@@ -37,11 +37,17 @@ struct DayTimeline: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var safeAreaInsets = EdgeInsets()
-    /// The timeline's top edge in global coordinates, which places the sky sample behind the title.
+    /// The timeline's top edge in global coordinates, which places the sky samples behind the
+    /// title and the sources button.
     @State private var timelineMinY: CGFloat = 0
     /// Where the scroll puts the day's top edge on screen. Only `ScrolledSky` reads it, so
     /// scrolling redraws that copy of the sky rather than the whole timeline.
     @State private var dayTop: CGFloat = 0
+    /// The sources button's center in global coordinates, which places the sky sample behind it.
+    @State private var sourcesMidY: CGFloat = 0
+    /// Like the bar, the sources button stays put while the sky scrolls under it, so it takes
+    /// the bar's hysteresis rather than a label's scheme.
+    @State private var isSourcesDark = true
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -94,7 +100,8 @@ struct DayTimeline: View {
                 .accessibilityHidden(true)
             }
             .ignoresSafeArea()
-            // Measured outside `ignoresSafeArea`, since the scroll content sees no insets at all.
+            // Measured outside `ignoresSafeArea`, since the scroll content sees no insets at all,
+            // and inside the sources button's bar, so the bottom inset includes the button.
             .onGeometryChange(for: EdgeInsets.self) { proxy in
                 proxy.safeAreaInsets
             } action: { insets in
@@ -106,8 +113,10 @@ struct DayTimeline: View {
             } action: { minY in
                 timelineMinY = minY
             }
-            // Blurs labels and lines under the bars, as Photos does, so they don't run through the clock.
-            .scrollEdgeEffectStyle(.soft, for: .top)
+            // Blurs labels and lines under the bars, as Photos does, so they don't run through the
+            // clock or the sources button. The button's glass would show a line through its text,
+            // and it stays put, so the overlay's cutout mask can't clear it.
+            .scrollEdgeEffectStyle(.soft, for: .vertical)
             .onAppear {
                 proxy.scrollTo(focusAnchorID, anchor: .center)
             }
@@ -128,10 +137,18 @@ struct DayTimeline: View {
                 }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
-                let y = geometry.visibleRect.minY + titleMidY - timelineMinY - topClearance
-                return SkyGradient.color(at: y / contentHeight, in: day)
+                sky(atGlobalY: titleMidY, in: geometry)
             } action: { _, color in
                 skyBehindTitle = color
+            }
+            .onScrollGeometryChange(for: Color.self) { geometry in
+                sky(atGlobalY: sourcesMidY, in: geometry)
+            } action: { _, color in
+                // Assigned only when it flips, so scrolling doesn't redraw the timeline every frame.
+                let isDark = Self.prefersDarkBar(over: color, wasDark: isSourcesDark)
+                if isDark != isSourcesDark {
+                    isSourcesDark = isDark
+                }
             }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 topClearance - geometry.visibleRect.minY
@@ -141,7 +158,20 @@ struct DayTimeline: View {
                     dayTop = top
                 }
             }
+            .safeAreaBar(edge: .bottom, spacing: 0) {
+                SourcesButton(showsWeather: showsWeather, scheme: isSourcesDark ? .dark : .light)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.frame(in: .global).midY
+                    } action: { midY in
+                        sourcesMidY = midY
+                    }
+            }
         }
+    }
+
+    /// Whether any spell reaches this day, which is when the overlay marks weather and the sources button credits it.
+    private var showsWeather: Bool {
+        weather.contains { $0.span(within: day) != nil }
     }
 
     private var contentHeight: CGFloat {
@@ -151,6 +181,12 @@ struct DayTimeline: View {
     /// Where the day starts in the scroll content, below the padding that lets midnight clear the bar.
     private var topClearance: CGFloat {
         safeAreaInsets.top + Self.edgeClearance
+    }
+
+    /// The sky scrolled to a point on screen, such as behind the title or the sources button.
+    private func sky(atGlobalY globalY: CGFloat, in geometry: ScrollGeometry) -> Color {
+        let y = geometry.visibleRect.minY + globalY - timelineMinY - topClearance
+        return SkyGradient.color(at: y / contentHeight, in: day)
     }
 
     /// Whether the bar should be dark over `color`. Inside `darkBarLuminance` it keeps `wasDark`.
