@@ -13,7 +13,7 @@ import Observation
 @Observable
 final class WeatherStore {
     /// What restarts a view's load: a finished location lookup, which launching and returning
-    /// to the app both run, or a reload.
+    /// to the app both run, and which choosing a place counts as, or a reload.
     struct Trigger: Hashable {
         let locatedCount: Int
         let reloadCount: Int
@@ -34,8 +34,8 @@ final class WeatherStore {
         self.provider = provider
     }
 
-    /// The spells, while they're for `place`. A time zone change moves the day store's place
-    /// before a finished lookup lets weather follow, and another place's spells mustn't show.
+    /// The spells, while they're for `place`, the place of the day on screen. A new place's
+    /// forecast can arrive before its day, and another place's spells mustn't mark the old one.
     func spells(at place: Place?) -> [WeatherSpell] {
         place == self.place ? forecast.spells : []
     }
@@ -46,8 +46,8 @@ final class WeatherStore {
     }
 
     /// Loads the forecast from the start of `now`'s day in `calendar`, which is the day store's,
-    /// so the window follows the device's time zone. A new place clears the forecast at once, and
-    /// an answer for a place that has since changed is dropped.
+    /// so the window follows the zone days are windowed to: the device's, or a chosen place's. A
+    /// new place clears the forecast at once, and an answer for a place that has since changed is dropped.
     func load(at place: Place?, now: Date, calendar: Calendar) async {
         if place != self.place {
             self.place = place

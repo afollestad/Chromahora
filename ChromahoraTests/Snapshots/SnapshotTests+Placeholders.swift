@@ -18,9 +18,10 @@ extension SnapshotTests {
         await assertScreenSnapshot(of: screen(.failed(StubError()), selectedDate: noon, now: noon))
     }
 
-    /// Location is off and the zone has no city to stand in, so only Settings can help.
+    /// Location is off and the zone has no city to stand in, so the title offers to choose a place,
+    /// and the message points to it and to Settings.
     @Test func locationNeeded() async throws {
         let noon = try time(12)
-        await assertScreenSnapshot(of: screen(.failed(PlaceError.unavailable(timeZone: "GMT")), selectedDate: noon, now: noon))
+        await assertScreenSnapshot(of: screen(.failed(PlaceError.unavailable(timeZone: "GMT")), selectedDate: noon, now: noon, place: nil))
     }
 }

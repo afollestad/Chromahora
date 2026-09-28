@@ -15,9 +15,19 @@ struct ContentView: View {
         let count: Int
     }
 
-    /// One store per window, so each window can show its own day.
+    /// Names the device's town once each lookup finishes, including after returning to the app,
+    /// so a name that failed offline is asked for again.
+    private struct NameTrigger: Hashable {
+        let place: Place?
+        let locatedCount: Int
+    }
+
+    /// One store per window, so each window can show its own day and place.
     @State private var store: SolarDayStore
     @State private var weather: WeatherStore
+    private let placeSearch: any PlaceSearch
+    private let placeNames: PlaceNames
+    private let recentPlaces: RecentPlaces
     @Environment(\.scenePhase) private var scenePhase
     #if DEBUG
     @Environment(DebugSettings.self) private var debug: DebugSettings?
@@ -27,10 +37,16 @@ struct ContentView: View {
         provider: any SolarDayProvider,
         placeProvider: any PlaceProvider,
         weatherProvider: any WeatherProvider,
+        placeSearch: any PlaceSearch,
+        placeNames: PlaceNames,
+        recentPlaces: RecentPlaces,
         selectedDate: Date = .now
     ) {
         _store = State(initialValue: SolarDayStore(provider: provider, placeProvider: placeProvider, selectedDate: selectedDate))
         _weather = State(initialValue: WeatherStore(provider: weatherProvider))
+        self.placeSearch = placeSearch
+        self.placeNames = placeNames
+        self.recentPlaces = recentPlaces
     }
 
     var body: some View {
@@ -42,8 +58,11 @@ struct ContentView: View {
                     selectedDate: $store.selectedDate,
                     calendar: store.calendar,
                     place: store.place,
-                    weather: weather.spells(at: store.place),
-                    hours: weather.hours(at: store.place),
+                    deviceName: placeNames.name(for: store.place),
+                    chooser: chooser,
+                    // For the day on screen, which keeps the last place's until the new one's loads.
+                    weather: weather.spells(at: store.shownPlace),
+                    hours: weather.hours(at: store.shownPlace),
                     initialPane: initialPane,
                     onRetry: store.reload,
                     onPage: store.selectDay(offsetBy:from:)
@@ -68,6 +87,11 @@ struct ContentView: View {
                 store.changeTimeZone(to: Calendar.current.timeZone)
             }
         }
+        .task(id: NameTrigger(place: store.place, locatedCount: store.locatedCount)) {
+            if let place = store.place {
+                await placeNames.load(place)
+            }
+        }
         // Waits for each location lookup, so no request goes to a stored place the device has
         // left, and only asks WeatherKit when its throttle allows.
         .task(id: WeatherStore.Trigger(locatedCount: store.locatedCount, reloadCount: store.reloadCount)) {
@@ -77,7 +101,28 @@ struct ContentView: View {
         }
         #if DEBUG
         .debugDrawer(store: store, settings: debug)
+        // `-DebugChosenPlace` opens on a chosen place, since `simctl` can't type into the search.
+        .task {
+            if let place = debug?.chosenPlace {
+                store.choose(place, now: now(from: .now))
+            }
+        }
         #endif
+    }
+
+    /// Chooses places for this window's store, at the time the choice is made.
+    private var chooser: PlaceChooser {
+        let store = store
+        // Read here, where the environment is installed, rather than whenever a place is chosen.
+        let nowOverride = nowOverride
+        return PlaceChooser(search: placeSearch, recents: recentPlaces) { place in
+            let now = nowOverride ?? .now
+            if let place {
+                store.choose(place, now: now)
+            } else {
+                store.useCurrentLocation(now: now)
+            }
+        }
     }
 
     /// The page beside the timeline to open on, which `-DebugPane` sets in debug builds.
@@ -91,14 +136,27 @@ struct ContentView: View {
 
     /// The time the app shows as now, which the debug drawer can override.
     private func now(from date: Date) -> Date {
+        nowOverride ?? date
+    }
+
+    /// The debug drawer's clock, if it overrides the real one.
+    private var nowOverride: Date? {
         #if DEBUG
-        debug?.nowOverride ?? date
+        debug?.nowOverride
         #else
-        date
+        nil
         #endif
     }
 }
 
 #Preview {
-    ContentView(provider: MockSolarDayProvider(), placeProvider: MockPlaceProvider(), weatherProvider: MockWeatherProvider())
+    let search = MockPlaceSearch()
+    ContentView(
+        provider: MockSolarDayProvider(),
+        placeProvider: MockPlaceProvider(),
+        weatherProvider: MockWeatherProvider(),
+        placeSearch: search,
+        placeNames: PlaceNames(search: search, defaults: nil),
+        recentPlaces: RecentPlaces(defaults: nil)
+    )
 }

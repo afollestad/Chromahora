@@ -31,8 +31,21 @@ extension ScreenSnapshotting {
     /// Built from local components, so the mock day's times and the labels formatted
     /// from them read the same wherever the tests run.
     func time(month: Int = 9, day: Int = 16, _ hour: Int, _ minute: Int = 0) throws -> Date {
+        try time(month: month, day: day, hour, minute, in: .current)
+    }
+
+    /// A time in 2026 on the clock of `calendar`, as for a place chosen in another zone. Its mock
+    /// day and labels read in that zone, so they read the same wherever the tests run.
+    func time(month: Int = 9, day: Int = 16, _ hour: Int, _ minute: Int = 0, in calendar: Calendar) throws -> Date {
         let components = DateComponents(year: 2026, month: month, day: day, hour: hour, minute: minute)
-        return try #require(Calendar.current.date(from: components))
+        return try #require(calendar.date(from: components))
+    }
+
+    /// The device's calendar in the zone named `identifier`.
+    func calendar(in identifier: String) throws -> Calendar {
+        var calendar = Calendar.current
+        calendar.timeZone = try #require(TimeZone(identifier: identifier))
+        return calendar
     }
 
     /// The timeline for `scenario` on the day containing `now`.
@@ -40,19 +53,22 @@ extension ScreenSnapshotting {
         timeline(of: SolarDay.mock(scenario, for: now), now: now)
     }
 
-    func timeline(of day: SolarDay, now: Date, weather: [WeatherSpell] = [], place: Place? = nil) -> some View {
-        screen(.loaded(day), selectedDate: day.dayStart, now: now, weather: weather, place: place)
+    /// The timeline for `day`, read in the day's own zone, as the store windows it.
+    func timeline(of day: SolarDay, now: Date, weather: [WeatherSpell] = [], place: Place? = MockPlaceProvider.sanFrancisco) -> some View {
+        screen(.loaded(day), selectedDate: day.dayStart, now: now, weather: weather, place: place, calendar: day.calendar)
     }
 
-    /// The screen in `state`, with `selectedDate` chosen, at `now`, open on `initialPane`. Only
-    /// the day panel names `place`, so it shows only in wide snapshots.
+    /// The screen in `state`, with `selectedDate` chosen, at `now`, open on `initialPane`. The title
+    /// names `place`, by `deviceName` when it's the device's, and dates read in `calendar`'s zone.
     func screen(
         _ state: SolarDayStore.LoadState,
         selectedDate: Date,
         now: Date,
         weather: [WeatherSpell] = [],
         hours: [SkyHour] = [],
-        place: Place? = nil,
+        place: Place? = MockPlaceProvider.sanFrancisco,
+        deviceName: String? = "San Francisco",
+        calendar: Calendar = .current,
         initialPane: DayPager.Pane = .timeline
     ) -> some View {
         NavigationStack {
@@ -60,7 +76,10 @@ extension ScreenSnapshotting {
                 state: state,
                 now: now,
                 selectedDate: .constant(selectedDate),
+                calendar: calendar,
                 place: place,
+                deviceName: deviceName,
+                chooser: .preview,
                 weather: weather,
                 hours: hours,
                 initialPane: initialPane

@@ -20,11 +20,17 @@ struct ChromahoraApp: App {
     private let provider: any SolarDayProvider
     private let placeProvider: any PlaceProvider
     private let weatherProvider: any WeatherProvider
+    /// Shared by every window too, so windows share town lookups, and a place chosen in one is
+    /// recent in the others.
+    private let placeSearch = MapKitPlaceSearch()
+    private let placeNames: PlaceNames
+    private let recentPlaces = RecentPlaces()
     #if DEBUG
     @State private var debug: DebugSettings
     #endif
 
     init() {
+        placeNames = PlaceNames(search: placeSearch)
         let provider = SunriseSunsetProvider(cache: cache)
         let placeProvider = DevicePlaceProvider()
         let forecastCache = ForecastCache()
@@ -61,10 +67,25 @@ struct ChromahoraApp: App {
     @ViewBuilder
     private var content: some View {
         #if DEBUG
-        ContentView(provider: provider, placeProvider: placeProvider, weatherProvider: weatherProvider, selectedDate: debug.nowOverride ?? .now)
-            .environment(debug)
+        ContentView(
+            provider: provider,
+            placeProvider: placeProvider,
+            weatherProvider: weatherProvider,
+            placeSearch: placeSearch,
+            placeNames: placeNames,
+            recentPlaces: recentPlaces,
+            selectedDate: debug.nowOverride ?? .now
+        )
+        .environment(debug)
         #else
-        ContentView(provider: provider, placeProvider: placeProvider, weatherProvider: weatherProvider)
+        ContentView(
+            provider: provider,
+            placeProvider: placeProvider,
+            weatherProvider: weatherProvider,
+            placeSearch: placeSearch,
+            placeNames: placeNames,
+            recentPlaces: recentPlaces
+        )
         #endif
     }
 }

@@ -41,4 +41,13 @@ extension WideSnapshotTests {
     @Test func blueHourPastMidnightAtEnd() async throws {
         try await assertScreenSnapshot(of: timeline(.blueHourPastMidnight, now: june(23, 50)), on: .wide)
     }
+
+    /// Kyoto, chosen from another zone: the title names it, and the panel's calendar marks the
+    /// day on Kyoto's clock. Early morning there is still the day before across the Americas, so a
+    /// title or calendar reading the device's zone would name June 20.
+    @Test func chosenPlace() async throws {
+        let kyoto = try calendar(in: "Asia/Tokyo")
+        let now = try june(7, in: kyoto)
+        await assertScreenSnapshot(of: timeline(of: SolarDay.mock(for: now, calendar: kyoto), now: now, place: MockPlaceSearch.kyoto), on: .wide)
+    }
 }

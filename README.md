@@ -2,7 +2,7 @@
 
 Chromahora is an iOS app designed to show photographers when blue hour and golden hour are in a given day.
 
-Sun and moon times come from [sunrise-sunset.org](https://sunrise-sunset.org), and weather from [Apple WeatherKit](https://developer.apple.com/weatherkit/). Live weather needs WeatherKit enabled for the App ID, under both Capabilities and App Services.
+Sun and moon times come from [sunrise-sunset.org](https://sunrise-sunset.org), weather from [Apple WeatherKit](https://developer.apple.com/weatherkit/), and place search and town names from Apple Maps. Live weather needs WeatherKit enabled for the App ID, under both Capabilities and App Services.
 
 ## Development
 

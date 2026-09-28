@@ -136,4 +136,15 @@ extension SnapshotTests {
     @Test func polarNight() async throws {
         try await assertScreenSnapshot(of: timeline(.polarNight, now: time(month: 12, day: 21, 12)))
     }
+
+    // MARK: Chosen places
+
+    /// Kyoto, chosen from another zone: the title names it without the location glyph, and the
+    /// day, its hours and now read on Kyoto's clock wherever the tests run. Early morning there is
+    /// still the day before across the Americas, so a title reading the device's zone would name it.
+    @Test func chosenPlace() async throws {
+        let kyoto = try calendar(in: "Asia/Tokyo")
+        let now = try time(7, in: kyoto)
+        await assertScreenSnapshot(of: timeline(of: SolarDay.mock(for: now, calendar: kyoto), now: now, place: MockPlaceSearch.kyoto))
+    }
 }

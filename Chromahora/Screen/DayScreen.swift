@@ -17,8 +17,12 @@ struct DayScreen: View {
     /// The store's, whose zone the days are windowed to. Dates outside a `SolarDay` read in
     /// it, since a place in another zone keeps its own clock.
     var calendar: Calendar = .current
-    /// Where the day is for, which the day picker names.
+    /// Where the day is for, which the title names.
     var place: Place?
+    /// The town the device's place lies in, once found, which the title names it by.
+    var deviceName: String?
+    /// The search, recent places and choice behind the title's location sheet.
+    let chooser: PlaceChooser
     /// The forecast's spells, which the timeline marks on the day they fall on.
     var weather: [WeatherSpell] = []
     /// The forecast's hours, which the day's details read its light and sky from.
@@ -57,7 +61,6 @@ struct DayScreen: View {
                         now: now,
                         selectedDate: $selectedDate,
                         calendar: calendar,
-                        place: place,
                         weather: weather,
                         hours: hours,
                         onToday: { focus.request() },
@@ -87,6 +90,8 @@ struct DayScreen: View {
                     now: now,
                     calendar: calendar,
                     place: place,
+                    deviceName: deviceName,
+                    chooser: chooser,
                     showsDayPicker: !showsPanel,
                     onTitleMidY: { titleMidY = $0 },
                     onToday: { focus.request() }
@@ -186,6 +191,9 @@ private struct BarScheme: View {
             state: .loaded(.mock(for: selectedDate)),
             now: .now,
             selectedDate: $selectedDate,
+            place: MockPlaceProvider.sanFrancisco,
+            deviceName: "San Francisco",
+            chooser: .preview,
             weather: WeatherSpell.mock(for: selectedDate),
             hours: SkyHour.mock(for: selectedDate)
         ) {}
@@ -199,6 +207,9 @@ private struct BarScheme: View {
             state: .loaded(.mock(for: selectedDate)),
             now: .now,
             selectedDate: $selectedDate,
+            place: MockPlaceProvider.sanFrancisco,
+            deviceName: "San Francisco",
+            chooser: .preview,
             weather: WeatherSpell.mock(for: selectedDate),
             hours: SkyHour.mock(for: selectedDate),
             initialPane: .details
@@ -214,6 +225,8 @@ private struct BarScheme: View {
             now: .now,
             selectedDate: $selectedDate,
             place: MockPlaceProvider.sanFrancisco,
+            deviceName: "San Francisco",
+            chooser: .preview,
             weather: WeatherSpell.mock(for: selectedDate),
             hours: SkyHour.mock(for: selectedDate)
         ) {}
@@ -224,20 +237,20 @@ private struct BarScheme: View {
 #Preview("Loading another day") {
     @Previewable @State var selectedDate = Date.now
     NavigationStack {
-        DayScreen(state: .loading(.mock(for: selectedDate)), now: .now, selectedDate: $selectedDate) {}
+        DayScreen(state: .loading(.mock(for: selectedDate)), now: .now, selectedDate: $selectedDate, chooser: .preview) {}
     }
 }
 
 #Preview("Loading") {
     @Previewable @State var selectedDate = Date.now
     NavigationStack {
-        DayScreen(state: .loading(nil), now: .now, selectedDate: $selectedDate) {}
+        DayScreen(state: .loading(nil), now: .now, selectedDate: $selectedDate, chooser: .preview) {}
     }
 }
 
 #Preview("Failed") {
     @Previewable @State var selectedDate = Date.now
     NavigationStack {
-        DayScreen(state: .failed(CancellationError()), now: .now, selectedDate: $selectedDate) {}
+        DayScreen(state: .failed(CancellationError()), now: .now, selectedDate: $selectedDate, chooser: .preview) {}
     }
 }

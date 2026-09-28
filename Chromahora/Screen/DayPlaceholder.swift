@@ -32,12 +32,16 @@ struct DayPlaceholder: View {
 
     @ViewBuilder
     private func failure(_ error: any Error) -> some View {
-        if case PlaceError.unavailable(let timeZone) = error {
-            // Retrying can't help until location is on: the zone has no city to fall back to.
+        if case PlaceError.unavailable(let zoneIdentifier) = error {
+            // Retrying can't help, since the zone has no city to fall back to: only location or a
+            // chosen place can.
             ContentUnavailableView {
                 Label("Location Needed", systemImage: "location.slash")
             } description: {
-                Text("Chromahora can't tell where you are from the \(timeZone) time zone. Turn on location to see sun times.")
+                Text("""
+                    Chromahora can't tell where you are from the \(zoneIdentifier) time zone. \
+                    Turn on location, or choose a place at the top, to see sun times.
+                    """)
             } actions: {
                 if let settings = URL(string: UIApplication.openSettingsURLString) {
                     Link("Open Settings", destination: settings)

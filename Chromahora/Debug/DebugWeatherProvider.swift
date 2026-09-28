@@ -22,7 +22,10 @@ struct DebugWeatherProvider: WeatherProvider {
                 throw error
             }
         case .mock:
-            return try await MockWeatherProvider().forecast(from: start, to: end, at: place)
+            // On the place's own clock, so a chosen place in another zone gets the mock day's hours.
+            var calendar = Calendar.current
+            calendar.timeZone = place.timeZone ?? .current
+            return try await MockWeatherProvider(calendar: calendar).forecast(from: start, to: end, at: place)
         case .off:
             return Forecast()
         }

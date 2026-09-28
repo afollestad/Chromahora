@@ -16,7 +16,13 @@ nonisolated struct Place: Hashable, Codable, Sendable {
         case device
         /// The reference city of the named time zone, standing in for a location.
         case timeZone(String)
+        /// A place the person searched for, named as they picked it, with the zone its days
+        /// are windowed to, since it may lie far from the device's.
+        case chosen(name: String, timeZone: String)
     }
+
+    /// What the title names while nothing places the device, as in a zone with no city.
+    static let unplacedTitle = "Choose a Place"
 
     let latitudeTenths: Int
     let longitudeTenths: Int
@@ -36,13 +42,50 @@ nonisolated struct Place: Hashable, Codable, Sendable {
         Double(longitudeTenths) / 10
     }
 
-    /// Where the times are for, in a phrase for the day picker.
-    var summary: String {
+    /// The name a chosen place was picked by. Nil for the device's own place.
+    var name: String? {
+        if case .chosen(let name, _) = source { name } else { nil }
+    }
+
+    /// The zone a chosen place's days are windowed to. Nil for the device's own place, whose
+    /// days follow the device's zone.
+    var timeZone: TimeZone? {
+        if case .chosen(_, let identifier) = source { TimeZone(identifier: identifier) } else { nil }
+    }
+
+    /// What the title calls the place: a chosen place's name, the device's town once
+    /// `deviceName` has it, or the time zone's city.
+    func title(deviceName: String?) -> String {
         switch source {
         case .device:
-            "At your location"
+            deviceName ?? "Current Location"
+        case .timeZone(let identifier):
+            Self.cityName(of: identifier)
+        case .chosen(let name, _):
+            name
+        }
+    }
+
+    /// The symbol beside the title, which tells the device's place from a stand-in for it. The
+    /// stand-in shows while the first permission prompt is up, so it isn't marked as denied.
+    var glyph: String? {
+        switch source {
+        case .device: "location.fill"
+        case .timeZone: "location"
+        case .chosen: nil
+        }
+    }
+
+    /// A note under the place in the location sheet: how the time zone stands in for the device,
+    /// or the zone a chosen place's times read in. Nil for a device fix, which needs none.
+    var note: String? {
+        switch source {
+        case .device:
+            nil
         case .timeZone(let identifier):
             "Approximate, from your time zone (\(Self.cityName(of: identifier)))"
+        case .chosen(_, let identifier):
+            "Times in \(TimeZone(identifier: identifier)?.localizedName(for: .generic, locale: .current) ?? Self.cityName(of: identifier))"
         }
     }
 

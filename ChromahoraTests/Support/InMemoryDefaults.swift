@@ -7,8 +7,8 @@ import Foundation
 
 /// Defaults held in memory for as long as the instance lives. A real suite leaves its plist
 /// in the test host's preferences on every run: cfprefsd writes it back, empty, even after
-/// `removePersistentDomain` and deleting the file. Unchecked, since `DevicePlaceProvider` and its
-/// tests only reach it from the main actor.
+/// `removePersistentDomain` and deleting the file. Unchecked, since `DevicePlaceProvider`,
+/// `PlaceNames`, `RecentPlaces` and their tests only reach it from the main actor.
 final class InMemoryDefaults: UserDefaults, @unchecked Sendable {
     private var values: [String: Any] = [:]
 

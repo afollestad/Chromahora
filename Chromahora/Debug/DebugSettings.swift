@@ -56,6 +56,8 @@ final class DebugSettings {
     var nowOverride: Date?
     /// Stands in for wherever the place provider would put the device.
     var placeOverride: Place?
+    /// A place chosen at launch, as if picked from the location sheet.
+    var chosenPlace: Place?
     var opensPanelOnLaunch: Bool
     /// The page beside the timeline the app opens on, since `simctl` can't swipe to it.
     var initialPane: DayPager.Pane
@@ -67,15 +69,17 @@ final class DebugSettings {
     var forecastCache: ForecastCache?
 
     /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugWeather`, `-DebugNow`, `-DebugPlace`,
-    /// `-DebugPanel` and `-DebugPane` from `arguments`, ignoring values it can't parse. `-DebugNow` is
-    /// local time, as in `2026-09-16T03:00:00`, `-DebugPlace` is as in `59.9N,30.3E`, and `-DebugPane`
-    /// is `timeline` or `details`.
+    /// `-DebugChosenPlace`, `-DebugPanel` and `-DebugPane` from `arguments`, ignoring values it can't
+    /// parse. `-DebugNow` is the device's local time, as in `2026-09-16T03:00:00`, even beside a chosen
+    /// place in another zone. `-DebugPlace` is as in `59.9N,30.3E`, `-DebugChosenPlace` adds a zone and
+    /// a name, as in `35.0N,135.8E,Asia/Tokyo,Kyoto`, and `-DebugPane` is `timeline` or `details`.
     init(arguments: [String: Any] = [:], timeZone: TimeZone = .current) {
         providerMode = (arguments["DebugProviderMode"] as? String).flatMap(ProviderMode.init(rawValue:)) ?? .live
         scenario = (arguments["DebugScenario"] as? String).flatMap(MockScenario.init(rawValue:))
         weatherMode = (arguments["DebugWeather"] as? String).flatMap(WeatherMode.init(rawValue:)) ?? .live
         nowOverride = (arguments["DebugNow"] as? String).flatMap { Self.localDate(from: $0, in: timeZone) }
         placeOverride = (arguments["DebugPlace"] as? String).flatMap(Self.place(from:))
+        chosenPlace = (arguments["DebugChosenPlace"] as? String).flatMap(Self.chosenPlace(from:))
         opensPanelOnLaunch = (arguments["DebugPanel"] as? String).map(Self.isTrue) ?? false
         initialPane = (arguments["DebugPane"] as? String).flatMap(DayPager.Pane.init(rawValue:)) ?? .timeline
     }
@@ -107,6 +111,19 @@ final class DebugSettings {
             return nil
         }
         return Place(latitude: latitude, longitude: longitude, source: .device)
+    }
+
+    /// A place as `place(from:)` reads it, then its zone and name, as in `35.0N,135.8E,Asia/Tokyo,Kyoto`.
+    /// Only the coordinates are uppercased, since zones and names are case-sensitive.
+    private nonisolated static func chosenPlace(from string: String) -> Place? {
+        let parts = string.split(separator: ",", maxSplits: 3).map { $0.trimmingCharacters(in: .whitespaces) }
+        guard parts.count == 4,
+              let place = place(from: "\(parts[0]),\(parts[1])"),
+              TimeZone(identifier: parts[2]) != nil,
+              !parts[3].isEmpty else {
+            return nil
+        }
+        return Place(latitude: place.latitude, longitude: place.longitude, source: .chosen(name: parts[3], timeZone: parts[2]))
     }
 
     private nonisolated static func degrees(_ text: String, negative: Character, positive: Character) -> Double? {

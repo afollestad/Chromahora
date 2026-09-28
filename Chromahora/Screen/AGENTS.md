@@ -9,6 +9,8 @@ These rules cover `Chromahora/Screen/`: the screen around the timeline, its tool
 - Give the timeline the day panel's footprint as `panelInset` and the placeholder as `safeAreaPadding`, both zero without a panel. Never branch around them for it, which rebuilds them and loses the scroll and the glow.
 - Align anything to the screen's edges, like the panel, on `DayScreen`'s `Color.clear` base rather than inside its layers. The loading glow is wider than the screen, and widens any stack that holds it past both edges.
 - Give anything presented from the toolbar `.foregroundStyle(Color.primary)`, not `.primary`, and `.tint(.accentColor)`. Once a drag turns the bar dark, its items pass white down.
+- In a list, give a button's label `Color.primary` and `Color.secondary`, not `.primary` and `.secondary`, which are levels of the button's tint.
+- Keep the Apple Maps credit at the foot of the location sheet, whose suggestions and the device's town come from Apple Maps.
 - Start looping animations with `withAnimation` from `.task`, never `.animation(_:value:)`, so the snapshot harness's transaction can stop them on their end state.
 - SwiftUI keeps the transition a view was inserted with, so turn a removal effect on or off through the animation that drives it, as `DayScreen` does for the reveal.
 - A mask inside a transition lays out in the safe area. Give its content `.ignoresSafeArea()`, or it uncovers the system background under the bar and home indicator.

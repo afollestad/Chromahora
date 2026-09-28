@@ -15,7 +15,8 @@ These rules cover `ChromahoraTests/Snapshots/`: `SnapshotTests` and its `+Topic`
 ### Writing
 
 - Build dates with `time(month:day:_:_:)`, never absolute timestamps. It uses local components, so labels match in every time zone, as long as the day has no daylight saving change anywhere: September 16, June 21, December 10 and December 21 are safe.
-- Snapshot screens through `DayScreen`, with `timeline(now:)`, `timeline(_:now:)` or `screen(_:selectedDate:now:)`, never `ContentView`, whose `TimelineView` reads the real clock and whose store loads.
+- Build a chosen place's day and dates in its own calendar with `time(month:day:_:_:in:)` or `june(day:_:_:in:)` and `calendar(in:)`, so they read the same in every time zone. Pick an hour that falls on another date across the Americas, so a date read in the device's zone fails rather than matching.
+- Snapshot screens through `DayScreen`, with `timeline(now:)`, `timeline(_:now:)` or `screen(_:selectedDate:now:)`, never `ContentView`, whose `TimelineView` reads the real clock and whose store loads. Snapshot a sheet directly, and pin its color scheme, since the harness leaves the scheme to the simulator.
 - The status bar, Dynamic Island and home indicator draw outside the app and never appear. Check them with simulator screenshots.
 - Put screens with the day panel in `WideSnapshotTests+Topic.swift`, dated in June 2026 with `june(day:_:_:)`. The panel's calendar marks the real today, and `time` fixes the year, so a later month would fail once it arrives.
 - Group tests into `SnapshotTests+Topic.swift` files by screen. Moving a test between files moves its baseline under `__Snapshots__/`, so move or re-record the PNG with it.

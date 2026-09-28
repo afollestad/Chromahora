@@ -65,6 +65,23 @@ struct ForecastCacheTests {
         #expect(await cache.record(for: record.key) == record)
     }
 
+    /// Past midnight a place's forecast starts a day later, and its last window is never asked for again.
+    @Test func aNewWindowReplacesAPlacesLastOne() async {
+        let cache = ForecastCache(directory: directory)
+        let tomorrow = start.addingTimeInterval(24 * 60 * 60)
+        let next = ForecastRecord(
+            key: ForecastKey(place: place, start: tomorrow, end: tomorrow.addingTimeInterval(10 * 24 * 60 * 60)),
+            attemptedAt: start.addingTimeInterval(60),
+            forecast: nil
+        )
+
+        await cache.store(record)
+        await cache.store(next)
+
+        #expect(await cache.record(for: record.key) == nil)
+        #expect(await cache.record(for: next.key) == next)
+    }
+
     /// A record an interval away from the newest would be asked again anyway, on either side of it.
     @Test func recordsTooFarFromTheNewestAreDropped() async {
         let cache = ForecastCache(directory: directory, retention: 60 * 60)

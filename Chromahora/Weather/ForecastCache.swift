@@ -19,6 +19,10 @@ nonisolated struct ForecastKey: Hashable, Codable, Sendable {
         self.start = start
         self.end = end
     }
+
+    func isSamePlace(as other: ForecastKey) -> Bool {
+        latitudeTenths == other.latitudeTenths && longitudeTenths == other.longitudeTenths
+    }
 }
 
 /// The last request made for a forecast, and its answer.
@@ -45,7 +49,7 @@ nonisolated struct ForecastRecord: Codable, Equatable, Sendable {
 /// holds its pace across relaunches and while the person switches between places. It lives in
 /// Caches, where the system may purge it at the cost of a request per place.
 actor ForecastCache {
-    /// Room for the device's place and a handful of others, so switching among them within the
+    /// Room for the device's place and every recent place, so switching among them within the
     /// throttle's interval never asks again.
     static let capacity = 6
 
@@ -69,12 +73,14 @@ actor ForecastCache {
         records().max { $0.attemptedAt < $1.attemptedAt }
     }
 
-    /// Replaces the record for `record`'s key, and drops records too far from it to answer and
-    /// the oldest past `capacity`. The distance counts either side, like the throttle's, so a
-    /// clock set back far can't keep a record alive. A failed write only costs a request later.
+    /// Replaces the record for `record`'s place, whatever window it covered, since only a place's
+    /// newest window is asked for again, so `capacity` counts places. Drops records too far from it
+    /// to answer, and the oldest past `capacity`. The distance counts either side, like the
+    /// throttle's, so a clock set back far can't keep a record alive. A failed write only costs a
+    /// request later.
     func store(_ record: ForecastRecord) {
         var kept = records().filter {
-            $0.key != record.key && abs($0.attemptedAt.timeIntervalSince(record.attemptedAt)) < retention
+            !$0.key.isSamePlace(as: record.key) && abs($0.attemptedAt.timeIntervalSince(record.attemptedAt)) < retention
         }
         kept.append(record)
         kept.sort { $0.attemptedAt > $1.attemptedAt }

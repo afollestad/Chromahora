@@ -40,7 +40,7 @@ struct TimeZonePlaceProvider: PlaceProvider {
 /// Always answers with `place`, for previews and tests.
 struct MockPlaceProvider: PlaceProvider {
     /// Central San Francisco.
-    static let sanFrancisco = Place(latitude: 37.8, longitude: -122.4, source: .device)
+    nonisolated static let sanFrancisco = Place(latitude: 37.8, longitude: -122.4, source: .device)
 
     var place = Self.sanFrancisco
 

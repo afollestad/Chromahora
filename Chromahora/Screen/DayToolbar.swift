@@ -5,9 +5,10 @@
 
 import SwiftUI
 
-/// The title and calendar button, shared by the timeline and its placeholders so they
-/// stay put while a day loads, and so the calendar can leave a day that failed. A wide
-/// window drops the button, since the day panel shows the calendar.
+/// The title, which names the place and opens the location sheet, and the calendar button,
+/// shared by the timeline and its placeholders so they stay put while a day loads, and so
+/// either can leave a day that failed. A wide window drops the button, since the day panel
+/// shows the calendar.
 struct DayToolbar: ToolbarContent {
     let isLoading: Bool
     @Binding var skyColor: Color
@@ -16,60 +17,113 @@ struct DayToolbar: ToolbarContent {
     /// The store's, whose zone reads the selected date.
     var calendar: Calendar = .current
     var place: Place?
+    /// The town the device's place lies in, once found.
+    var deviceName: String?
+    let chooser: PlaceChooser
     var showsDayPicker = true
     let onTitleMidY: (CGFloat) -> Void
     let onToday: () -> Void
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            TitlePill(date: selectedDate, timeZone: calendar.timeZone, isLoading: isLoading, skyColor: $skyColor)
-                .onGeometryChange(for: CGFloat.self) { proxy in
-                    proxy.frame(in: .global).midY
-                } action: { midY in
-                    onTitleMidY(midY)
-                }
+            TitlePill(
+                date: selectedDate,
+                timeZone: calendar.timeZone,
+                place: place,
+                deviceName: deviceName,
+                chooser: chooser,
+                isLoading: isLoading,
+                skyColor: $skyColor
+            )
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.frame(in: .global).midY
+            } action: { midY in
+                onTitleMidY(midY)
+            }
         }
+        // The pill brings its own tinted glass, which the bar's glass behind a button would double.
+        .sharedBackgroundVisibility(.hidden)
 
         // An `if` rather than `hidden(_:)`, which iOS doesn't offer for toolbar content.
         if showsDayPicker {
             ToolbarItem(placement: .primaryAction) {
-                DayPickerButton(selection: $selectedDate, now: now, calendar: calendar, place: place, onToday: onToday)
+                DayPickerButton(selection: $selectedDate, now: now, calendar: calendar, onToday: onToday)
             }
         }
     }
 }
 
-/// The title and day on glass tinted with the sky behind it, so the glass carries
-/// its backdrop's hue through the blended phases. It takes the color as a binding
-/// so that only this view, not the whole timeline, redraws on each frame of a scroll.
+/// The place and day on glass tinted with the sky behind it, so the glass carries its
+/// backdrop's hue through the blended phases, which opens the location sheet. It takes the
+/// color as a binding so that only this view, not the whole timeline, redraws on each frame
+/// of a scroll.
 private struct TitlePill: View {
     let date: Date
     let timeZone: TimeZone
+    let place: Place?
+    let deviceName: String?
+    let chooser: PlaceChooser
     /// Another day is on its way while the last one stays on screen.
     let isLoading: Bool
     @Binding var skyColor: Color
 
+    @State private var isChoosingPlace = false
+
     var body: some View {
-        VStack(spacing: 1) {
-            Text("Chromahora")
-                .font(.headline)
-            HStack(spacing: 4) {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.mini)
+        Button {
+            isChoosingPlace = true
+        } label: {
+            VStack(spacing: 1) {
+                HStack(spacing: 4) {
+                    if let glyph = place?.glyph {
+                        Image(systemName: glyph)
+                            .font(.caption)
+                            .accessibilityHidden(true)
+                    }
+                    Text(place?.title(deviceName: deviceName) ?? Place.unplacedTitle)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.bold))
                         .accessibilityHidden(true)
                 }
-                // Primary rather than secondary, which drops below 3:1 on the tinted glass.
-                // The smaller, lighter font already ranks it below the title.
-                Text(date.dayTitle(in: timeZone))
-                    .font(.caption)
+                HStack(spacing: 4) {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .accessibilityHidden(true)
+                    }
+                    // Primary rather than secondary, which drops below 3:1 on the tinted glass.
+                    // The smaller, lighter font already ranks it below the title.
+                    Text(date.dayTitle(in: timeZone))
+                        .font(.caption)
+                }
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .contentShape(Capsule())
+            .glassEffect(.regular.tint(skyColor.opacity(0.5)).interactive(), in: Capsule())
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .glassEffect(.regular.tint(skyColor.opacity(0.5)), in: Capsule())
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(spokenPlace), \(date.dayTitle(in: timeZone))")
         .accessibilityValue(isLoading ? Text("Loading") : Text(verbatim: ""))
+        .accessibilityHint("Opens a search to choose where the times are for")
+        // The bar holds its text to one size, so a long press shows it larger.
+        .accessibilityShowsLargeContentViewer()
+        .sheet(isPresented: $isChoosingPlace) {
+            PlaceSearchSheet(place: place, deviceName: deviceName, chooser: chooser)
+        }
+    }
+
+    /// The place as VoiceOver reads it, saying what the hidden glyph shows: where the device is, or
+    /// a stand-in for it from the time zone.
+    private var spokenPlace: String {
+        let title = place?.title(deviceName: deviceName) ?? Place.unplacedTitle
+        return switch place?.source {
+        case .device: deviceName.map { "Current location, \($0)" } ?? title
+        case .timeZone: "Approximate location, \(title)"
+        case .chosen, nil: title
+        }
     }
 }
 
@@ -78,7 +132,6 @@ private struct DayPickerButton: View {
     @Binding var selection: Date
     let now: Date
     let calendar: Calendar
-    let place: Place?
     let onToday: () -> Void
 
     @State private var isChoosingDay = false
@@ -93,7 +146,7 @@ private struct DayPickerButton: View {
         .accessibilityValue(selection.dayTitle(in: calendar.timeZone))
         .accessibilityHint("Opens a calendar to choose the day to show")
         .popover(isPresented: $isChoosingDay, arrowEdge: .top) {
-            DayPicker(selection: $selection, calendar: calendar, place: place) {
+            DayPicker(selection: $selection, calendar: calendar) {
                 // `now`, not `.now`, so Today follows the debug drawer's clock.
                 selection = now
                 isChoosingDay = false
@@ -119,7 +172,17 @@ private struct DayPickerButton: View {
         DayPhase.daylight.color
             .ignoresSafeArea()
             .toolbar {
-                DayToolbar(isLoading: true, skyColor: $sky, selectedDate: $selectedDate, now: .now, onTitleMidY: { _ in }, onToday: {})
+                DayToolbar(
+                    isLoading: true,
+                    skyColor: $sky,
+                    selectedDate: $selectedDate,
+                    now: .now,
+                    place: MockPlaceProvider.sanFrancisco,
+                    deviceName: "San Francisco",
+                    chooser: .preview,
+                    onTitleMidY: { _ in },
+                    onToday: {}
+                )
             }
     }
 }

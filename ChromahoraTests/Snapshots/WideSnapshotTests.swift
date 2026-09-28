@@ -16,14 +16,14 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct WideSnapshotTests: ScreenSnapshotting {
-    /// A time on June 21, 2026, or another day that June.
-    func june(day: Int = 21, _ hour: Int, _ minute: Int = 0) throws -> Date {
-        try time(month: 6, day: day, hour, minute)
+    /// A time on June 21, 2026, or another day that June, on the clock of `calendar`.
+    func june(day: Int = 21, _ hour: Int, _ minute: Int = 0, in calendar: Calendar = .current) throws -> Date {
+        try time(month: 6, day: day, hour, minute, in: calendar)
     }
 
     /// The timeline for June 21 at `now`, which may fall on another day, marked with
     /// `weather`, at a place found by location.
     func timeline(now: Date, weather: [WeatherSpell] = []) throws -> some View {
-        timeline(of: SolarDay.mock(for: try june(12)), now: now, weather: weather, place: MockPlaceProvider.sanFrancisco)
+        timeline(of: SolarDay.mock(for: try june(12)), now: now, weather: weather)
     }
 }

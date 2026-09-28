@@ -471,17 +471,3 @@ struct SolarDayStoreTests {
         #expect(losAngelesCalendar.dateComponents([.month, .day], from: store.selectedDayStart) == DateComponents(month: 9, day: 20))
     }
 }
-
-private extension SolarDayStore.LoadState {
-    var isLoading: Bool {
-        if case .loading = self { true } else { false }
-    }
-
-    var loadedDay: SolarDay? {
-        if case .loaded(let day) = self { day } else { nil }
-    }
-
-    var failure: (any Error)? {
-        if case .failed(let error) = self { error } else { nil }
-    }
-}

@@ -48,18 +48,26 @@ final class SolarDayStore {
     /// The day to show. Any time within the day selects it.
     var selectedDate: Date
     private(set) var state: LoadState = .loading(nil)
-    /// Where days are loaded for. Nil until the place provider has anything to go on.
+    /// Where days are loaded for: the device's place, or one the person chose. Nil until the
+    /// place provider has anything to go on.
     private(set) var place: Place?
+    /// Where the day on screen is for, which lags `place` while a new place's day loads. Weather
+    /// is matched against it, so another place's forecast never marks the day still shown.
+    private(set) var shownPlace: Place?
     private(set) var reloadCount = 0
-    /// Keys the view's locate task, so `reload()` can locate again when there's no place,
-    /// and a time zone change can locate in the new zone.
+    /// Keys the view's locate task, so `reload()` can locate again when there's no place, a time
+    /// zone change can locate in the new zone, and choosing a place cancels a lookup still out.
     private(set) var locateCount = 0
     /// Counts lookups that finished, found or not. Weather waits for one, so it never spends
     /// a request on the stored place the device may have left.
     private(set) var locatedCount = 0
 
-    /// Days are windowed to its time zone, which follows the device's through `changeTimeZone(to:)`.
+    /// Days are windowed to its time zone: the device's, which `changeTimeZone(to:)` follows, or a
+    /// chosen place's own.
     private(set) var calendar: Calendar
+    /// The device's zone, which days return to when a chosen place is let go. It follows the
+    /// device even while a chosen place holds the calendar.
+    private(set) var deviceTimeZone: TimeZone
     private let provider: any SolarDayProvider
     private let placeProvider: any PlaceProvider
     @ObservationIgnored private var loadedDays: [DayKey: SolarDay] = [:]
@@ -73,8 +81,14 @@ final class SolarDayStore {
         self.provider = provider
         self.placeProvider = placeProvider
         self.calendar = calendar
+        deviceTimeZone = calendar.timeZone
         self.selectedDate = selectedDate
         place = placeProvider.lastKnownPlace(in: calendar.timeZone)
+    }
+
+    /// Whether days are for a place the person chose rather than the device's.
+    var isPlaceChosen: Bool {
+        if case .chosen = place?.source { true } else { false }
     }
 
     /// Identifies the selected day regardless of the time picked within it.
@@ -88,27 +102,72 @@ final class SolarDayStore {
 
     /// Asks the place provider where the device is. A new place changes `loadKey`, which
     /// reloads the day. Without any place, a failure shows; with one, the day stays.
+    ///
+    /// A chosen place is already known, so it counts as found at once, which lets weather load
+    /// for it, and the device isn't asked. An answer that arrives cancelled or after a place was
+    /// chosen is dropped: whatever cancelled the lookup starts the next one, possibly in another
+    /// zone, and the choice wins.
     func locate() async {
+        guard !isPlaceChosen else {
+            if !Task.isCancelled {
+                locatedCount += 1
+            }
+            return
+        }
         do {
-            place = try await placeProvider.currentPlace(in: calendar.timeZone)
+            let found = try await placeProvider.currentPlace(in: deviceTimeZone)
+            if !Task.isCancelled, !isPlaceChosen {
+                place = found
+            }
         } catch {
-            // Whatever cancelled the task starts the next one.
-            if place == nil, !Task.isCancelled {
+            if place == nil, !Task.isCancelled, !isPlaceChosen {
                 state = .failed(error)
             }
         }
-        // A cancelled lookup isn't finished, since whatever cancelled it starts the next one.
-        if !Task.isCancelled {
+        if !Task.isCancelled, !isPlaceChosen {
             locatedCount += 1
         }
+    }
+
+    /// Shows days for `place`, a place the person searched for, windowed to its own zone. The
+    /// day on screen stays until the place's loads, and a lookup still out for the device is
+    /// cancelled, so its answer can't replace the choice. Choosing the place already shown, or
+    /// one with no zone, changes nothing.
+    func choose(_ place: Place, now: Date) {
+        guard let timeZone = place.timeZone, place != self.place else {
+            return
+        }
+        moveCalendar(to: timeZone, now: now)
+        self.place = place
+        state = .loading(state.day)
+        locateCount += 1
+    }
+
+    /// Lets a chosen place go, returning to the device's place and zone and looking for the device
+    /// again. Without any device place to go on, the screen clears rather than keep the chosen
+    /// place's day under the device's title.
+    func useCurrentLocation(now: Date) {
+        guard isPlaceChosen else {
+            return
+        }
+        moveCalendar(to: deviceTimeZone, now: now)
+        place = placeProvider.lastKnownPlace(in: deviceTimeZone)
+        state = place == nil ? .loading(nil) : .loading(state.day)
+        locateCount += 1
     }
 
     /// Windows days to `timeZone` after the device's zone changes, as travel can while the app
     /// is suspended. The place restarts from what the provider knows in the new zone,
     /// since a fix from the old one is likely far behind, and a lookup still running in the old
     /// zone restarts too, so its fix isn't remembered under the wrong zone.
+    ///
+    /// A chosen place keeps its own zone, and only the device's is noted, for when it's let go.
     func changeTimeZone(to timeZone: TimeZone) {
-        guard timeZone.identifier != calendar.timeZone.identifier else {
+        guard timeZone.identifier != deviceTimeZone.identifier else {
+            return
+        }
+        deviceTimeZone = timeZone
+        guard !isPlaceChosen else {
             return
         }
         calendar.timeZone = timeZone
@@ -154,6 +213,7 @@ final class SolarDayStore {
         let key = DayKey(place: place, dayStart: selectedDayStart, timeZone: calendar.timeZone)
         if let day = loadedDays[key] {
             state = .loaded(day)
+            shownPlace = place
             return
         }
 
@@ -163,6 +223,7 @@ final class SolarDayStore {
             loadedDays[key] = day
             if key == currentKey {
                 state = .loaded(day)
+                shownPlace = place
             }
         } catch {
             if key == currentKey, !Task.isCancelled {
@@ -195,17 +256,12 @@ final class SolarDayStore {
     /// a page change and the day it shows can share one transaction. Returns whether it was;
     /// if not, `loadSelectedDay()` loads it as for any other selection.
     ///
-    /// It goes by the date `day` reads in its own calendar. After `changeTimeZone(to:)`, a day
-    /// from the old zone stays on screen until the new zone's loads, and in a zone to the west
-    /// the midnight that ends it still falls on that same date.
+    /// It goes by the date `day` reads in its own calendar. After the zone changes, with the
+    /// device's or to a chosen place's, a day from the old zone stays on screen until the new
+    /// zone's loads, and in a zone to the west the midnight that ends it still falls on that same date.
     func selectDay(offsetBy offset: Int, from day: SolarDay) -> Bool {
-        guard let date = day.calendar.date(byAdding: .day, value: offset, to: day.dayStart) else {
-            return false
-        }
-        var components = day.calendar.dateComponents([.era, .year, .month, .isLeapMonth, .day], from: date)
-        // Noon, since some zones skip midnight when daylight saving time starts.
-        components.hour = 12
-        guard let target = calendar.date(from: components) else {
+        guard let date = day.calendar.date(byAdding: .day, value: offset, to: day.dayStart),
+              let target = noon(onDateOf: date, in: day.calendar) else {
             return false
         }
         selectedDate = target
@@ -213,7 +269,28 @@ final class SolarDayStore {
             return false
         }
         state = .loaded(loaded)
+        shownPlace = key.place
         return true
+    }
+
+    /// Windows days to `timeZone`, keeping the day the person was looking at: today stays today,
+    /// as it reads there, and any other day keeps its date.
+    private func moveCalendar(to timeZone: TimeZone, now: Date) {
+        let previous = calendar
+        calendar.timeZone = timeZone
+        if previous.isDate(selectedDate, inSameDayAs: now) {
+            selectedDate = now
+        } else if let date = noon(onDateOf: selectedDate, in: previous) {
+            selectedDate = date
+        }
+    }
+
+    /// Noon in this store's calendar on the date `date` reads in `calendar`. Noon, since some
+    /// zones skip midnight when daylight saving time starts.
+    private func noon(onDateOf date: Date, in calendar: Calendar) -> Date? {
+        var components = calendar.dateComponents([.era, .year, .month, .isLeapMonth, .day], from: date)
+        components.hour = 12
+        return self.calendar.date(from: components)
     }
 
     private var currentKey: DayKey? {

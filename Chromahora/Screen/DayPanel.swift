@@ -21,7 +21,6 @@ struct DayPanel: View {
     @Binding var selectedDate: Date
     /// The store's, whose zone the calendar picks days in.
     var calendar: Calendar = .current
-    var place: Place?
     /// The forecast's spells, of any day. Those reaching this one are listed.
     var weather: [WeatherSpell] = []
     /// The forecast's hours, of any day, which the day's light and sky readings come from.
@@ -35,7 +34,7 @@ struct DayPanel: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                DayPicker(selection: $selectedDate, calendar: calendar, place: place) {
+                DayPicker(selection: $selectedDate, calendar: calendar) {
                     // `now`, not `.now`, so Today follows the debug drawer's clock.
                     selectedDate = now
                     onToday()
@@ -70,7 +69,6 @@ struct DayPanel: View {
             day: day,
             now: .now,
             selectedDate: $selectedDate,
-            place: MockPlaceProvider.sanFrancisco,
             weather: WeatherSpell.mock(for: selectedDate),
             hours: SkyHour.mock(for: selectedDate),
             onToday: {},
@@ -89,7 +87,6 @@ struct DayPanel: View {
             day: nil,
             now: .now,
             selectedDate: $selectedDate,
-            place: TimeZonePlaceProvider().lastKnownPlace(in: .current),
             onToday: {},
             onFocus: { _ in }
         )

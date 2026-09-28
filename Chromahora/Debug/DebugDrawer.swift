@@ -122,11 +122,12 @@ private struct DebugPanel: View {
                 Section("Place") {
                     if let place = store.place {
                         LabeledContent("Coordinates", value: "\(place.latitude), \(place.longitude)")
-                        LabeledContent("Source", value: place.summary)
+                        LabeledContent("Source", value: [place.title(deviceName: nil), place.note].compactMap(\.self).joined(separator: ". "))
                     } else {
                         Text("None yet")
                     }
                     LabeledContent("Time zone", value: store.calendar.timeZone.identifier)
+                    LabeledContent("Device time zone", value: store.deviceTimeZone.identifier)
                     LabeledContent("Permission", value: Self.authorization)
                     Button("Relocate", action: store.relocate)
                     Button("Forget last device fix") {
