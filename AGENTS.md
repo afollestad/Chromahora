@@ -52,3 +52,4 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Every view has a `#Preview`. Use `@Previewable @State` for bindings.
 - Doc comments explain why a constant has its value, not what the code does.
 - Unit tests cover the model and snapshots cover screens.
+- Write test files into a `TemporaryDirectory` held by the suite, which removes it after each test, since the simulator doesn't empty a test host's `tmp` between runs. Await any task that outlives the call under test, such as a prefetch, or it writes the directory back after removal.

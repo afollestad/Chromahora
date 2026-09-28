@@ -9,7 +9,10 @@ import Testing
 
 /// Each test writes to its own temporary directory.
 struct SolarDayCacheTests {
-    private let directory = URL.temporaryDirectory.appending(path: "SolarDayCacheTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    private let temporary = TemporaryDirectory("SolarDayCacheTests")
+    private var directory: URL {
+        temporary.url
+    }
     private let place = Place(latitude: 41.85, longitude: -87.65, source: .device)
     private let chicago = TimeZone(identifier: "America/Chicago") ?? .gmt
 

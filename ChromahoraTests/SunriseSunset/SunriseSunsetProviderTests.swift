@@ -12,15 +12,18 @@ import Testing
 @Suite(.timeLimit(.minutes(1)))
 struct SunriseSunsetProviderTests {
     private let fetcher = StubSunriseSunsetFetcher()
-    private let cache = SolarDayCache(
-        directory: URL.temporaryDirectory.appending(path: "SunriseSunsetProviderTests-\(UUID().uuidString)", directoryHint: .isDirectory)
-    )
+    private let directory = TemporaryDirectory("SunriseSunsetProviderTests")
+    private let cache: SolarDayCache
     private let place = Place(latitude: 41.85, longitude: -87.65, source: .device)
     private let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago") ?? .gmt
         return calendar
     }()
+
+    init() {
+        cache = SolarDayCache(directory: directory.url)
+    }
 
     private func makeProvider() -> SunriseSunsetProvider {
         SunriseSunsetProvider(fetcher: fetcher, cache: cache)
@@ -109,5 +112,8 @@ struct SunriseSunsetProviderTests {
         await #expect(throws: SunriseSunsetError.missingDay) {
             try await provider.solarDay(for: try date(month: 9, day: 26), at: place, calendar: calendar)
         }
+        // The month itself loaded, so next month's prefetch started, and it would otherwise
+        // store into the directory after the test removes it.
+        await provider.lastPrefetch?.value
     }
 }

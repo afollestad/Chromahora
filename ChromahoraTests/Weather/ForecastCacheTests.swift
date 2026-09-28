@@ -9,7 +9,10 @@ import Testing
 
 /// Each test writes to its own temporary directory.
 struct ForecastCacheTests {
-    private let directory = URL.temporaryDirectory.appending(path: "ForecastCacheTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    private let temporary = TemporaryDirectory("ForecastCacheTests")
+    private var directory: URL {
+        temporary.url
+    }
     private let place = Place(latitude: 41.85, longitude: -87.65, source: .device)
     private let start = Date(timeIntervalSince1970: 1_790_000_000)
 

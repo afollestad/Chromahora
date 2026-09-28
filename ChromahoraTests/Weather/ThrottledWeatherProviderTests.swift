@@ -21,12 +21,15 @@ struct ThrottledWeatherProviderTests {
     }
 
     private let base = StubWeatherProvider()
-    private let cache = ForecastCache(
-        directory: URL.temporaryDirectory.appending(path: "ThrottledWeatherProviderTests-\(UUID().uuidString)", directoryHint: .isDirectory)
-    )
+    private let directory = TemporaryDirectory("ThrottledWeatherProviderTests")
+    private let cache: ForecastCache
     private let place = Place(latitude: 41.85, longitude: -87.65, source: .device)
     private let start = Date(timeIntervalSince1970: 1_790_000_000)
     private let clock = ManualClock(Date(timeIntervalSince1970: 1_790_000_000))
+
+    init() {
+        cache = ForecastCache(directory: directory.url)
+    }
 
     private var end: Date {
         start.addingTimeInterval(10 * 24 * 60 * 60)
