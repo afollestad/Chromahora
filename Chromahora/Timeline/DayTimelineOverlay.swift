@@ -93,6 +93,13 @@ struct DayTimelineOverlay: View {
         var id: Int { segment.id }
     }
 
+    /// Every label is laid out twice: once as itself, and once as its bare capsule in the
+    /// mask that cuts it out of the lines.
+    private enum LabelStyle {
+        case glass
+        case cutout
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let size = geometry.size
@@ -103,11 +110,8 @@ struct DayTimelineOverlay: View {
             ZStack {
                 RulerScrim(leadingInset: safeAreaInsets.leading)
                 hourRuler(size: size, avoiding: markers)
-                markerLayer(markers, size: size)
-                // Labels are keyed by segment index, so a new phase sequence gets new
-                // labels rather than morphing one phase's capsule into another's.
-                phaseLabels(size: size, beside: markers)
-                    .id(day.phaseSequence)
+                markerLines(markers, size: size)
+                labels(markers, size: size, style: .glass)
             }
             .frame(width: size.width, height: size.height)
         }
@@ -140,40 +144,62 @@ struct DayTimelineOverlay: View {
         }
     }
 
-    /// Every line goes under every label, since markers minutes apart draw one's line through the other's label.
-    @ViewBuilder
-    private func markerLayer(_ markers: [PlacedMarker], size: CGSize) -> some View {
-        ForEach(markers) { placed in
-            markerLine(for: placed.marker)
-                .position(x: size.width / 2, y: placed.lineY)
-                .accessibilityHidden(true)
+    /// Lines run under the labels and break around each one, since glass shows a line through
+    /// its text. A marker's label sits on its own line, a nearby marker's line can cross it,
+    /// and phase labels slide across lines while scrolling.
+    private func markerLines(_ markers: [PlacedMarker], size: CGSize) -> some View {
+        ZStack {
+            ForEach(markers) { placed in
+                markerLine(for: placed.marker)
+                    .position(x: size.width / 2, y: placed.lineY)
+            }
         }
+        .mask {
+            Rectangle()
+                .overlay {
+                    labels(markers, size: size, style: .cutout)
+                        .blendMode(.destinationOut)
+                }
+                .compositingGroup()
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Every label, so the lines' mask cuts out exactly what the glass pass draws.
+    @ViewBuilder
+    private func labels(_ markers: [PlacedMarker], size: CGSize, style: LabelStyle) -> some View {
         ForEach(markers) { placed in
             row(at: placed.labelY, alignment: .leading, size: size) {
-                markerLabel(for: placed.marker, scheme: DayTimeline.labelScheme(over: skyColor(at: placed.labelY, in: size)))
+                markerLabel(for: placed.marker, scheme: DayTimeline.labelScheme(over: skyColor(at: placed.labelY, in: size)), style: style)
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.size.width
                     } action: { width in
-                        markerLabelWidths[placed.marker.id] = width
+                        if style == .glass {
+                            markerLabelWidths[placed.marker.id] = width
+                        }
                     }
                     .padding(.leading, safeAreaInsets.leading + horizontalPadding)
             }
         }
+        // Labels are keyed by segment index, so a new phase sequence gets new
+        // labels rather than morphing one phase's capsule into another's.
+        phaseLabels(size: size, beside: markers, style: style)
+            .id(day.phaseSequence)
     }
 
     /// Phase labels drop their time range when the full text won't fit beside a marker
     /// label, which happens at large text sizes. VoiceOver still reads the range.
     ///
     /// Each capsule is tinted with its phase's color, so that color picks its scheme too.
-    private func phaseLabels(size: CGSize, beside markers: [PlacedMarker]) -> some View {
+    private func phaseLabels(size: CGSize, beside markers: [PlacedMarker], style: LabelStyle) -> some View {
         ForEach(placedPhases(size: size)) { placed in
             let phaseColor = placed.segment.phase.color
             let glass = Glass.regular.tint(phaseColor.opacity(0.5))
             let scheme = DayTimeline.labelScheme(over: phaseColor)
             row(at: placed.labelY, alignment: .trailing, size: size) {
                 ViewThatFits(in: .horizontal) {
-                    label(text(for: placed.segment), glass: glass, scheme: scheme)
-                    label(placed.segment.phase.title, glass: glass, scheme: scheme)
+                    label(text(for: placed.segment), glass: glass, scheme: scheme, style: style)
+                    label(placed.segment.phase.title, glass: glass, scheme: scheme, style: style)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(text(for: placed.segment))
@@ -196,20 +222,17 @@ struct DayTimelineOverlay: View {
 
     // MARK: Pieces
 
-    /// Sunrise, sunset and now draw a solid line across the day. Precipitation draws a dashed
+    /// Sunrise, sunset and now draw a solid line across the day, at one opacity that reads
+    /// over daylight without now's line outshining the sun's. Precipitation draws a dashed
     /// one where it begins, since it's the weather worth lining up against the phases, with
     /// short even dashes that read as a forecast beside the sun's firm lines. Sky changes draw
     /// none, which would stripe the whole day, and neither does a spell carried over from the night before.
     @ViewBuilder
     private func markerLine(for marker: Marker) -> some View {
         switch marker.kind {
-        case .event:
+        case .event, .now:
             Rectangle()
-                .fill(.white.opacity(0.35))
-                .frame(height: 1)
-        case .now:
-            Rectangle()
-                .fill(.white.opacity(0.9))
+                .fill(.white.opacity(0.6))
                 .frame(height: 1)
         case .weather(let spell, _, _):
             if spell.condition.isPrecipitation, spell.interval.start > day.dayStart {
@@ -221,26 +244,39 @@ struct DayTimelineOverlay: View {
     }
 
     @ViewBuilder
-    private func markerLabel(for marker: Marker, scheme: ColorScheme) -> some View {
+    private func markerLabel(for marker: Marker, scheme: ColorScheme, style: LabelStyle) -> some View {
         switch marker.kind {
         case .event(let title):
-            label("\(title) · \(marker.date.formatted(date: .omitted, time: .shortened))", scheme: scheme)
+            label("\(title) · \(marker.date.formatted(date: .omitted, time: .shortened))", scheme: scheme, style: style)
         case .now:
-            label("Now · \(marker.date.formatted(date: .omitted, time: .shortened))", scheme: scheme)
+            label("Now · \(marker.date.formatted(date: .omitted, time: .shortened))", scheme: scheme, style: style)
         case .weather(let spell, let range, let inDaylight):
-            WeatherButton(spell: spell, range: range, inDaylight: inDaylight, scheme: scheme)
+            switch style {
+            case .glass:
+                WeatherButton(spell: spell, range: range, inDaylight: inDaylight, scheme: scheme)
+            case .cutout:
+                WeatherButton.glyph(for: spell.condition, inDaylight: inDaylight)
+                    .background(Capsule())
+            }
         }
     }
 
     /// `scheme` comes from the sky behind the label, which the system's appearance knows
     /// nothing about. White text over daylight contrasts at only 1.5:1.
-    private func label(_ text: String, glass: Glass = .regular, scheme: ColorScheme) -> some View {
-        Text(text)
+    @ViewBuilder
+    private func label(_ text: String, glass: Glass = .regular, scheme: ColorScheme, style: LabelStyle) -> some View {
+        let content = Text(text)
             .font(.caption2.weight(.semibold).monospacedDigit())
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .glassEffect(glass, in: Capsule())
-            .environment(\.colorScheme, scheme)
+        switch style {
+        case .glass:
+            content
+                .glassEffect(glass, in: Capsule())
+                .environment(\.colorScheme, scheme)
+        case .cutout:
+            content.background(Capsule())
+        }
     }
 
     private func text(for segment: DaySegment) -> String {

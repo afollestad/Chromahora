@@ -23,12 +23,7 @@ struct WeatherButton: View {
         Button {
             isPresented = true
         } label: {
-            // The same font and padding as the overlay's text labels, so the capsule is as
-            // tall as theirs and marker spacing holds.
-            Text("\(Image(systemName: spell.condition.symbolName(inDaylight: inDaylight)))")
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, 7)
-                .padding(.vertical, 5)
+            Self.glyph(for: spell.condition, inDaylight: inDaylight)
                 .glassEffect(.regular.interactive(), in: Capsule())
                 .environment(\.colorScheme, scheme)
                 // A taller target than the capsule, without widening what the overlay measures.
@@ -41,6 +36,16 @@ struct WeatherButton: View {
             WeatherDetails(spell: spell, range: range, inDaylight: inDaylight)
                 .presentationCompactAdaptation(.popover)
         }
+    }
+
+    /// The icon padded to fill its capsule, which the overlay also cuts out of the lines behind it.
+    /// The same font and padding as the overlay's text labels, so the capsule is as tall as
+    /// theirs and marker spacing holds.
+    static func glyph(for condition: SkyCondition, inDaylight: Bool) -> some View {
+        Text("\(Image(systemName: condition.symbolName(inDaylight: inDaylight)))")
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 5)
     }
 
     private var description: String {
