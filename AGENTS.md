@@ -17,7 +17,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 ## Build and test
 
 - Xcode 27 project with an iOS 27 deployment target. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely.
-- Source folders are synchronized groups. New files under `Chromahora/` or `ChromahoraTests/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above.
+- Source folders are synchronized groups. New files under `Chromahora/` or `ChromahoraTests/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above and `App/Info.plist`, which `INFOPLIST_FILE` merges into the generated plist for keys with no `INFOPLIST_KEY_` setting.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint` and `xcsift` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.
 - Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).
@@ -43,7 +43,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - A regular-width window with room for a 390pt timeline beside it (iPad, an opened foldable, a Pro Max in landscape) floats the glass `DayPanel` on the trailing side in place of the calendar button. Size class and width alone decide, with no control to hide it.
 - Popovers and the day panel keep the default Liquid Glass like the rest of the floating chrome, not a material background, so give them primary text and underlined links; a bright sky through the glass washes out gray and tinted text. Cap their content at `accessibility1`, since at their width larger text breaks to a word a line.
 - Hide decorative shapes from accessibility. Every control needs a label, and the calendar button also exposes the selected day as its value.
-- Keep the sunrise-sunset.org link and `AppleWeatherCredit` in `SourcesButton`'s popover, and `AppleWeatherCredit` in the weather popover and under the day panel's weather; both services' terms require them. The button reads as the Apple Weather mark whenever the timeline shows weather, since App Review looks for the mark wherever weather shows.
+- Keep the sunrise-sunset.org link and `AppleWeatherCredit` in `SourcesButton`'s popover, and `AppleWeatherCredit` in the weather popover and under the day panel's weather; both services' terms require them. The button always names sunrise-sunset.org, whose terms want the credit visible, and leads with the Apple Weather mark whenever the timeline shows weather, since App Review looks for the mark wherever weather shows.
 
 ## Code conventions
 

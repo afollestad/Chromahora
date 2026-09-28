@@ -6,9 +6,10 @@
 import SwiftUI
 
 /// A quiet capsule at the foot of the timeline, which opens a popover saying where the sun
-/// times and weather come from, with the links both services' terms ask for. While the
-/// timeline shows weather it reads as the Apple Weather mark, since App Review looks for the
-/// mark wherever weather shows, and a credit a tap away isn't enough.
+/// times and weather come from, with the links both services' terms ask for. The capsule
+/// itself names sunrise-sunset.org, whose terms want the credit shown visibly, and while the
+/// timeline shows weather it leads with the Apple Weather mark, since App Review looks for
+/// the mark wherever weather shows. A credit a tap away isn't enough for either.
 struct SourcesButton: View {
     /// Whether the timeline shows weather, which puts the mark on the capsule and Apple
     /// Weather's credit in the popover.
@@ -36,6 +37,8 @@ struct SourcesButton: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        // Spelled out, so VoiceOver reads the logo as Apple Weather and skips the separator.
+        .accessibilityLabel(showsWeather ? Text("Apple Weather and sunrise-sunset.org") : Text("sunrise-sunset.org"))
         .accessibilityHint(showsWeather ? Text("Shows where the sun times and weather come from") : Text("Shows where the sun times come from"))
         // The labels' cap, so the capsule never outgrows them.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -49,7 +52,7 @@ struct SourcesButton: View {
     /// One `Text` either way, so the capsule stretches between them rather than a second
     /// capsule fading in over the first.
     private var title: Text {
-        showsWeather ? AppleWeatherCredit.mark : Text("Sources")
+        showsWeather ? Text("\(AppleWeatherCredit.mark) · sunrise-sunset.org") : Text("sunrise-sunset.org")
     }
 }
 

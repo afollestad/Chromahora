@@ -37,6 +37,7 @@
 		D98A871D30685002007D5F92 /* Exceptions for "Chromahora" folder in "Chromahora" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				App/Info.plist,
 				Debug/AGENTS.md,
 				Debug/CLAUDE.md,
 				Location/AGENTS.md,
@@ -364,6 +365,7 @@
 				DEVELOPMENT_TEAM = DHWPN889K5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Chromahora/App/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Chromahora uses your location to work out when blue hour and golden hour happen where you are.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -398,6 +400,7 @@
 				DEVELOPMENT_TEAM = DHWPN889K5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Chromahora/App/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Chromahora uses your location to work out when blue hour and golden hour happen where you are.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
