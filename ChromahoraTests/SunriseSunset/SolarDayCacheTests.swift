@@ -51,7 +51,7 @@ struct SolarDayCacheTests {
         for month in [7, 8, 9, 10] {
             try await cache.store(StubSunriseSunsetFetcher.daylight(through: key(month: month).month), for: key(month: month))
         }
-        let oldFormat = directory.appending(path: "v0_2026-09_419_-877_America-Chicago.json")
+        let oldFormat = directory.appending(path: "v1_2026-09_419_-877_America-Chicago.json")
         try Data("[]".utf8).write(to: oldFormat)
         let now = try #require(CalendarMonth.gregorian(in: .gmt).date(from: DateComponents(year: 2026, month: 9, day: 15)))
 

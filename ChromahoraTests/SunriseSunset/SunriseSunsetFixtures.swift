@@ -35,7 +35,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1790429690, "end": 1790430299},
                             "evening": {"begin": 1790475363, "end": 1790475970}
                         },
-                        "solar_position": {"solar_noon_altitude": 50.71}
+                        "solar_position": {"solar_noon_altitude": 50.71},
+                        "astronomical_twilight_begin": 1790426005,
+                        "astronomical_twilight_end": 1790479647,
+                        "moonrise": 1790474010,
+                        "moonset": 1790431250,
+                        "moon_phase": "Full Moon",
+                        "moon_illumination": 99.92
                     }
                 ]
             }
@@ -63,7 +69,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1790429690, "end": 1790430299},
                             "evening": {"begin": 1790389056, "end": 1790389664}
                         },
-                        "solar_position": {"solar_noon_altitude": 51.1}
+                        "solar_position": {"solar_noon_altitude": 51.1},
+                        "astronomical_twilight_begin": 1790426005,
+                        "astronomical_twilight_end": 1790393344,
+                        "moonrise": 1790386121,
+                        "moonset": 1790431250,
+                        "moon_phase": "Full Moon",
+                        "moon_illumination": 99.57
                     }
                 ]
             }
@@ -91,7 +103,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1797847345, "end": 1797848966},
                             "evening": {"begin": 1797870118, "end": 1797871740}
                         },
-                        "solar_position": {"solar_noon_altitude": 2.46}
+                        "solar_position": {"solar_noon_altitude": 2.46},
+                        "astronomical_twilight_begin": 1797839613,
+                        "astronomical_twilight_end": 1797879471,
+                        "moonrise": 1797856389,
+                        "moonset": 1797842411,
+                        "moon_phase": "Waxing Gibbous",
+                        "moon_illumination": 90.25
                     }
                 ]
             }
@@ -119,7 +137,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": null, "end": null},
                             "evening": {"begin": null, "end": null}
                         },
-                        "solar_position": {"solar_noon_altitude": 50.04}
+                        "solar_position": {"solar_noon_altitude": 50.04},
+                        "astronomical_twilight_begin": null,
+                        "astronomical_twilight_end": null,
+                        "moonrise": 1782039323,
+                        "moonset": 1781996505,
+                        "moon_phase": "First Quarter",
+                        "moon_illumination": 44.82
                     }
                 ]
             }
@@ -147,7 +171,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1781995910, "end": 1781999050},
                             "evening": {"begin": 1782073022, "end": 1781989749}
                         },
-                        "solar_position": {"solar_noon_altitude": 53.54}
+                        "solar_position": {"solar_noon_altitude": 53.54},
+                        "astronomical_twilight_begin": null,
+                        "astronomical_twilight_end": null,
+                        "moonrise": 1782034266,
+                        "moonset": 1781991515,
+                        "moon_phase": "First Quarter",
+                        "moon_illumination": 44.39
                     }
                 ]
             }
@@ -175,7 +205,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1796890527, "end": 1796893643},
                             "evening": {"begin": 1796904347, "end": 1796907463}
                         },
-                        "solar_position": {"solar_noon_altitude": -2.63}
+                        "solar_position": {"solar_noon_altitude": -2.63},
+                        "astronomical_twilight_begin": 1796879826,
+                        "astronomical_twilight_end": 1796918160,
+                        "moonrise": null,
+                        "moonset": null,
+                        "moon_phase": "New Moon",
+                        "moon_illumination": 1.92
                     }
                 ]
             }
@@ -203,7 +239,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": null, "end": null},
                             "evening": {"begin": null, "end": null}
                         },
-                        "solar_position": {"solar_noon_altitude": 35.24}
+                        "solar_position": {"solar_noon_altitude": 35.24},
+                        "astronomical_twilight_begin": null,
+                        "astronomical_twilight_end": null,
+                        "moonrise": 1782037763,
+                        "moonset": 1781997426,
+                        "moon_phase": "First Quarter",
+                        "moon_illumination": 44.82
                     }
                 ]
             }
@@ -231,7 +273,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": null, "end": null},
                             "evening": {"begin": null, "end": null}
                         },
-                        "solar_position": {"solar_noon_altitude": -11.64}
+                        "solar_position": {"solar_noon_altitude": -11.64},
+                        "astronomical_twilight_begin": 1797835016,
+                        "astronomical_twilight_end": 1797866061,
+                        "moonrise": null,
+                        "moonset": null,
+                        "moon_phase": "Waxing Gibbous",
+                        "moon_illumination": 89.96
                     }
                 ]
             }
@@ -259,7 +307,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1772970361, "end": 1772971006},
                             "evening": {"begin": 1773014767, "end": 1773015412}
                         },
-                        "solar_position": {"solar_noon_altitude": 43.43}
+                        "solar_position": {"solar_noon_altitude": 43.43},
+                        "astronomical_twilight_begin": 1772966479,
+                        "astronomical_twilight_end": 1773019304,
+                        "moonrise": null,
+                        "moonset": 1772979269,
+                        "moon_phase": "Waning Gibbous",
+                        "moon_illumination": 74.46
                     }
                 ]
             }
@@ -287,7 +341,13 @@ enum SunriseSunsetFixtures {
                             "morning": {"begin": 1793534038, "end": 1793534706},
                             "evening": {"begin": 1793574132, "end": 1793574800}
                         },
-                        "solar_position": {"solar_noon_altitude": 33.5}
+                        "solar_position": {"solar_noon_altitude": 33.5},
+                        "astronomical_twilight_begin": 1793530113,
+                        "astronomical_twilight_end": 1793578721,
+                        "moonrise": 1793596092,
+                        "moonset": 1793559952,
+                        "moon_phase": "Last Quarter",
+                        "moon_illumination": 51.17
                     }
                 ]
             }

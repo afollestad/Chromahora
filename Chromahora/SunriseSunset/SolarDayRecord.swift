@@ -29,6 +29,16 @@ nonisolated struct SolarDayRecord: Codable, Equatable, Sendable {
     let goldenHour: Twilight
     let blueHour: Twilight
     let solarPosition: SolarPosition
+    // Null on days without the event, and optional throughout, so a response without them still draws the day.
+    let astronomicalTwilightBegin: Date?
+    let astronomicalTwilightEnd: Date?
+    let moonrise: Date?
+    let moonset: Date?
+    /// As the API names it, like "Waning Gibbous". Kept as text, so a name the app doesn't
+    /// know only hides the phase.
+    let moonPhase: String?
+    /// In percent.
+    let moonIllumination: Double?
 
     /// Each crossing the API reports, in its fixed direction. With `tz` windowing, evening
     /// crossings can come before morning ones, so `SolarDay.make` orders them by time.
@@ -46,7 +56,20 @@ nonisolated struct SolarDayRecord: Codable, Equatable, Sendable {
             change(blueHour.evening.begin, from: .goldenHour, into: .blueHour),
             change(blueHour.evening.end, from: .blueHour, into: .night)
         ].compactMap(\.self)
-        return SolarDay.Readings(transitions: transitions, noonAltitude: solarPosition.solarNoonAltitude, sunrise: sunrise, sunset: sunset)
+        return SolarDay.Readings(
+            transitions: transitions,
+            noonAltitude: solarPosition.solarNoonAltitude,
+            sunrise: sunrise,
+            sunset: sunset,
+            astronomicalDawn: astronomicalTwilightBegin,
+            astronomicalDusk: astronomicalTwilightEnd,
+            moon: SolarDay.Moon(
+                phase: moonPhase.flatMap(MoonPhase.init(rawValue:)),
+                illumination: moonIllumination.map { $0 / 100 },
+                rise: moonrise,
+                set: moonset
+            )
+        )
     }
 
     func solarDay(calendar: Calendar, dayStart: Date, dayEnd: Date) throws -> SolarDay {

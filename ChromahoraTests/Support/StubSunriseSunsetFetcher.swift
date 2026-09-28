@@ -59,7 +59,13 @@ final class StubSunriseSunsetFetcher: SunriseSunsetFetching {
                 sunset: nil,
                 goldenHour: none,
                 blueHour: none,
-                solarPosition: .init(solarNoonAltitude: 40)
+                solarPosition: .init(solarNoonAltitude: 40),
+                astronomicalTwilightBegin: nil,
+                astronomicalTwilightEnd: nil,
+                moonrise: nil,
+                moonset: nil,
+                moonPhase: nil,
+                moonIllumination: nil
             )
         }
     }

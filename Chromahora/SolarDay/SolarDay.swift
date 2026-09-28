@@ -158,6 +158,11 @@ nonisolated struct SolarDay: Equatable, Sendable {
     let sunrise: Date?
     let sunset: Date?
 
+    /// When the sun is more than 18° below the horizon, in time order. Defaulted, like `moon`,
+    /// so fixed days without them still build.
+    var astronomicalNight: [DateInterval] = []
+    var moon: Moon?
+
     var segments: [DaySegment] {
         var segments: [DaySegment] = []
         var start = dayStart
@@ -253,6 +258,11 @@ nonisolated extension SolarDay {
         var noonAltitude: Double
         var sunrise: Date?
         var sunset: Date?
+        /// The morning crossing out of astronomical night and the evening one into it, in
+        /// either order, or nil when the day has none, as when the sun doesn't reach -18°.
+        var astronomicalDawn: Date?
+        var astronomicalDusk: Date?
+        var moon: Moon?
     }
 
     /// Builds the day from `dayStart` to `dayEnd` out of `readings`, checking that its changes chain.
@@ -292,7 +302,61 @@ nonisolated extension SolarDay {
             initialPhase: initialPhase,
             transitions: inside,
             sunrise: readings.sunrise.flatMap { range.contains($0) ? $0 : nil },
-            sunset: readings.sunset.flatMap { range.contains($0) ? $0 : nil }
+            sunset: readings.sunset.flatMap { range.contains($0) ? $0 : nil },
+            astronomicalNight: astronomicalNight(
+                dawn: readings.astronomicalDawn,
+                dusk: readings.astronomicalDusk,
+                noonAltitude: readings.noonAltitude,
+                in: range
+            ),
+            moon: readings.moon.map { moon in
+                Moon(
+                    phase: moon.phase,
+                    illumination: moon.illumination,
+                    rise: moon.rise.flatMap { range.contains($0) ? $0 : nil },
+                    set: moon.set.flatMap { range.contains($0) ? $0 : nil }
+                )
+            }
         )
+    }
+
+    /// The spans of `range` in astronomical night, from the crossings out of it at `dawn` and
+    /// into it at `dusk`. With neither, the whole day is in it only if even noon is below -18°.
+    /// It never throws, since the night sky only adds to a day whose phases already chain.
+    static func astronomicalNight(dawn: Date?, dusk: Date?, noonAltitude: Double, in range: Range<Date>) -> [DateInterval] {
+        let crossings = [(dawn, false), (dusk, true)].compactMap { date, entersDark in
+            date.map { Crossing(date: $0, enters: entersDark) }
+        }
+        return spans(of: crossings, in: range, otherwise: noonAltitude < -18)
+    }
+
+    /// A moment something starts or stops, like the sun entering astronomical night.
+    struct Crossing {
+        let date: Date
+        let enters: Bool
+    }
+
+    /// The spans of `range` between `crossings` that enter a state and those that leave it.
+    /// The state at the start follows the last crossing at or before it, else the opposite
+    /// of the first crossing, else `otherwise`.
+    static func spans(of crossings: [Crossing], in range: Range<Date>, otherwise: Bool) -> [DateInterval] {
+        let sorted = crossings.sorted { $0.date < $1.date }
+        var isIn = sorted.last { $0.date <= range.lowerBound }?.enters
+            ?? sorted.first.map { !$0.enters }
+            ?? otherwise
+        var start = range.lowerBound
+        var spans: [DateInterval] = []
+        for crossing in sorted where range.lowerBound < crossing.date && crossing.date < range.upperBound {
+            if isIn, !crossing.enters {
+                spans.append(DateInterval(start: start, end: crossing.date))
+            } else if !isIn, crossing.enters {
+                start = crossing.date
+            }
+            isIn = crossing.enters
+        }
+        if isIn {
+            spans.append(DateInterval(start: start, end: range.upperBound))
+        }
+        return spans
     }
 }

@@ -44,7 +44,12 @@ struct SolarDayTests {
     @Test(arguments: MockScenario.allCases)
     func everyScenarioPassesMake(scenario: MockScenario) throws {
         let mock = SolarDay.mock(scenario, for: date, calendar: calendar)
-        let made = try make(mock.transitions, noonAltitude: scenario.noonAltitude, sunrise: mock.sunrise, sunset: mock.sunset)
+        let made = try SolarDay.make(
+            calendar: calendar,
+            dayStart: mock.dayStart,
+            dayEnd: mock.dayEnd,
+            readings: scenario.readings(from: mock.dayStart, calendar: calendar)
+        )
 
         #expect(made == mock)
     }
@@ -261,7 +266,101 @@ struct SolarDayTests {
         #expect(fallBack.hourMarks.allSatisfy { fallBack.dayStart < $0.date && $0.date < fallBack.dayEnd })
     }
 
+    // MARK: Night sky
+
+    @Test func astronomicalNightRunsUntilDawnAndFromDusk() {
+        let night = SolarDay.astronomicalNight(dawn: at(5), dusk: at(21), noonAltitude: 50, in: range)
+
+        #expect(night == [span(0, 5), span(21, 24)])
+    }
+
+    /// Windowed to a far time zone, the evening's crossing comes first, so the night falls between them.
+    @Test func astronomicalNightFallsBetweenAnEarlierDuskAndALaterDawn() {
+        #expect(SolarDay.astronomicalNight(dawn: at(15), dusk: at(3), noonAltitude: 50, in: range) == [span(3, 15)])
+    }
+
+    @Test func aCrossingBeforeTheDaySetsHowItOpens() {
+        #expect(SolarDay.astronomicalNight(dawn: at(5), dusk: at(-1), noonAltitude: 50, in: range) == [span(0, 5)])
+    }
+
+    /// Summer near the poles never gets that dark, and only a sun below -18° even at noon stays dark all day.
+    @Test func withoutCrossingsNoonAltitudeDecidesTheWholeDay() {
+        #expect(SolarDay.astronomicalNight(dawn: nil, dusk: nil, noonAltitude: 50, in: range).isEmpty)
+        #expect(SolarDay.astronomicalNight(dawn: nil, dusk: nil, noonAltitude: -11.66, in: range).isEmpty)
+        #expect(SolarDay.astronomicalNight(dawn: nil, dusk: nil, noonAltitude: -20, in: range) == [span(0, 24)])
+    }
+
+    @Test func makeKeepsOnlyTheMoonsCrossingsWithinTheDay() throws {
+        var readings = SolarDay.Readings(transitions: day.transitions, noonAltitude: 49, sunrise: day.sunrise, sunset: day.sunset)
+        readings.moon = SolarDay.Moon(phase: .full, illumination: 1, rise: at(-2), set: at(7))
+        let made = try SolarDay.make(calendar: calendar, dayStart: day.dayStart, dayEnd: day.dayEnd, readings: readings)
+
+        #expect(made.moon == SolarDay.Moon(phase: .full, illumination: 1, rise: nil, set: at(7)))
+    }
+
+    /// With only a set, the moon was up at midnight, and with only a rise, it was down.
+    @Test func theFirstMoonCrossingTellsWhetherItWasUpAtMidnight() {
+        #expect(night(moonrise: nil, moonset: 4).moonUp == [span(0, 4)])
+        #expect(night(moonrise: 15, moonset: nil).moonUp == [span(15, 24)])
+        #expect(night(moonrise: 12, moonset: 22).moonUp == [span(12, 22)])
+        #expect(night(moonrise: 22, moonset: 12).moonUp == [span(0, 12), span(22, 24)])
+    }
+
+    @Test func withNeitherMoonCrossingTheSkysDarknessIsUnknown() {
+        let polar = night(moonrise: nil, moonset: nil, astronomicalNight: [span(0, 5)])
+
+        #expect(polar.moonUp == nil)
+        #expect(polar.darkSky == nil)
+        #expect(SolarDay.mock(.polarNight, for: date, calendar: calendar).darkSky == nil)
+    }
+
+    /// A summer's day near the pole with the moon up or down throughout still has no dark sky,
+    /// since the sky never gets that dark wherever the moon is.
+    @Test func withoutAstronomicalNightThereIsNoDarkSkyEvenWithTheMoonUnknown() {
+        let day = night(moonrise: nil, moonset: nil)
+
+        #expect(day.moonUp == nil)
+        #expect(day.darkSky?.isEmpty == true)
+    }
+
+    @Test func darkSkyIsAstronomicalNightWithTheMoonDown() {
+        let day = night(moonrise: 22, moonset: 3, astronomicalNight: [span(0, 5), span(21, 24)])
+
+        #expect(day.darkSky == [span(3, 5), span(21, 22)])
+    }
+
+    /// San Francisco's waxing crescent sets at 10:07 PM, after astronomical dusk at 8:44.
+    @Test func theTypicalDayHasDarkSkyBeforeDawnAndAfterMoonset() {
+        #expect(day.darkSky == [span(0, 5 + 23.0 / 60), span(22 + 7.0 / 60, 24)])
+    }
+
+    /// Longyearbyen's June never reaches astronomical night, so there's no dark sky though the moon is known.
+    @Test func noAstronomicalNightMeansNoDarkSky() {
+        #expect(SolarDay.mock(.midnightSun, for: date, calendar: calendar).darkSky?.isEmpty == true)
+    }
+
     // MARK: Helpers
+
+    private var range: Range<Date> {
+        day.dayStart..<day.dayEnd
+    }
+
+    /// `hours` into the mock's day.
+    private func at(_ hours: Double) -> Date {
+        day.dayStart.addingTimeInterval(hours * 60 * 60)
+    }
+
+    private func span(_ start: Double, _ end: Double) -> DateInterval {
+        DateInterval(start: at(start), end: at(end))
+    }
+
+    /// The mock day with the moon crossing at the given hours and `astronomicalNight` in place of its own.
+    private func night(moonrise: Double?, moonset: Double?, astronomicalNight: [DateInterval] = []) -> SolarDay {
+        var day = self.day
+        day.moon = SolarDay.Moon(phase: .full, illumination: 1, rise: moonrise.map(at), set: moonset.map(at))
+        day.astronomicalNight = astronomicalNight
+        return day
+    }
 
     /// A change `hours` into the mock's day.
     private func change(hours: Double, _ from: DayPhase, _ into: DayPhase) -> PhaseTransition {

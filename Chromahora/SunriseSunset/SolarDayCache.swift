@@ -36,7 +36,7 @@ nonisolated struct SolarMonthKey: Hashable, Sendable {
 actor SolarDayCache {
     /// Part of every file name. Bump it when `SolarDayRecord`'s stored shape changes, and
     /// `prune` deletes the files written in the old one.
-    static let formatVersion = 1
+    static let formatVersion = 2
 
     struct Summary: Equatable, Sendable {
         let fileNames: [String]
@@ -91,7 +91,7 @@ actor SolarDayCache {
         try? FileManager.default.removeItem(at: directory)
     }
 
-    /// As in `v1_2026-09_378_-1224_America-Los_Angeles.json`: the version and month come
+    /// As in `v2_2026-09_378_-1224_America-Los_Angeles.json`: the version and month come
     /// first, so `prune` can read them without parsing the zone.
     private func url(for key: SolarMonthKey) -> URL {
         let zone = key.month.timeZone.identifier.replacingOccurrences(of: "/", with: "-")
