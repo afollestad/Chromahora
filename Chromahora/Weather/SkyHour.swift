@@ -26,6 +26,12 @@ nonisolated struct SkyHour: Codable, Equatable, Sendable {
         DateInterval(start: date, duration: Self.duration)
     }
 
+    /// Whether any of the hour falls on `day`. In a zone offset by half an hour from UTC, the
+    /// hours at either midnight fall on two days.
+    func falls(on day: SolarDay) -> Bool {
+        date < day.dayEnd && interval.end > day.dayStart
+    }
+
     /// The WHO's exposure category, which WeatherKit's `UVIndex.ExposureCategory` also follows.
     var uvCategory: UVCategory {
         switch uvIndex {
@@ -65,7 +71,7 @@ nonisolated struct SkyHour: Codable, Equatable, Sendable {
     /// doesn't reach the day or the index stays at 0, as in polar night.
     static func peakUV(on day: SolarDay, in hours: [SkyHour]) -> SkyHour? {
         let peak = hours
-            .filter { $0.date < day.dayEnd && $0.interval.end > day.dayStart }
+            .filter { $0.falls(on: day) }
             .sorted { $0.date < $1.date }
             .max { $0.uvIndex < $1.uvIndex }
         return peak.flatMap { $0.uvIndex > 0 ? $0 : nil }

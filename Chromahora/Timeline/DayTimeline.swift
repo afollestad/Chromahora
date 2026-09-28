@@ -43,7 +43,13 @@ struct DayTimeline: View {
     var isCurrent = true
     /// Called when a drag that began at one of the ends lets go past it, beyond `EdgePull.threshold`.
     var onPullThrough: ((VerticalEdge) -> Void)?
-    var pointsPerHour: CGFloat = 72
+    /// Where the scroll puts the day's top edge on screen, for the copy of the sky `DayPager`
+    /// keeps behind the details page. Only the page on screen writes it.
+    @Binding var pagerSkyTop: CGFloat
+    var pointsPerHour = Self.defaultPointsPerHour
+
+    /// The zoom a timeline opens at, which `DayPager`'s copy of the sky is drawn at too.
+    static let defaultPointsPerHour: CGFloat = 72
 
     private let focusAnchorID = "focus"
     private let requestAnchorID = "request"
@@ -122,18 +128,13 @@ struct DayTimeline: View {
             // standing where the push ends.
             .defaultScrollAnchor(opening == .end ? .bottom : nil, for: .initialOffset)
             // Overscrolling past either end uncovers this, so each half continues the sky at
-            // its end and the scrim runs on without a seam. The soft edge effect fades the
-            // content toward it too, so it also carries the sky wherever the scroll puts it,
-            // and the bars blur the sky under them without tinting it.
+            // its end and the scrim runs on without a seam. Standing alone, as in previews, the
+            // timeline's own soft edge effect fades the content toward it too, so it also carries
+            // the sky wherever the scroll puts it. Inside `DayPager`, the bars take their effect
+            // from the pager's scroll view, which fades toward the same copy behind the pages.
             .background {
                 ZStack {
-                    VStack(spacing: 0) {
-                        SkyGradient.color(at: 0, in: day)
-                        SkyGradient.color(at: 1, in: day)
-                    }
-                    .overlay(alignment: .top) {
-                        ScrolledSky(day: day, height: contentHeight, top: $dayTop)
-                    }
+                    DaySky(day: day, height: contentHeight, top: $dayTop)
                     RulerScrim(leadingInset: safeAreaInsets.leading)
                 }
                 .ignoresSafeArea()
@@ -143,9 +144,8 @@ struct DayTimeline: View {
                 EdgePullHint(pull: $edgePull, day: day, insets: labelInsets, clearance: Self.edgeClearance)
             }
             .ignoresSafeArea()
-            // Blurs labels and lines under the bars, as Photos does, so they don't run through the
-            // clock or the sources button. The button's glass would show a line through its text,
-            // and it stays put, so the overlay's cutout mask can't clear it.
+            // Blurs labels and lines under the bars when the timeline stands alone. `DayPager` sets
+            // the same on the scroll view the bars take their effect from.
             .scrollEdgeEffectStyle(.soft, for: .vertical)
             // A page pulled in from another day lays out at the end it opens at.
             .onAppear {
@@ -209,9 +209,12 @@ struct DayTimeline: View {
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 topClearance - geometry.visibleRect.minY
             } action: { _, top in
-                // Unanimated, so the copy can't trail the content through an animated scroll.
+                // Unanimated, so the copies can't trail the content through an animated scroll.
                 withTransaction(\.disablesAnimations, true) {
                     dayTop = top
+                    if isCurrent {
+                        pagerSkyTop = top
+                    }
                 }
             }
         }
@@ -225,6 +228,11 @@ struct DayTimeline: View {
     }
 
     private var contentHeight: CGFloat {
+        Self.contentHeight(of: day, pointsPerHour: pointsPerHour)
+    }
+
+    /// How tall `day` draws, which time is proportional to.
+    static func contentHeight(of day: SolarDay, pointsPerHour: CGFloat = defaultPointsPerHour) -> CGFloat {
         pointsPerHour * day.duration / (60 * 60)
     }
 
@@ -316,30 +324,10 @@ extension DayTimeline {
     }
 }
 
-/// A copy of the day's sky behind the scroll view, at the same place on screen as the one it scrolls.
-private struct ScrolledSky: View {
-    let day: SolarDay
-    let height: CGFloat
-    @Binding var top: CGFloat
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        ZStack {
-            // Changes between days the same way as the sky it copies.
-            SkyGradient(day: day)
-                .id(day.phaseSequence)
-                .transition(.opacity)
-        }
-        .animation(reduceMotion ? nil : .smooth, value: day)
-        .frame(height: height)
-        .offset(y: top)
-    }
-}
-
 #Preview {
     @Previewable @State var sky = DayPhase.night.color
     @Previewable @State var isSourcesDark = true
+    @Previewable @State var skyTop: CGFloat = 0
     // An iPhone's status bar and home indicator, which `DayPager` would measure.
     DayTimeline(
         day: .mock(),
@@ -347,6 +335,7 @@ private struct ScrolledSky: View {
         weather: WeatherSpell.mock(),
         skyBehindTitle: $sky,
         isSourcesDark: $isSourcesDark,
-        safeAreaInsets: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0)
+        safeAreaInsets: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0),
+        pagerSkyTop: $skyTop
     )
 }

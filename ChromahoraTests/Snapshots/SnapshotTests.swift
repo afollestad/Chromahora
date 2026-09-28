@@ -44,17 +44,27 @@ extension ScreenSnapshotting {
         screen(.loaded(day), selectedDate: day.dayStart, now: now, weather: weather, place: place)
     }
 
-    /// The screen in `state`, with `selectedDate` chosen, at `now`. Only the day panel
-    /// names `place`, so it shows only in wide snapshots.
+    /// The screen in `state`, with `selectedDate` chosen, at `now`, open on `initialPane`. Only
+    /// the day panel names `place`, so it shows only in wide snapshots.
     func screen(
         _ state: SolarDayStore.LoadState,
         selectedDate: Date,
         now: Date,
         weather: [WeatherSpell] = [],
-        place: Place? = nil
+        hours: [SkyHour] = [],
+        place: Place? = nil,
+        initialPane: DayPager.Pane = .timeline
     ) -> some View {
         NavigationStack {
-            DayScreen(state: state, now: now, selectedDate: .constant(selectedDate), place: place, weather: weather) {}
+            DayScreen(
+                state: state,
+                now: now,
+                selectedDate: .constant(selectedDate),
+                place: place,
+                weather: weather,
+                hours: hours,
+                initialPane: initialPane
+            ) {}
         }
     }
 }

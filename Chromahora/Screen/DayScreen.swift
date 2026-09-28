@@ -18,6 +18,10 @@ struct DayScreen: View {
     var place: Place?
     /// The forecast's spells, which the timeline marks on the day they fall on.
     var weather: [WeatherSpell] = []
+    /// The forecast's hours, which the day's details read its light and sky from.
+    var hours: [SkyHour] = []
+    /// The page beside the timeline to open on, which snapshots and `-DebugPane` set.
+    var initialPane = DayPager.Pane.timeline
     let onRetry: () -> Void
     /// Selects the day a pull through the timeline's end leads to, a number of days from the
     /// one pulled, and answers whether it's on hand to page to at once.
@@ -51,6 +55,7 @@ struct DayScreen: View {
                         selectedDate: $selectedDate,
                         place: place,
                         weather: weather,
+                        hours: hours,
                         onToday: { focus.request() },
                         onFocus: { focus.request($0) }
                     )
@@ -62,8 +67,10 @@ struct DayScreen: View {
             } action: { width in
                 self.width = width
             }
-            .onChange(of: skyBehindTitle) {
-                isBarDark = DayTimeline.prefersDarkBar(over: skyBehindTitle, wasDark: isBarDark)
+            // In a view of its own, so the scroll changing the sky every frame across a blend
+            // doesn't run this body, and with it the pager and the details beside the timeline.
+            .background {
+                BarScheme(sky: $skyBehindTitle, isDark: $isBarDark)
             }
             .toolbarColorScheme(isBarDark ? .dark : .light, for: .navigationBar)
             .navigationTitle("Chromahora")
@@ -92,11 +99,16 @@ struct DayScreen: View {
                     day: day,
                     now: now,
                     weather: weather,
+                    hours: hours,
                     skyBehindTitle: $skyBehindTitle,
                     titleMidY: titleMidY,
                     focus: focus,
                     panelInset: panelInset,
-                    onPage: onPage
+                    onPage: onPage,
+                    // A window with the panel lists the details there, so only one without it pages to them.
+                    showsDetails: !showsPanel,
+                    initialPane: initialPane,
+                    onFocus: { focus.request($0) }
                 )
                     .transition(.identity)
             }
@@ -149,6 +161,19 @@ struct DayScreen: View {
     }
 }
 
+/// Picks the navigation bar's scheme from the sky behind the title.
+private struct BarScheme: View {
+    @Binding var sky: Color
+    @Binding var isDark: Bool
+
+    var body: some View {
+        Color.clear
+            .onChange(of: sky) {
+                isDark = DayTimeline.prefersDarkBar(over: sky, wasDark: isDark)
+            }
+    }
+}
+
 #Preview("Loaded") {
     @Previewable @State var selectedDate = Date.now
     NavigationStack {
@@ -156,7 +181,22 @@ struct DayScreen: View {
             state: .loaded(.mock(for: selectedDate)),
             now: .now,
             selectedDate: $selectedDate,
-            weather: WeatherSpell.mock(for: selectedDate)
+            weather: WeatherSpell.mock(for: selectedDate),
+            hours: SkyHour.mock(for: selectedDate)
+        ) {}
+    }
+}
+
+#Preview("Details") {
+    @Previewable @State var selectedDate = Date.now
+    NavigationStack {
+        DayScreen(
+            state: .loaded(.mock(for: selectedDate)),
+            now: .now,
+            selectedDate: $selectedDate,
+            weather: WeatherSpell.mock(for: selectedDate),
+            hours: SkyHour.mock(for: selectedDate),
+            initialPane: .details
         ) {}
     }
 }
@@ -169,7 +209,8 @@ struct DayScreen: View {
             now: .now,
             selectedDate: $selectedDate,
             place: MockPlaceProvider.sanFrancisco,
-            weather: WeatherSpell.mock(for: selectedDate)
+            weather: WeatherSpell.mock(for: selectedDate),
+            hours: SkyHour.mock(for: selectedDate)
         ) {}
     }
     .environment(\.horizontalSizeClass, .regular)

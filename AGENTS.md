@@ -32,7 +32,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh -b` and capture with `xcrun simctl io <udid> screenshot`.
 - Every visible change also runs `./scripts/snapshots.sh verify`. When the change is intended, `record` the affected baselines and look at the new images.
 - Reach other states with debug launch arguments after `--`, e.g. `./scripts/run.sh -b -- -DebugNow 2026-09-16T03:00:00 -DebugProviderMode hang`. `DebugSettings` documents each one; give `-DebugPlace` hemisphere letters (`33.9S,151.2E`), since the argument domain drops a value starting with `-`.
-- `simctl` cannot scroll or tap. To open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render.
+- `simctl` cannot scroll or tap. To open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render; to reach the page beside the timeline, launch with `-DebugPane details`.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.
 
 ## Design rules
@@ -41,9 +41,10 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Keep weather out of `SolarDay`, since forecasts change and fail while sun times don't. `WeatherStore` loads a `Forecast` of `WeatherSpell`s and `SkyHour`s through a `WeatherProvider`, and a failure only leaves the timeline without them.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. The top edge, and the bottom under `SourcesButton`, use the soft scroll edge effect, which blurs labels and lines under the bars so they don't run through the clock or the button; the hard style would paint a dark band.
 - A regular-width window with room for a 390pt timeline beside it (iPad, an opened foldable, a Pro Max in landscape) floats the glass `DayPanel` on the trailing side in place of the calendar button. Size class and width alone decide, with no control to hide it.
+- Without the panel, a sideways swipe pages from the timeline to `DayDetailsPage` over `DayPager`'s copy of the sky, with `PageDots` under `SourcesButton`. The panel lists the same `DayDetails` under its calendar, with no pager.
 - Popovers and the day panel keep the default Liquid Glass like the rest of the floating chrome, not a material background, so give them primary text and underlined links; a bright sky through the glass washes out gray and tinted text. Cap their content at `accessibility1`, since at their width larger text breaks to a word a line.
 - Hide decorative shapes from accessibility. Every control needs a label, and the calendar button also exposes the selected day as its value.
-- Keep the sunrise-sunset.org link and `AppleWeatherCredit` in `SourcesButton`'s popover, and `AppleWeatherCredit` in the weather popover and under the day panel's weather; both services' terms require them. The button always names sunrise-sunset.org, whose terms want the credit visible, and leads with the Apple Weather mark whenever the timeline shows weather, since App Review looks for the mark wherever weather shows.
+- Keep the sunrise-sunset.org link and `AppleWeatherCredit` in `SourcesButton`'s popover, and `AppleWeatherCredit` in the weather popover and under the day panel's weather, though `DayDetailsPage` leaves it to the button right below; both services' terms require them. The button always names sunrise-sunset.org, whose terms want the credit visible, and leads with the Apple Weather mark whenever the timeline shows weather, since App Review looks for the mark wherever weather shows.
 
 ## Code conventions
 

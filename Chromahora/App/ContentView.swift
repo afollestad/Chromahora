@@ -42,6 +42,8 @@ struct ContentView: View {
                     selectedDate: $store.selectedDate,
                     place: store.place,
                     weather: weather.spells(at: store.place),
+                    hours: weather.hours(at: store.place),
+                    initialPane: initialPane,
                     onRetry: store.reload,
                     onPage: store.selectDay(offsetBy:from:)
                 )
@@ -74,6 +76,15 @@ struct ContentView: View {
         }
         #if DEBUG
         .debugDrawer(store: store, settings: debug)
+        #endif
+    }
+
+    /// The page beside the timeline to open on, which `-DebugPane` sets in debug builds.
+    private var initialPane: DayPager.Pane {
+        #if DEBUG
+        debug?.initialPane ?? .timeline
+        #else
+        .timeline
         #endif
     }
 

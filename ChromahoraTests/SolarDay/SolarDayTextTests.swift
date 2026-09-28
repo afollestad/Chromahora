@@ -23,6 +23,16 @@ struct SolarDayTextTests {
         #expect(plain(allDay.rangeText(of: allDay.segments[0])) == "all day")
     }
 
+    /// Dark sky windows are cut off by midnight like phases, so they read the same way.
+    @Test func anIntervalSitsInTheDayAsAPhaseWould() {
+        let hour: TimeInterval = 60 * 60
+
+        #expect(day.span(of: DateInterval(start: day.dayStart, duration: 5 * hour)) == .until)
+        #expect(day.span(of: DateInterval(start: day.dayStart.addingTimeInterval(22 * hour), end: day.dayEnd)) == .from)
+        #expect(day.span(of: DateInterval(start: day.dayStart.addingTimeInterval(hour), duration: hour)) == .range)
+        #expect(day.span(of: DateInterval(start: day.dayStart, end: day.dayEnd)) == .allDay)
+    }
+
     @Test func startingALineCapitalizesTheWordsOnly() {
         let segments = day.segments
 

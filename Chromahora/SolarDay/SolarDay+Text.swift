@@ -38,6 +38,16 @@ nonisolated extension SolarDay {
     func rangeText(of segment: DaySegment, startsLine: Bool = false) -> String {
         rangeText(segment.interval, span: segment.span, startsLine: startsLine)
     }
+
+    /// How `interval`, which lies within the day, sits in it, as a phase's span does.
+    func span(of interval: DateInterval) -> DaySegment.Span {
+        switch (interval.start <= dayStart, interval.end >= dayEnd) {
+        case (true, true): .allDay
+        case (true, false): .until
+        case (false, true): .from
+        case (false, false): .range
+        }
+    }
 }
 
 nonisolated extension DaySegment {
@@ -47,6 +57,11 @@ nonisolated extension DaySegment {
         guard span == .range else {
             return nil
         }
-        return Duration.seconds(interval.duration).formatted(.units(allowed: [.hours, .minutes], width: width))
+        return Self.durationText(interval.duration, width: width)
+    }
+
+    /// A length of time, as in "1 hr, 4 min".
+    static func durationText(_ duration: TimeInterval, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated) -> String {
+        Duration.seconds(duration).formatted(.units(allowed: [.hours, .minutes], width: width))
     }
 }

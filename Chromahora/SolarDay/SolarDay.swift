@@ -121,6 +121,12 @@ nonisolated struct DaySegment: Identifiable, Sendable {
 
 /// An instant worth marking on the timeline, like sunrise or sunset.
 nonisolated struct SolarEvent: Identifiable, Sendable {
+    enum Kind: Sendable {
+        case sunrise
+        case sunset
+    }
+
+    let kind: Kind
     let title: String
     let date: Date
     /// The SF Symbol the day panel lists it with.
@@ -203,8 +209,9 @@ nonisolated struct SolarDay: Equatable, Sendable {
     }
 
     var events: [SolarEvent] {
-        [("Sunrise", "sunrise.fill", sunrise), ("Sunset", "sunset.fill", sunset)].compactMap { title, symbolName, date in
-            date.map { SolarEvent(title: title, date: $0, symbolName: symbolName) }
+        let crossings = [(SolarEvent.Kind.sunrise, "Sunrise", "sunrise.fill", sunrise), (.sunset, "Sunset", "sunset.fill", sunset)]
+        return crossings.compactMap { kind, title, symbolName, date in
+            date.map { SolarEvent(kind: kind, title: title, date: $0, symbolName: symbolName) }
         }
     }
 

@@ -40,6 +40,8 @@
 				App/Info.plist,
 				Debug/AGENTS.md,
 				Debug/CLAUDE.md,
+				Details/AGENTS.md,
+				Details/CLAUDE.md,
 				Location/AGENTS.md,
 				Location/CLAUDE.md,
 				Screen/AGENTS.md,

@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-/// A quiet capsule at the foot of the timeline, which opens a popover saying where the sun
-/// times and weather come from, with the links both services' terms ask for. The capsule
+/// A quiet capsule at the foot of the timeline, which opens a popover saying where the sun and
+/// moon times and weather come from, with the links both services' terms ask for. The capsule
 /// itself names sunrise-sunset.org, whose terms want the credit shown visibly, and while the
 /// timeline shows weather it leads with the Apple Weather mark, since App Review looks for
 /// the mark wherever weather shows. A credit a tap away isn't enough for either.
@@ -39,7 +39,9 @@ struct SourcesButton: View {
         .buttonStyle(.plain)
         // Spelled out, so VoiceOver reads the logo as Apple Weather and skips the separator.
         .accessibilityLabel(showsWeather ? Text("Apple Weather and sunrise-sunset.org") : Text("sunrise-sunset.org"))
-        .accessibilityHint(showsWeather ? Text("Shows where the sun times and weather come from") : Text("Shows where the sun times come from"))
+        .accessibilityHint(
+            showsWeather ? Text("Shows where the sun and moon times and weather come from") : Text("Shows where the sun and moon times come from")
+        )
         // The labels' cap, so the capsule never outgrows them.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .animation(.smooth, value: showsWeather)
@@ -66,10 +68,10 @@ private struct SourcesDetails: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Sun Times")
+                Text("Sun and Moon")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
-                Text("Sunrise, sunset, golden hour and blue hour come from sunrise-sunset.org.")
+                Text("Sunrise, sunset, golden and blue hours, the moon and the dark sky come from sunrise-sunset.org.")
                 if let sunSource = Self.sunSource {
                     // Primary and underlined, since a bright sky through a popover's glass washes
                     // out tinted text.
@@ -83,7 +85,7 @@ private struct SourcesDetails: View {
                     Text("Weather")
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)
-                    Text("Clouds, fog and the chance of rain or snow come from Apple Weather.")
+                    Text("Clouds, fog, the chance of rain or snow, the UV index and visibility come from Apple Weather.")
                     AppleWeatherCredit()
                 }
             }

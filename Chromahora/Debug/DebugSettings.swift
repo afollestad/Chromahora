@@ -57,6 +57,8 @@ final class DebugSettings {
     /// Stands in for wherever the place provider would put the device.
     var placeOverride: Place?
     var opensPanelOnLaunch: Bool
+    /// The page beside the timeline the app opens on, since `simctl` can't swipe to it.
+    var initialPane: DayPager.Pane
     /// The app's sun-time cache, which the drawer summarizes and clears.
     var cache: SolarDayCache?
     /// The app's place provider, whose stored fix the drawer can forget.
@@ -64,9 +66,10 @@ final class DebugSettings {
     /// The app's forecast cache, whose last request the drawer shows and clears.
     var forecastCache: ForecastCache?
 
-    /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugWeather`, `-DebugNow`, `-DebugPlace` and
-    /// `-DebugPanel` from `arguments`, ignoring values it can't parse. `-DebugNow` is local time, as in
-    /// `2026-09-16T03:00:00`, and `-DebugPlace` is as in `59.9N,30.3E`.
+    /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugWeather`, `-DebugNow`, `-DebugPlace`,
+    /// `-DebugPanel` and `-DebugPane` from `arguments`, ignoring values it can't parse. `-DebugNow` is
+    /// local time, as in `2026-09-16T03:00:00`, `-DebugPlace` is as in `59.9N,30.3E`, and `-DebugPane`
+    /// is `timeline` or `details`.
     init(arguments: [String: Any] = [:], timeZone: TimeZone = .current) {
         providerMode = (arguments["DebugProviderMode"] as? String).flatMap(ProviderMode.init(rawValue:)) ?? .live
         scenario = (arguments["DebugScenario"] as? String).flatMap(MockScenario.init(rawValue:))
@@ -74,6 +77,7 @@ final class DebugSettings {
         nowOverride = (arguments["DebugNow"] as? String).flatMap { Self.localDate(from: $0, in: timeZone) }
         placeOverride = (arguments["DebugPlace"] as? String).flatMap(Self.place(from:))
         opensPanelOnLaunch = (arguments["DebugPanel"] as? String).map(Self.isTrue) ?? false
+        initialPane = (arguments["DebugPane"] as? String).flatMap(DayPager.Pane.init(rawValue:)) ?? .timeline
     }
 
     /// Settings from this process's launch arguments. Only the argument domain is read, so
