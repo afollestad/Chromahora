@@ -18,7 +18,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 - Xcode 27 project with an iOS 27 deployment target. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely.
 - Source folders are synchronized groups. New files under `Chromahora/` or `ChromahoraTests/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above and `App/Info.plist`, which `INFOPLIST_FILE` merges into the generated plist for keys with no `INFOPLIST_KEY_` setting.
-- First-time setup: `./scripts/setup.sh` installs `swiftlint` and `xcsift` and a pre-commit hook that lints.
+- First-time setup: `./scripts/setup.sh` installs `swiftlint`, `xcsift` and `axe` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.
 - Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).
 - Tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`. It includes the snapshot suite pinned to `SIMULATOR`'s device, `SnapshotTests` on iPhone 18 Pro or `WideSnapshotTests` on iPad mini (A17 Pro), and skips the other.
@@ -32,7 +32,8 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh -b` and capture with `xcrun simctl io <udid> screenshot`.
 - Every visible change also runs `./scripts/snapshots.sh verify`. When the change is intended, `record` the affected baselines and look at the new images.
 - Reach other states with debug launch arguments after `--`, e.g. `./scripts/run.sh -b -- -DebugNow 2026-09-16T03:00:00 -DebugProviderMode hang`. `DebugSettings` documents each one; give `-DebugPlace` hemisphere letters (`33.9S,151.2E`), since the argument domain drops a value starting with `-`.
-- `simctl` cannot scroll or tap. To open a popover, flip its state from a `.task` after a short delay, because presentations on the first frame don't render; to reach the page beside the timeline, launch with `-DebugPane details`.
+- `simctl` cannot tap or drag, so use `axe touch --down --up --delay 0.1`, `axe drag` and `axe describe-ui` with `--udid`, which reach the simulator without the host's cursor; never post host mouse events, which take over the user's. `axe tap` doesn't activate this app's controls and `axe swipe` often leaves its scroll views in place, so tap and scroll with those instead.
+- To open a popover without a tap, flip its state from a `.task` after a short delay, because presentations on the first frame don't render; to reach the page beside the timeline, launch with `-DebugPane details`.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.
 
 ## Design rules

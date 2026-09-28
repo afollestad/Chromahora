@@ -7,7 +7,7 @@ Sun and moon times come from [sunrise-sunset.org](https://sunrise-sunset.org), a
 ## Development
 
 ```sh
-./scripts/setup.sh             # Install SwiftLint and xcsift, and a lint pre-commit hook
+./scripts/setup.sh             # Install SwiftLint, xcsift and AXe, and a lint pre-commit hook
 ./scripts/build.sh             # Build for the iOS Simulator
 ./scripts/run.sh -b            # Build, install, and launch in the simulator (omit -b to relaunch the last build; pass launch arguments after --)
 ./scripts/test.sh              # Run unit and snapshot tests

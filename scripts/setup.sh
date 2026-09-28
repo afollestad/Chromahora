@@ -22,6 +22,8 @@ install_brew_formula() {
 
 install_brew_formula xcsift
 install_brew_formula swiftlint
+# Taps, drags and reads the simulator's accessibility tree without the host's cursor.
+install_brew_formula cameroncooke/axe/axe
 
 "$repo_root/scripts/install-git-hooks.sh"
 
