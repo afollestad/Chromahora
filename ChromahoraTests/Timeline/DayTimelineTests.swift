@@ -28,4 +28,12 @@ struct DayTimelineTests {
         #expect(DayTimeline.prefersDarkBar(over: crossover, wasDark: true))
         #expect(!DayTimeline.prefersDarkBar(over: crossover, wasDark: false))
     }
+
+    @Test func labelsTurnDarkOverNightBlueHourAndDuskAndLightOverGoldenHourAndDaylight() {
+        #expect(DayTimeline.labelScheme(over: DayPhase.night.color) == .dark)
+        #expect(DayTimeline.labelScheme(over: DayPhase.blueHour.color) == .dark)
+        #expect(DayTimeline.labelScheme(over: SkyGradient.duskBridge) == .dark)
+        #expect(DayTimeline.labelScheme(over: DayPhase.goldenHour.color) == .light)
+        #expect(DayTimeline.labelScheme(over: DayPhase.daylight.color) == .light)
+    }
 }

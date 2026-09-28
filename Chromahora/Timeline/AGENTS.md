@@ -11,7 +11,7 @@ These rules cover `Chromahora/Timeline/` and its tests in `ChromahoraTests/Timel
 - The timeline draws edge to edge, so its content sees zero safe-area insets. Inset labels by the per-edge `safeAreaInsets` that `DayTimeline` measures outside `ignoresSafeArea`, never by a fixed padding alone.
 - Pad the scroll content by the safe area plus `edgeClearance` at both ends, so midnight at either end scrolls clear of the bars. Use padding, not `contentMargins`, which would also move where the timeline centers on its focus.
 - The soft scroll edge effect fades the content toward whatever is behind the scroll view, so its background carries a copy of the sky in step with the scroll. Paint anything new onto that copy too, or the bars tint what's under them.
-- Keep `labelSpacing` in `DayTimelineOverlay` larger than the glass container's merge distance so stacked capsules never fuse.
+- Each label takes the color scheme of the sky behind it from `DayTimeline.labelScheme(over:)`, since white text on daylight contrasts at 1.5:1. Keep labels out of a `GlassEffectContainer`, which renders every capsule in the container's scheme.
 - Weather spells are markers in the leading column, so the overlay's spacing keeps them off every label; never position them separately. Only precipitation draws a line, since sky lines would stripe the whole day.
 
 ### Verifying

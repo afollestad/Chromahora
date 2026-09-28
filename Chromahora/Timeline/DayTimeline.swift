@@ -28,10 +28,12 @@ struct DayTimeline: View {
     /// cap, plus the gap held labels keep from the bars.
     private static let edgeClearance: CGFloat = 24
 
-    /// The sky's relative luminance where white and black text contrast with it
-    /// equally is about 0.18. The bar turns dark below this range and light above
-    /// it, so scrolling slowly across the crossover doesn't flicker the title.
-    private static let darkBarLuminance = 0.17...0.19
+    /// The sky's relative luminance where white and black text contrast with it equally.
+    private static let crossoverLuminance = 0.18
+
+    /// The bar turns dark below this range and light above it, so scrolling slowly
+    /// across the crossover doesn't flicker the title.
+    private static let darkBarLuminance = (crossoverLuminance - 0.01)...(crossoverLuminance + 0.01)
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var safeAreaInsets = EdgeInsets()
@@ -161,6 +163,13 @@ struct DayTimeline: View {
             return false
         }
         return wasDark
+    }
+
+    /// The scheme a timeline label takes over `color`, so its text and glass contrast with the sky
+    /// rather than follow the system's appearance. Labels scroll with the sky beneath them, so
+    /// unlike the bar they need no margin against flicker.
+    static func labelScheme(over color: Color) -> ColorScheme {
+        luminance(of: color) < crossoverLuminance ? .dark : .light
     }
 
     /// Relative luminance as WCAG defines it, which weights green most because the eye is most sensitive to it.

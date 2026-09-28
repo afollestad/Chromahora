@@ -13,6 +13,9 @@ struct WeatherButton: View {
     let range: String
     /// Whether the spell starts in daylight or golden hour, which shows a sun rather than a moon.
     let inDaylight: Bool
+    /// The scheme of the sky behind the capsule, which the overlay picks for every label.
+    /// Only the capsule takes it, so the popover keeps the system's.
+    let scheme: ColorScheme
 
     @State private var isPresented = false
 
@@ -27,6 +30,7 @@ struct WeatherButton: View {
                 .padding(.horizontal, 7)
                 .padding(.vertical, 5)
                 .glassEffect(.regular.interactive(), in: Capsule())
+                .environment(\.colorScheme, scheme)
                 // A taller target than the capsule, without widening what the overlay measures.
                 .padding(.vertical, 10)
                 .contentShape(.rect)
@@ -72,7 +76,7 @@ private struct WeatherDetails: View {
 
 #Preview {
     let spell = WeatherSpell.mock()[3]
-    WeatherButton(spell: spell, range: "3:00 – 5:00 PM", inDaylight: true)
+    WeatherButton(spell: spell, range: "3:00 – 5:00 PM", inDaylight: true, scheme: .light)
         .padding()
         .background(DayPhase.daylight.color)
 }
