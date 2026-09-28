@@ -46,6 +46,11 @@ extension SnapshotTests {
 
     // MARK: Weather
 
+    /// A spell for forecasts that `WeatherSpell.mock(for:)` doesn't shape.
+    private func spell(_ condition: SkyCondition, _ start: Date, _ end: Date, chance: Double = 0, cover: Double) -> WeatherSpell {
+        WeatherSpell(condition: condition, interval: DateInterval(start: start, end: end), precipitationChance: chance, cloudCover: cover)
+    }
+
     /// Rain at 3 PM draws a dashed line, and the clear sky after it shows the sun just below Now.
     @Test func weatherThisAfternoon() async throws {
         try await assertScreenSnapshot(of: timeline(now: time(16, 30), weather: WeatherSpell.mock(for: time(12))))
@@ -60,15 +65,22 @@ extension SnapshotTests {
     /// Now, Sunset and rain starting ten minutes after it stack in time order, and the
     /// clear night after the rain shows the moon.
     @Test func rainJustAfterSunset() async throws {
-        func spell(_ condition: SkyCondition, _ start: Date, _ end: Date, chance: Double = 0, cover: Double) -> WeatherSpell {
-            WeatherSpell(condition: condition, interval: DateInterval(start: start, end: end), precipitationChance: chance, cloudCover: cover)
-        }
         let weather = [
             spell(.partlyCloudy, try time(12), try time(19), cover: 0.5),
             spell(.rain, try time(19), try time(21), chance: 0.7, cover: 1),
             spell(.clear, try time(21), try time(day: 17, 0), cover: 0.1)
         ]
         try await assertScreenSnapshot(of: timeline(now: time(18, 40), weather: weather))
+    }
+
+    /// The icon for clouds arriving fifteen minutes before sunset rises to make room, so
+    /// Sunset's label stays on its line.
+    @Test func cloudsJustBeforeSunset() async throws {
+        let weather = [
+            spell(.partlyCloudy, try time(12), try time(18, 35), cover: 0.5),
+            spell(.cloudy, try time(18, 35), try time(day: 17, 0), cover: 0.9)
+        ]
+        try await assertScreenSnapshot(of: timeline(now: time(16, 30), weather: weather))
     }
 
     /// Weather icons keep their place among marker labels that have grown.

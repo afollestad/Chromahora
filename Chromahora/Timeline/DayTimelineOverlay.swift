@@ -51,7 +51,7 @@ struct DayTimelineOverlay: View {
     private let heldLabelInset: CGFloat = 8
 
     /// Minimum vertical distance between neighboring labels on the same edge.
-    /// Labels that would sit closer than this are pushed down; marker lines stay
+    /// Labels that would sit closer than this are moved apart; marker lines stay
     /// put. It leaves a visible gap between stacked capsules, and grows with the labels' text.
     @ScaledMetric(relativeTo: .caption2) private var labelSpacing: CGFloat = 28
 
@@ -152,7 +152,7 @@ struct DayTimelineOverlay: View {
     /// and phase labels slide across lines while scrolling.
     private func markerLines(_ markers: [PlacedMarker], size: CGSize) -> some View {
         ZStack {
-            ForEach(markers) { placed in
+            ForEach(markers.filter { drawsLine($0.marker) }) { placed in
                 markerLine(for: placed.marker)
                     .position(x: size.width / 2, y: placed.lineY)
             }
@@ -227,11 +227,21 @@ struct DayTimelineOverlay: View {
 
     // MARK: Pieces
 
-    /// Sunrise, sunset and now draw a solid line across the day, at one opacity that reads
-    /// over daylight without now's line outshining the sun's. Precipitation draws a dashed
-    /// one where it begins, since it's the weather worth lining up against the phases, with
-    /// short even dashes that read as a forecast beside the sun's firm lines. Sky changes draw
+    /// Sunrise, sunset and now draw a line across the day, and so does precipitation where it
+    /// begins, since it's the weather worth lining up against the phases. Sky changes draw
     /// none, which would stripe the whole day, and neither does a spell carried over from the night before.
+    private func drawsLine(_ marker: Marker) -> Bool {
+        switch marker.kind {
+        case .event, .now:
+            true
+        case .weather(let spell, _, _):
+            spell.condition.isPrecipitation && spell.interval.start > day.dayStart
+        }
+    }
+
+    /// The sun's and now's lines are solid, at one opacity that reads over daylight without
+    /// now's outshining the sun's. Precipitation's are dashed, with short even dashes that read
+    /// as a forecast beside the sun's firm lines.
     @ViewBuilder
     private func markerLine(for marker: Marker) -> some View {
         switch marker.kind {
@@ -239,12 +249,10 @@ struct DayTimelineOverlay: View {
             Rectangle()
                 .fill(.white.opacity(0.6))
                 .frame(height: 1)
-        case .weather(let spell, _, _):
-            if spell.condition.isPrecipitation, spell.interval.start > day.dayStart {
-                HorizontalRule()
-                    .stroke(.white.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                    .frame(height: 1)
-            }
+        case .weather:
+            HorizontalRule()
+                .stroke(.white.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .frame(height: 1)
         }
     }
 
@@ -323,8 +331,9 @@ struct DayTimelineOverlay: View {
     }
 
     /// Sunrise, sunset, "now" and weather in time order, with labels nudged apart when
-    /// they'd overlap. "Now" only appears when the current time falls on this day, and a
-    /// spell under way at midnight is marked there.
+    /// they'd overlap. Labels on lines move for each other, and weather labels without one move
+    /// for them. "Now" only appears when the current time falls on this day, and a spell under
+    /// way at midnight is marked there.
     private func placedMarkers(size: CGSize) -> [PlacedMarker] {
         var markers = day.events.map { Marker(id: $0.title, date: $0.date, kind: .event($0.title)) }
         if day.contains(now) {
@@ -343,8 +352,9 @@ struct DayTimelineOverlay: View {
         // Ties break by id, so markers at the same instant keep one order.
         markers.sort { ($0.date, $0.id) < ($1.date, $1.id) }
         let lineYs = markers.map { y(for: $0.date, in: size) }
+        let labelYs = Self.spaced(lineYs, pinned: markers.map(drawsLine), spacing: labelSpacing)
 
-        return zip(zip(markers, lineYs), spaced(lineYs)).map { pair, labelY in
+        return zip(zip(markers, lineYs), labelYs).map { pair, labelY in
             PlacedMarker(marker: pair.0, lineY: pair.1, labelY: labelY)
         }
     }
@@ -357,7 +367,7 @@ struct DayTimelineOverlay: View {
         // short, and the blue hour labels already mark where it begins and ends.
         // A night that fills the day is the exception, since nothing else would.
         let segments = day.segments.filter { $0.phase != .night || $0.span == .allDay }
-        let labelYs = spaced(segments.map { y(for: $0.midpoint, in: size) })
+        let labelYs = Self.spaced(segments.map { y(for: $0.midpoint, in: size) }, spacing: labelSpacing)
 
         return segments.indices.map { index in
             let segment = segments[index]
@@ -382,12 +392,28 @@ struct DayTimelineOverlay: View {
         }
     }
 
-    /// Pushes ascending positions down as needed so neighbors sit at least `labelSpacing` apart.
-    private func spaced(_ positions: [CGFloat]) -> [CGFloat] {
+    /// Pushes ascending positions down as needed so neighbors sit at least `spacing` apart.
+    /// A pinned position first lifts the unpinned ones right above it to make room, since a
+    /// label off its line reads as marking another time, and one without a line has none to
+    /// leave. They rise no higher than the pinned one above them allows, or than the top of
+    /// the day, where `DayTimeline` leaves only enough room for a label centered on it.
+    static func spaced(_ positions: [CGFloat], pinned: [Bool] = [], spacing: CGFloat) -> [CGFloat] {
         var result: [CGFloat] = []
-        for y in positions {
-            if let previous = result.last, y - previous < labelSpacing {
-                result.append(previous + labelSpacing)
+        for (index, y) in positions.enumerated() {
+            if pinned.indices.contains(index), pinned[index] {
+                var start = result.endIndex
+                while start > 0, !pinned[start - 1] {
+                    start -= 1
+                }
+                let highest = start > 0 ? result[start - 1] + spacing : 0
+                for lifted in start..<result.endIndex {
+                    let wanted = y - CGFloat(result.endIndex - lifted) * spacing
+                    let allowed = highest + CGFloat(lifted - start) * spacing
+                    result[lifted] = min(result[lifted], max(wanted, allowed))
+                }
+            }
+            if let previous = result.last, y - previous < spacing {
+                result.append(previous + spacing)
             } else {
                 result.append(y)
             }
