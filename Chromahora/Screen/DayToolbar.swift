@@ -90,6 +90,11 @@ private struct DayPickerButton: View {
                 isChoosingDay = false
                 onToday()
             }
+            // Once a drag turns the bar dark, its items pass a white foreground and tint into
+            // the popover, which sits over the sky below rather than the bar. It takes
+            // `Color.primary`, since `.primary` is a level of that white.
+            .foregroundStyle(Color.primary)
+            .tint(.accentColor)
             .presentationCompactAdaptation(.popover)
         }
         .onChange(of: selection) {
