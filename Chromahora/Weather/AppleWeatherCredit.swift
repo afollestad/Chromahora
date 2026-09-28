@@ -17,7 +17,11 @@ struct AppleWeatherCredit: View {
             Text("\(Image(systemName: "apple.logo")) Weather")
                 .accessibilityLabel("Apple Weather")
             if let legalPage = Self.legalPage {
+                // Primary and underlined, since a bright sky through a popover's glass washes
+                // out tinted text.
                 Link("Other data sources", destination: legalPage)
+                    .foregroundStyle(.primary)
+                    .underline()
             }
         }
     }

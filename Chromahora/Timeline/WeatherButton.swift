@@ -58,13 +58,15 @@ private struct WeatherDetails: View {
             Text(range.prefix(1).uppercased() + range.dropFirst())
             if let summary = spell.summary {
                 Text(summary)
-                    .foregroundStyle(.secondary)
             }
             AppleWeatherCredit()
                 .font(.footnote)
                 .padding(.top, 8)
         }
         .padding()
+        // Stops growing at accessibility1, like the timeline's labels. Past it, the popover runs
+        // out of room beside its marker and truncates the time range and the credit.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 }
 
