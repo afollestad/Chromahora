@@ -13,7 +13,7 @@ import Testing
 struct DevicePlaceProviderTests {
     private let source = StubLocationSource()
     private let fallback = StubPlaceProvider()
-    private let suiteName = "DevicePlaceProviderTests-\(UUID().uuidString)"
+    private let defaults = InMemoryDefaults()
     private let chicago = TimeZone(identifier: "America/Chicago") ?? .gmt
     private let tokyo = TimeZone(identifier: "Asia/Tokyo") ?? .gmt
     private let sanFrancisco = Place(latitude: 37.77, longitude: -122.42, source: .device)
@@ -25,19 +25,13 @@ struct DevicePlaceProviderTests {
     }
 
     /// `timeoutSleep` stands in for the fix timeout, which by default passes at once.
-    private func makeProvider(timeoutSleep: @escaping @Sendable (Duration) async throws -> Void = { _ in }) throws -> DevicePlaceProvider {
-        let defaults = try #require(UserDefaults(suiteName: suiteName))
-        return DevicePlaceProvider(source: source, fallback: fallback, defaults: defaults, sleep: timeoutSleep)
-    }
-
-    private func removeDefaults() {
-        UserDefaults().removePersistentDomain(forName: suiteName)
+    private func makeProvider(timeoutSleep: @escaping @Sendable (Duration) async throws -> Void = { _ in }) -> DevicePlaceProvider {
+        DevicePlaceProvider(source: source, fallback: fallback, defaults: defaults, sleep: timeoutSleep)
     }
 
     @Test func aFixPlacesTheDeviceAndIsRemembered() async throws {
-        defer { removeDefaults() }
         source.script = [.awaitingPermission, .fix(latitude: 37.77, longitude: -122.42)]
-        let provider = try makeProvider()
+        let provider = makeProvider()
 
         #expect(try await provider.currentPlace(in: chicago) == sanFrancisco)
         #expect(provider.lastKnownPlace(in: chicago) == sanFrancisco)
@@ -45,38 +39,34 @@ struct DevicePlaceProviderTests {
 
     /// A fix wavering over a cell's edge would otherwise reload the day and spend a forecast request.
     @Test func aNearbyFixKeepsTheStoredPlace() async throws {
-        defer { removeDefaults() }
         source.script = [.fix(latitude: 37.77, longitude: -122.42)]
         _ = try await makeProvider().currentPlace(in: chicago)
 
         // Rounds to the next cell south, about 7 km from the stored place's center.
         source.script = [.fix(latitude: 37.74, longitude: -122.42)]
         #expect(try await makeProvider().currentPlace(in: chicago) == sanFrancisco)
-        #expect(try makeProvider().lastKnownPlace(in: chicago) == sanFrancisco)
+        #expect(makeProvider().lastKnownPlace(in: chicago) == sanFrancisco)
     }
 
     @Test func aDistantFixReplacesTheStoredPlace() async throws {
-        defer { removeDefaults() }
         source.script = [.fix(latitude: 37.77, longitude: -122.42)]
         _ = try await makeProvider().currentPlace(in: chicago)
 
         source.script = [.fix(latitude: 37.34, longitude: -121.89)]
         let sanJose = Place(latitude: 37.34, longitude: -121.89, source: .device)
         #expect(try await makeProvider().currentPlace(in: chicago) == sanJose)
-        #expect(try makeProvider().lastKnownPlace(in: chicago) == sanJose)
+        #expect(makeProvider().lastKnownPlace(in: chicago) == sanJose)
     }
 
     /// Windowed to another zone, a remembered fix would describe a day off the device's clock.
     @Test func aFixFromAnotherZoneIsntReused() async throws {
-        defer { removeDefaults() }
         source.script = [.fix(latitude: 37.77, longitude: -122.42)]
         _ = try await makeProvider().currentPlace(in: chicago)
 
-        #expect(try makeProvider().lastKnownPlace(in: tokyo) == timeZoneCity)
+        #expect(makeProvider().lastKnownPlace(in: tokyo) == timeZoneCity)
     }
 
     @Test func deniedFallsBackToTheLastFixInTheZone() async throws {
-        defer { removeDefaults() }
         source.script = [.fix(latitude: 37.77, longitude: -122.42)]
         _ = try await makeProvider().currentPlace(in: chicago)
 
@@ -86,7 +76,6 @@ struct DevicePlaceProviderTests {
     }
 
     @Test func noFixInTimeFallsBackToTheTimeZone() async throws {
-        defer { removeDefaults() }
         source.script = [.noFix]
 
         #expect(try await makeProvider().currentPlace(in: chicago) == timeZoneCity)
@@ -95,9 +84,8 @@ struct DevicePlaceProviderTests {
     /// The prompt can stay up as long as the person likes, so it never times out, and
     /// cancelling the wait throws rather than settling for the fallback.
     @Test func awaitingPermissionWaitsUntilCancelled() async throws {
-        defer { removeDefaults() }
         source.script = [.awaitingPermission]
-        let provider = try makeProvider { _ in
+        let provider = makeProvider { _ in
             Issue.record("Timed out while the permission prompt was up")
         }
 
@@ -110,7 +98,6 @@ struct DevicePlaceProviderTests {
     }
 
     @Test func withNoFixAndNoCityItFails() async throws {
-        defer { removeDefaults() }
         source.script = [.denied]
         fallback.error = PlaceError.unavailable(timeZone: "GMT")
 

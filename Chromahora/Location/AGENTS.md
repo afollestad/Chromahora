@@ -9,3 +9,4 @@ These rules cover `Chromahora/Location/` and its tests in `ChromahoraTests/Locat
 - Verify location with `xcrun simctl privacy <udid> grant|revoke location com.afollestad.Chromahora` and `xcrun simctl location <udid> set <lat>,<lng>`, then `reset` and `clear` them. Pass a matching zone as `SIMCTL_CHILD_TZ`, since a stored fix is only reused in its own zone.
 - Move a simulated location farther than `DevicePlaceProvider.moveThreshold` to see a new place, since a nearer fix keeps the stored one.
 - Tests script location through `StubLocationSource` and pass `DevicePlaceProvider` an instant `sleep`, so they never wait for a fix or a timeout.
+- Give `DevicePlaceProvider` an `InMemoryDefaults` in tests, never a real `UserDefaults` suite, which leaves a plist in the simulator on every run even after `removePersistentDomain`.
