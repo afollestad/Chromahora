@@ -20,6 +20,8 @@ struct SolarDayStoreTests {
     /// Mid-afternoon, so a selected time is distinguishable from the start of its day.
     private let monday = Date(timeIntervalSince1970: 1_790_000_000)
     private var tuesday: Date { monday.addingTimeInterval(24 * 60 * 60) }
+    private var sunday: Date { monday.addingTimeInterval(-24 * 60 * 60) }
+    private var wednesday: Date { monday.addingTimeInterval(2 * 24 * 60 * 60) }
 
     private let provider = StubSolarDayProvider()
     private let places = StubPlaceProvider()
@@ -373,6 +375,79 @@ struct SolarDayStoreTests {
         request.fail(with: CancellationError())
         await loading.value
 
+        #expect(store.state.isLoading)
+    }
+
+    // MARK: Adjacent days
+
+    @Test func theDaysEitherSideLoadAfterTheSelectedOne() async {
+        let store = makeStore()
+        await store.loadSelectedDay()
+        await store.loadAdjacentDays()
+
+        #expect(provider.requestedDates == [dayStart(monday), dayStart(sunday), dayStart(tuesday)])
+    }
+
+    @Test func heldDaysArentAskedForAgain() async {
+        let store = makeStore()
+        await store.loadSelectedDay()
+        await store.loadAdjacentDays()
+        store.selectedDate = tuesday
+        await store.loadSelectedDay()
+        await store.loadAdjacentDays()
+
+        #expect(provider.requestedDates == [dayStart(monday), dayStart(sunday), dayStart(tuesday), dayStart(wednesday)])
+    }
+
+    /// A provider that failed the selected day isn't asked for more.
+    @Test func theDaysEitherSideWaitForTheSelectedOne() async {
+        let store = makeStore()
+        await store.loadAdjacentDays()
+        provider.error = StubError()
+        await store.loadSelectedDay()
+        await store.loadAdjacentDays()
+
+        #expect(provider.requestedDates == [dayStart(monday)])
+    }
+
+    @Test func pagingToAHeldDayShowsItAtOnce() async {
+        let store = makeStore()
+        await store.loadSelectedDay()
+        await store.loadAdjacentDays()
+
+        #expect(store.selectDay(containing: dayStart(tuesday)))
+        #expect(store.selectedDayStart == dayStart(tuesday))
+        #expect(store.state.loadedDay?.dayStart == dayStart(tuesday))
+
+        await store.loadSelectedDay()
+
+        #expect(provider.requestedDates.count == 3)
+        #expect(store.state.loadedDay?.dayStart == dayStart(tuesday))
+    }
+
+    @Test func pagingToADayNotHeldLeavesItToLoad() async {
+        let store = makeStore()
+        await store.loadSelectedDay()
+
+        #expect(!store.selectDay(containing: dayStart(tuesday)))
+        #expect(store.selectedDayStart == dayStart(tuesday))
+        #expect(store.state.loadedDay?.dayStart == dayStart(monday))
+
+        await store.loadSelectedDay()
+
+        #expect(provider.requestedDates == [dayStart(monday), dayStart(tuesday)])
+        #expect(store.state.loadedDay?.dayStart == dayStart(tuesday))
+    }
+
+    /// Reykjavik keeps GMT's offset all year, so its days start when the held GMT ones do.
+    @Test func daysHeldForAnotherZoneArentPagedTo() async throws {
+        let store = makeStore()
+        await store.loadSelectedDay()
+        await store.loadAdjacentDays()
+
+        store.changeTimeZone(to: try #require(TimeZone(identifier: "Atlantic/Reykjavik")))
+
+        #expect(!store.selectDay(containing: dayStart(tuesday)))
         #expect(store.state.isLoading)
     }
 }

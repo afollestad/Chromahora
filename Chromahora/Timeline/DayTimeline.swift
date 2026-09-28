@@ -7,7 +7,7 @@ import SwiftUI
 
 /// A scrolling, top-to-bottom view of one day. `pointsPerHour` sets the zoom
 /// level. The view opens centered on the current time when showing today, and
-/// on the middle of its brightest phase otherwise.
+/// on the middle of its brightest phase otherwise, unless `DayPager` opens it at an end.
 struct DayTimeline: View {
     let day: SolarDay
     let now: Date
@@ -17,6 +17,12 @@ struct DayTimeline: View {
     @Binding var skyBehindTitle: Color
     /// The title's center in global coordinates, which places that sky sample.
     var titleMidY: CGFloat = 0
+    /// Whether the sources button `DayPager` floats over the timeline takes the dark scheme.
+    /// Like the bar, it stays put while the sky scrolls under it, so it takes the bar's
+    /// hysteresis rather than a label's scheme.
+    @Binding var isSourcesDark: Bool
+    /// The sources button's center in global coordinates, which places the sky sample behind it.
+    var sourcesMidY: CGFloat = 0
     /// Scrolls whenever it changes: to the focus time for Today, or to a phase or spell the
     /// day panel asks for.
     var focus = Focus()
@@ -24,6 +30,19 @@ struct DayTimeline: View {
     /// lines and the sources button stop short of it, since its glass would show a line through
     /// its text. It isn't safe area, which would reach the lines only mixed with the device's.
     var panelInset: CGFloat = 0
+    /// The screen's safe area, sources bar included. The timeline draws edge to edge, so its
+    /// content sees no insets, and `DayPager` measures them where a push doesn't move them.
+    var safeAreaInsets = EdgeInsets()
+    /// The timeline's top edge in global coordinates, which places the sky samples behind the
+    /// title and the sources button.
+    var timelineMinY: CGFloat = 0
+    /// Where the view opens.
+    var opening = Opening.focus
+    /// Whether this is the page on screen rather than one `DayPager` is pushing off it. Only
+    /// the page on screen reports the skies under the chrome, follows `focus` and pages.
+    var isCurrent = true
+    /// Called when a drag that began at one of the ends lets go past it, beyond `EdgePull.threshold`.
+    var onPullThrough: ((VerticalEdge) -> Void)?
     var pointsPerHour: CGFloat = 72
 
     private let focusAnchorID = "focus"
@@ -42,18 +61,16 @@ struct DayTimeline: View {
     private static let darkBarLuminance = (crossoverLuminance - 0.01)...(crossoverLuminance + 0.01)
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var safeAreaInsets = EdgeInsets()
-    /// The timeline's top edge in global coordinates, which places the sky samples behind the
-    /// title and the sources button.
-    @State private var timelineMinY: CGFloat = 0
     /// Where the scroll puts the day's top edge on screen. Only `ScrolledSky` reads it, so
     /// scrolling redraws that copy of the sky rather than the whole timeline.
     @State private var dayTop: CGFloat = 0
-    /// The sources button's center in global coordinates, which places the sky sample behind it.
-    @State private var sourcesMidY: CGFloat = 0
-    /// Like the bar, the sources button stays put while the sky scrolls under it, so it takes
-    /// the bar's hysteresis rather than a label's scheme.
-    @State private var isSourcesDark = true
+    /// How far the timeline is pulled past the end it can page through, if it is. Only
+    /// `EdgePullHint` reads it, for the same reason.
+    @State private var edgePull: EdgePull?
+    /// The end the current drag began at, the only one it can page through, until it lets go
+    /// short of it. A drag that scrolls into an end, like a fling, meets the rubber band without
+    /// a hint or a page.
+    @State private var pageableEdge: VerticalEdge?
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -100,6 +117,10 @@ struct DayTimeline: View {
                 .padding(.top, topClearance)
                 .padding(.bottom, safeAreaInsets.bottom + Self.edgeClearance)
             }
+            // The day before opens at its end from its first layout. Scrolling there once it appears
+            // would move its sky copy mid-push, outside the push's animation, and leave the copy
+            // standing where the push ends.
+            .defaultScrollAnchor(opening == .end ? .bottom : nil, for: .initialOffset)
             // Overscrolling past either end uncovers this, so each half continues the sky at
             // its end and the scrim runs on without a seam. The soft edge effect fades the
             // content toward it too, so it also carries the sky wherever the scroll puts it,
@@ -118,26 +139,19 @@ struct DayTimeline: View {
                 .ignoresSafeArea()
                 .accessibilityHidden(true)
             }
+            .overlay {
+                EdgePullHint(pull: $edgePull, day: day, insets: labelInsets, clearance: Self.edgeClearance)
+            }
             .ignoresSafeArea()
-            // Measured outside `ignoresSafeArea`, since the scroll content sees no insets at all,
-            // and inside the sources button's bar, so the bottom inset includes the button.
-            .onGeometryChange(for: EdgeInsets.self) { proxy in
-                proxy.safeAreaInsets
-            } action: { insets in
-                safeAreaInsets = insets
-            }
-            // The timeline extends past this frame by the top inset.
-            .onGeometryChange(for: CGFloat.self) { proxy in
-                proxy.frame(in: .global).minY - proxy.safeAreaInsets.top
-            } action: { minY in
-                timelineMinY = minY
-            }
             // Blurs labels and lines under the bars, as Photos does, so they don't run through the
             // clock or the sources button. The button's glass would show a line through its text,
             // and it stays put, so the overlay's cutout mask can't clear it.
             .scrollEdgeEffectStyle(.soft, for: .vertical)
+            // A page pulled in from another day lays out at the end it opens at.
             .onAppear {
-                proxy.scrollTo(focusAnchorID, anchor: .center)
+                if opening == .focus {
+                    proxy.scrollTo(focusAnchorID, anchor: .center)
+                }
             }
             // Only a new day moves the focus. The same day with new times, as after a
             // relocation, keeps the scroll where the reader left it.
@@ -148,7 +162,7 @@ struct DayTimeline: View {
             }
             // Today on another day scrolls once that day loads, through the change above.
             .onChange(of: focus) {
-                guard day.contains(focus.date ?? now) else {
+                guard isCurrent, day.contains(focus.date ?? now) else {
                     return
                 }
                 withAnimation {
@@ -158,15 +172,38 @@ struct DayTimeline: View {
             .onScrollGeometryChange(for: Color.self) { geometry in
                 sky(atGlobalY: titleMidY, in: geometry)
             } action: { _, color in
-                skyBehindTitle = color
+                if isCurrent {
+                    skyBehindTitle = color
+                }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
                 sky(atGlobalY: sourcesMidY, in: geometry)
             } action: { _, color in
-                // Assigned only when it flips, so scrolling doesn't redraw the timeline every frame.
-                let isDark = Self.prefersDarkBar(over: color, wasDark: isSourcesDark)
-                if isDark != isSourcesDark {
-                    isSourcesDark = isDark
+                if isCurrent {
+                    updateSourcesScheme(over: color)
+                }
+            }
+            .onScrollGeometryChange(for: EdgePull?.self) { geometry in
+                EdgePull(geometry)
+            } action: { _, pull in
+                edgePull = pull?.edge == pageableEdge ? pull : nil
+            }
+            // Only a drag that began at an end and lets go past the threshold pages through it.
+            .onScrollPhaseChange { oldPhase, newPhase, context in
+                if newPhase == .interacting, oldPhase != .interacting {
+                    pageableEdge = [VerticalEdge.top, .bottom].first { EdgePull.isAt($0, in: context.geometry) }
+                    return
+                }
+                guard oldPhase == .interacting else {
+                    return
+                }
+                // Let go short of the end it began at, so momentum carrying back into it only bounces.
+                guard let pull = EdgePull(context.geometry), pull.edge == pageableEdge else {
+                    pageableEdge = nil
+                    return
+                }
+                if isCurrent, pull.isArmed {
+                    onPullThrough?(pull.edge)
                 }
             }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
@@ -177,22 +214,7 @@ struct DayTimeline: View {
                     dayTop = top
                 }
             }
-            .safeAreaBar(edge: .bottom, spacing: 0) {
-                SourcesButton(showsWeather: showsWeather, scheme: isSourcesDark ? .dark : .light)
-                    .onGeometryChange(for: CGFloat.self) { proxy in
-                        proxy.frame(in: .global).midY
-                    } action: { midY in
-                        sourcesMidY = midY
-                    }
-                    // Centered under the timeline rather than the window, clear of the day panel.
-                    .padding(.trailing, panelInset)
-            }
         }
-    }
-
-    /// Whether any spell reaches this day, which is when the overlay marks weather and the sources button credits it.
-    private var showsWeather: Bool {
-        weather.contains { $0.span(within: day) != nil }
     }
 
     /// The insets labels keep from each edge: the device's, and the day panel's on the trailing one.
@@ -215,6 +237,14 @@ struct DayTimeline: View {
     private func sky(atGlobalY globalY: CGFloat, in geometry: ScrollGeometry) -> Color {
         let y = geometry.visibleRect.minY + globalY - timelineMinY - topClearance
         return SkyGradient.color(at: y / contentHeight, in: day)
+    }
+
+    /// Assigned only when it flips, so scrolling doesn't redraw the pager every frame.
+    private func updateSourcesScheme(over color: Color) {
+        let isDark = Self.prefersDarkBar(over: color, wasDark: isSourcesDark)
+        if isDark != isSourcesDark {
+            isSourcesDark = isDark
+        }
     }
 
     /// Whether the bar should be dark over `color`. Inside `darkBarLuminance` it keeps `wasDark`.
@@ -264,6 +294,14 @@ struct DayTimeline: View {
 }
 
 extension DayTimeline {
+    /// Where the view opens: on its focus, or for a page pulled in from the day before or
+    /// after, at the end that meets the day it left.
+    enum Opening {
+        case focus
+        case start
+        case end
+    }
+
     /// A request to scroll, as Today and the day panel's rows make. Each gets a new `id`, so
     /// asking for the same time again scrolls back to it.
     struct Focus: Equatable {
@@ -301,5 +339,14 @@ private struct ScrolledSky: View {
 
 #Preview {
     @Previewable @State var sky = DayPhase.night.color
-    DayTimeline(day: .mock(), now: .now, weather: WeatherSpell.mock(), skyBehindTitle: $sky)
+    @Previewable @State var isSourcesDark = true
+    // An iPhone's status bar and home indicator, which `DayPager` would measure.
+    DayTimeline(
+        day: .mock(),
+        now: .now,
+        weather: WeatherSpell.mock(),
+        skyBehindTitle: $sky,
+        isSourcesDark: $isSourcesDark,
+        safeAreaInsets: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0)
+    )
 }

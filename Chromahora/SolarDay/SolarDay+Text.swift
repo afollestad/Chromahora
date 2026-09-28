@@ -13,6 +13,11 @@ nonisolated extension SolarDay {
         date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: calendar.timeZone))
     }
 
+    /// A date, as in "Sat, Sep 26".
+    func dayText(_ date: Date) -> String {
+        date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).weekday(.abbreviated).month(.abbreviated).day())
+    }
+
     /// When `interval` runs within the day. A phase or spell cut off by midnight began or ends
     /// on another day, so its text gives only the side it has on this one. It reads
     /// mid-sentence, as in "until 4:00 AM", unless `startsLine` capitalizes it.

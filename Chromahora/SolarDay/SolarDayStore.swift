@@ -7,7 +7,8 @@ import Foundation
 import Observation
 
 /// Loads the selected day's solar schedule for the current place from a provider, and
-/// keeps every day it loads so returning to one doesn't wait on the provider again.
+/// keeps every day it loads so returning to one doesn't wait on the provider again. It
+/// also loads the days either side, so pulling the timeline through an end shows one at once.
 @Observable
 final class SolarDayStore {
     enum LoadState {
@@ -168,6 +169,38 @@ final class SolarDayStore {
                 state = .failed(error)
             }
         }
+    }
+
+    /// Loads the days before and after the selected one, so paging to either shows it at once.
+    ///
+    /// Only once the selected day has loaded, so a failing or rate-limited provider isn't asked
+    /// for more. A neighbor that fails is left for `loadSelectedDay()` to load if it's paged to.
+    func loadAdjacentDays() async {
+        guard let place, case .loaded(let shown) = state, shown.dayStart == selectedDayStart else {
+            return
+        }
+        for offset in [-1, 1] {
+            guard !Task.isCancelled,
+                  let date = calendar.date(byAdding: .day, value: offset, to: selectedDayStart) else {
+                return
+            }
+            let key = DayKey(place: place, dayStart: calendar.startOfDay(for: date), timeZone: calendar.timeZone)
+            if loadedDays[key] == nil, let day = try? await provider.solarDay(for: key.dayStart, at: place, calendar: calendar) {
+                loadedDays[key] = day
+            }
+        }
+    }
+
+    /// Selects the day containing `date`, and shows it at once if it's already loaded, so a
+    /// page change and the day it shows can share one transaction. Returns whether it was;
+    /// if not, `loadSelectedDay()` loads it as for any other selection.
+    func selectDay(containing date: Date) -> Bool {
+        selectedDate = date
+        guard let key = currentKey, let day = loadedDays[key] else {
+            return false
+        }
+        state = .loaded(day)
+        return true
     }
 
     private var currentKey: DayKey? {

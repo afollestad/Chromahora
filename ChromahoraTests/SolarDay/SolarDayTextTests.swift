@@ -43,6 +43,17 @@ struct SolarDayTextTests {
         }
     }
 
+    /// Kiritimati is already on Tuesday. Read in the process's zone instead, both dates come out
+    /// right only in Kiritimati's own.
+    @Test func datesReadInTheDaysOwnZone() throws {
+        let kiritimati = try #require(TimeZone(identifier: "Pacific/Kiritimati"))
+        for (zone, text) in [(TimeZone.gmt, "Mon, Sep 21"), (kiritimati, "Tue, Sep 22")] {
+            let day = SolarDay.mock(for: date, calendar: calendar(zone))
+
+            #expect(day.dayText(day.dayStart) == text)
+        }
+    }
+
     @Test func durationsRoundToMinutes() {
         let segments = day.segments
 

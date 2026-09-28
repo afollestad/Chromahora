@@ -4,16 +4,16 @@ These rules cover `Chromahora/Timeline/` and its tests in `ChromahoraTests/Timel
 
 ### Design
 
-- Vertical position is proportional to time of day. Never compress or stretch phases to make them more visible; zoom (`pointsPerHour`) and scrolling are the only tools.
-- All positions come from `SolarDay.fraction(of:)`, and every time or duration from the model. Never hard-code hours or minutes in views.
+- Vertical position is proportional to time of day, every position comes from `SolarDay.fraction(of:)`, and every time or duration from the model. Never compress or stretch phases or hard-code hours in views; zoom (`pointsPerHour`) and scrolling are the only tools.
 - The sky gradient interpolates in perceptual color space, holds color across night and daylight, and crosses a mauve stop between blue and golden hours, which are near-complementary and blend to mud otherwise. Blue and golden hours hold their color over `DaySegment.heldColorRange`, which narrows to the midpoint for normal-length ones.
 - Emit exactly two gradient stops per segment, plus a bridge between blue and golden, so the stop count depends only on the phase sequence. Gliding between days animates stop locations, which needs matching counts.
-- The timeline draws edge to edge, so its content sees zero safe-area insets; inset labels by the per-edge `safeAreaInsets` that `DayTimeline` measures outside `ignoresSafeArea`, never by a fixed padding alone. The day panel's `panelInset` adds to the trailing one, and lines and `SourcesButton` stop short of it too, since its glass would show a line through its text.
+- The timeline draws edge to edge, so its content sees zero safe-area insets; inset labels by the per-edge `safeAreaInsets` that `DayPager` measures where the push never moves them, never by a fixed padding alone. The day panel's `panelInset` adds to the trailing one, and lines and `SourcesButton` stop short of it too, since its glass would show a line through its text.
 - Pad the scroll content by the safe area plus `edgeClearance` at both ends, so midnight at either end scrolls clear of the bars. Use padding, not `contentMargins`, which would also move where the timeline centers on its focus.
 - The soft scroll edge effect fades the content toward whatever is behind the scroll view, so its background carries a copy of the sky in step with the scroll. Paint anything new onto that copy too, or the bars tint what's under them.
 - Each label takes the color scheme of the sky behind it from `DayTimeline.labelScheme(over:)`, since white text on daylight contrasts at 1.5:1. Keep labels out of a `GlassEffectContainer`, which renders every capsule in the container's scheme.
 - Weather spells are markers in the leading column, so the overlay's spacing keeps them off every label; never position them separately. Only precipitation draws a line, since sky lines would stripe the whole day.
-- Keep `SourcesButton`'s `safeAreaBar` outside the `onGeometryChange` that measures `safeAreaInsets`, so the bottom inset clears it. It stays put while the sky scrolls, so it takes its scheme through `prefersDarkBar(over:wasDark:)`, like the bar, not `labelScheme(over:)`.
+- Keep `SourcesButton`'s `safeAreaBar` on `DayPager`, outside its pages and the `onGeometryChange` that measures `safeAreaInsets`, so the bottom inset clears it and it stays put as pages push past. It takes its scheme through `prefersDarkBar(over:wasDark:)`, like the bar, not `labelScheme(over:)`.
+- Page between days by moving `DayPager`'s live pages with an animated `offset`, never a transition, and open an incoming page at its end with `defaultScrollAnchor`, not a scroll once it appears. Either one leaves the page's sky copy standing where the push ends, over the leaving page.
 
 ### Verifying
 

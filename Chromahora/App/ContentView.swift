@@ -42,7 +42,8 @@ struct ContentView: View {
                     selectedDate: $store.selectedDate,
                     place: store.place,
                     weather: weather.spells(at: store.place),
-                    onRetry: store.reload
+                    onRetry: store.reload,
+                    onPage: store.selectDay(containing:)
                 )
             }
         }
@@ -56,6 +57,7 @@ struct ContentView: View {
         }
         .task(id: store.loadKey) {
             await store.loadSelectedDay()
+            await store.loadAdjacentDays()
         }
         // Travel can change the device's zone while the app is suspended, and days are windowed to it.
         .task {
