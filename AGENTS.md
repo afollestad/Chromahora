@@ -39,7 +39,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 - `SolarDay` is the single contract for a day's sun data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` builds the real ones once; the mocks serve previews, tests and the debug drawer.
 - Keep weather out of `SolarDay`, since forecasts change and fail while sun times don't. `WeatherStore` loads `WeatherSpell`s through a `WeatherProvider`, and a failure only leaves the timeline without them.
-- Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. No scroll edge effects, since the soft style blurs hours of timeline and the hard style paints a dark band.
+- Floating chrome is Liquid Glass: labels are glass capsules, and the title and calendar button are glass toolbar items. The top edge uses the soft scroll edge effect, which blurs labels under the bars so they don't run through the clock; the hard style would paint a dark band.
 - Hide decorative shapes from accessibility. Every control needs a label, and the calendar button also exposes the selected day as its value.
 - Keep the sunrise-sunset.org link and `AppleWeatherCredit` in the day picker, and `AppleWeatherCredit` in the weather popover; both services' terms require them.
 

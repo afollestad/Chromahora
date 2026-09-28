@@ -37,6 +37,9 @@ struct DayTimeline: View {
     @State private var safeAreaInsets = EdgeInsets()
     /// The timeline's top edge in global coordinates, which places the sky sample behind the title.
     @State private var timelineMinY: CGFloat = 0
+    /// Where the scroll puts the day's top edge on screen. Only `ScrolledSky` reads it, so
+    /// scrolling redraws that copy of the sky rather than the whole timeline.
+    @State private var dayTop: CGFloat = 0
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -71,12 +74,17 @@ struct DayTimeline: View {
                 .padding(.bottom, safeAreaInsets.bottom + Self.edgeClearance)
             }
             // Overscrolling past either end uncovers this, so each half continues the sky at
-            // its end and the scrim runs on without a seam. The opaque sky covers it otherwise.
+            // its end and the scrim runs on without a seam. The soft edge effect fades the
+            // content toward it too, so it also carries the sky wherever the scroll puts it,
+            // and the bars blur the sky under them without tinting it.
             .background {
                 ZStack {
                     VStack(spacing: 0) {
                         SkyGradient.color(at: 0, in: day)
                         SkyGradient.color(at: 1, in: day)
+                    }
+                    .overlay(alignment: .top) {
+                        ScrolledSky(day: day, height: contentHeight, top: $dayTop)
                     }
                     RulerScrim(leadingInset: safeAreaInsets.leading)
                 }
@@ -96,7 +104,8 @@ struct DayTimeline: View {
             } action: { minY in
                 timelineMinY = minY
             }
-            .scrollEdgeEffectHidden()
+            // Blurs labels and lines under the bars, as Photos does, so they don't run through the clock.
+            .scrollEdgeEffectStyle(.soft, for: .top)
             .onAppear {
                 proxy.scrollTo(focusAnchorID, anchor: .center)
             }
@@ -121,6 +130,14 @@ struct DayTimeline: View {
                 return SkyGradient.color(at: y / contentHeight, in: day)
             } action: { _, color in
                 skyBehindTitle = color
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                topClearance - geometry.visibleRect.minY
+            } action: { _, top in
+                // Unanimated, so the copy can't trail the content through an animated scroll.
+                withTransaction(\.disablesAnimations, true) {
+                    dayTop = top
+                }
             }
         }
     }
@@ -165,6 +182,27 @@ struct DayTimeline: View {
             }
         }
         return day.dayStart.addingTimeInterval(day.duration / 2)
+    }
+}
+
+/// A copy of the day's sky behind the scroll view, at the same place on screen as the one it scrolls.
+private struct ScrolledSky: View {
+    let day: SolarDay
+    let height: CGFloat
+    @Binding var top: CGFloat
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            // Changes between days the same way as the sky it copies.
+            SkyGradient(day: day)
+                .id(day.phaseSequence)
+                .transition(.opacity)
+        }
+        .animation(reduceMotion ? nil : .smooth, value: day)
+        .frame(height: height)
+        .offset(y: top)
     }
 }
 

@@ -10,6 +10,7 @@ These rules cover `Chromahora/Timeline/` and its tests in `ChromahoraTests/Timel
 - Emit exactly two gradient stops per segment, plus a bridge between blue and golden, so the stop count depends only on the phase sequence. Gliding between days animates stop locations, which needs matching counts.
 - The timeline draws edge to edge, so its content sees zero safe-area insets. Inset labels by the per-edge `safeAreaInsets` that `DayTimeline` measures outside `ignoresSafeArea`, never by a fixed padding alone.
 - Pad the scroll content by the safe area plus `edgeClearance` at both ends, so midnight at either end scrolls clear of the bars. Use padding, not `contentMargins`, which would also move where the timeline centers on its focus.
+- The soft scroll edge effect fades the content toward whatever is behind the scroll view, so its background carries a copy of the sky in step with the scroll. Paint anything new onto that copy too, or the bars tint what's under them.
 - Keep `labelSpacing` in `DayTimelineOverlay` larger than the glass container's merge distance so stacked capsules never fuse.
 - Weather spells are markers in the leading column, so the overlay's spacing keeps them off every label; never position them separately. Only precipitation draws a line, since sky lines would stripe the whole day.
 
