@@ -11,6 +11,8 @@ import SwiftUI
 struct DayPlaceholder: View {
     let state: SolarDayStore.LoadState
     let date: Date
+    /// The store's zone, which reads `date`.
+    var timeZone: TimeZone = .current
     @Binding var isGlowShown: Bool
     let onRetry: () -> Void
 
@@ -49,7 +51,7 @@ struct DayPlaceholder: View {
                 if case SunriseSunsetError.rateLimited = error {
                     Text("Sun times are busy right now. Try again in a moment.")
                 } else {
-                    Text("Sun times for \(date, format: .dateTime.weekday(.wide).month(.wide).day()) aren't available.")
+                    Text("Sun times for \(date.dayTitle(in: timeZone)) aren't available.")
                 }
             } actions: {
                 Button("Try Again", action: onRetry)

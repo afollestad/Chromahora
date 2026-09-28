@@ -143,4 +143,41 @@ struct ThrottledWeatherProviderTests {
         #expect(try await second.value == mock)
         #expect(base.requestedPlaces == [place])
     }
+
+    /// Switching to another place and back within the interval asks for each only once.
+    @Test func alternatingPlacesAsksForEachOnce() async throws {
+        let provider = makeProvider()
+        let sanFrancisco = MockPlaceProvider.sanFrancisco
+
+        _ = try await ask(provider)
+        _ = try await ask(provider, at: sanFrancisco)
+        _ = try await ask(provider)
+        _ = try await ask(provider, at: sanFrancisco)
+
+        #expect(base.requestedPlaces == [place, sanFrancisco])
+    }
+
+    /// A place asked for again while its request is out joins it, even after another place was
+    /// asked for in between, rather than reading its own unanswered attempt as a failure. Both
+    /// later requests start before the test waits for San Francisco's, so the repeat reaches the
+    /// throttle while Chicago's is still out.
+    @Test func returningToAPlaceWhoseRequestIsOutJoinsIt() async throws {
+        let provider = makeProvider()
+        let sanFrancisco = MockPlaceProvider.sanFrancisco
+        base.holdsResponses = true
+        var requests = base.heldRequests.makeAsyncIterator()
+
+        let first = Task { try await ask(provider) }
+        let held = try #require(await requests.next())
+        let other = Task { try await ask(provider, at: sanFrancisco) }
+        let again = Task { try await ask(provider) }
+        let otherHeld = try #require(await requests.next())
+        held.answer(mock)
+        otherHeld.answer(Forecast())
+
+        #expect(try await first.value == mock)
+        #expect(try await again.value == mock)
+        #expect(try await other.value == Forecast())
+        #expect(base.requestedPlaces == [place, sanFrancisco])
+    }
 }

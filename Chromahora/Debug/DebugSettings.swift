@@ -63,7 +63,7 @@ final class DebugSettings {
     var cache: SolarDayCache?
     /// The app's place provider, whose stored fix the drawer can forget.
     var devicePlaces: DevicePlaceProvider?
-    /// The app's forecast cache, whose last request the drawer shows and clears.
+    /// The app's forecast cache, whose latest request the drawer shows, and which it clears.
     var forecastCache: ForecastCache?
 
     /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugWeather`, `-DebugNow`, `-DebugPlace`,

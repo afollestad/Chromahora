@@ -41,36 +41,59 @@ nonisolated struct ForecastRecord: Codable, Equatable, Sendable {
     }
 }
 
-/// The last forecast request, on disk, so `ThrottledWeatherProvider` holds its pace across
-/// relaunches. One record is enough, since a device rarely moves between places within the
-/// interval. It lives in Caches, where the system may purge it at the cost of one request.
+/// The last forecast request for each place and window, on disk, so `ThrottledWeatherProvider`
+/// holds its pace across relaunches and while the person switches between places. It lives in
+/// Caches, where the system may purge it at the cost of a request per place.
 actor ForecastCache {
+    /// Room for the device's place and a handful of others, so switching among them within the
+    /// throttle's interval never asks again.
+    static let capacity = 6
+
     private let directory: URL
+    /// How long a record can still answer. Older ones would be asked again anyway, so they're dropped.
+    private let retention: TimeInterval
 
-    init(directory: URL = .cachesDirectory) {
+    init(directory: URL = .cachesDirectory, retention: TimeInterval = ThrottledWeatherProvider.minimumInterval) {
         self.directory = directory
+        self.retention = retention
     }
 
-    /// The stored record. One in an older shape reads as none, which costs at most one request.
-    func record() -> ForecastRecord? {
-        guard let data = try? Data(contentsOf: file) else {
-            return nil
-        }
-        guard let record = try? JSONDecoder().decode(ForecastRecord.self, from: data),
-              record.formatVersion == ForecastRecord.formatVersion else {
-            return nil
-        }
-        return record
+    /// The stored record for `key`. A file or record in an older shape reads as none, which
+    /// costs at most a request.
+    func record(for key: ForecastKey) -> ForecastRecord? {
+        records().first { $0.key == key }
     }
 
-    /// Replaces the stored record. A failed write only costs a request later.
+    /// The most recent request for any place, for the debug drawer.
+    func latestRecord() -> ForecastRecord? {
+        records().max { $0.attemptedAt < $1.attemptedAt }
+    }
+
+    /// Replaces the record for `record`'s key, and drops records too far from it to answer and
+    /// the oldest past `capacity`. The distance counts either side, like the throttle's, so a
+    /// clock set back far can't keep a record alive. A failed write only costs a request later.
     func store(_ record: ForecastRecord) {
+        var kept = records().filter {
+            $0.key != record.key && abs($0.attemptedAt.timeIntervalSince(record.attemptedAt)) < retention
+        }
+        kept.append(record)
+        kept.sort { $0.attemptedAt > $1.attemptedAt }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try? JSONEncoder().encode(record).write(to: file, options: .atomic)
+        try? JSONEncoder().encode(Array(kept.prefix(Self.capacity))).write(to: file, options: .atomic)
     }
 
     func removeAll() {
         try? FileManager.default.removeItem(at: file)
+    }
+
+    /// Every stored record. A file in any other shape, including the single record it once held,
+    /// reads as empty.
+    private func records() -> [ForecastRecord] {
+        guard let data = try? Data(contentsOf: file),
+              let records = try? JSONDecoder().decode([ForecastRecord].self, from: data) else {
+            return []
+        }
+        return records.filter { $0.formatVersion == ForecastRecord.formatVersion }
     }
 
     private var file: URL {

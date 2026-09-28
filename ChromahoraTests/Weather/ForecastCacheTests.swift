@@ -14,12 +14,17 @@ struct ForecastCacheTests {
         temporary.url
     }
     private let place = Place(latitude: 41.85, longitude: -87.65, source: .device)
+    private let otherPlace = Place(latitude: 37.8, longitude: -122.4, source: .device)
     private let start = Date(timeIntervalSince1970: 1_790_000_000)
 
     private var record: ForecastRecord {
+        record(at: place)
+    }
+
+    private func record(at place: Place, attemptedAt: Date? = nil) -> ForecastRecord {
         ForecastRecord(
             key: ForecastKey(place: place, start: start, end: start.addingTimeInterval(10 * 24 * 60 * 60)),
-            attemptedAt: start,
+            attemptedAt: attemptedAt ?? start,
             forecast: Forecast(spells: WeatherSpell.mock(for: start), hours: SkyHour.mock(for: start))
         )
     }
@@ -27,19 +32,83 @@ struct ForecastCacheTests {
     /// A relaunch makes a new cache, which reads the same file.
     @Test func aStoredRecordReadsBack() async {
         let cache = ForecastCache(directory: directory)
-        #expect(await cache.record() == nil)
+        #expect(await cache.record(for: record.key) == nil)
 
         await cache.store(record)
 
-        #expect(await cache.record() == record)
-        #expect(await ForecastCache(directory: directory).record() == record)
+        #expect(await cache.record(for: record.key) == record)
+        #expect(await ForecastCache(directory: directory).record(for: record.key) == record)
+    }
+
+    /// Switching between places keeps each one's answer, so returning to one asks nothing.
+    @Test func recordsForTwoPlacesReadBack() async {
+        let cache = ForecastCache(directory: directory)
+        let other = record(at: otherPlace, attemptedAt: start.addingTimeInterval(60))
+
+        await cache.store(record)
+        await cache.store(other)
+
+        let relaunched = ForecastCache(directory: directory)
+        #expect(await relaunched.record(for: record.key) == record)
+        #expect(await relaunched.record(for: other.key) == other)
+        #expect(await relaunched.latestRecord() == other)
+    }
+
+    /// The answer to a request replaces the attempt stored before it.
+    @Test func aRecordReplacesTheOneForItsKey() async {
+        let cache = ForecastCache(directory: directory)
+        let attempt = ForecastRecord(key: record.key, attemptedAt: start, forecast: nil)
+
+        await cache.store(attempt)
+        await cache.store(record)
+
+        #expect(await cache.record(for: record.key) == record)
+    }
+
+    /// A record an interval away from the newest would be asked again anyway, on either side of it.
+    @Test func recordsTooFarFromTheNewestAreDropped() async {
+        let cache = ForecastCache(directory: directory, retention: 60 * 60)
+        let old = record(at: place, attemptedAt: start)
+        let new = record(at: otherPlace, attemptedAt: start.addingTimeInterval(60 * 60))
+
+        await cache.store(old)
+        await cache.store(new)
+
+        #expect(await cache.record(for: old.key) == nil)
+        #expect(await cache.record(for: new.key) == new)
+    }
+
+    @Test func onlyTheNewestRecordsAreKept() async {
+        let cache = ForecastCache(directory: directory)
+        let records = (0...ForecastCache.capacity).map { index in
+            record(at: Place(latitude: Double(index), longitude: 0, source: .device), attemptedAt: start.addingTimeInterval(Double(index)))
+        }
+
+        for record in records {
+            await cache.store(record)
+        }
+
+        #expect(await cache.record(for: records[0].key) == nil)
+        for record in records.dropFirst() {
+            #expect(await cache.record(for: record.key) == record)
+        }
     }
 
     @Test func anUnreadableFileReadsAsNoRecord() async throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try Data("{".utf8).write(to: directory.appending(path: "Forecast.json"))
 
-        #expect(await ForecastCache(directory: directory).record() == nil)
+        #expect(await ForecastCache(directory: directory).record(for: record.key) == nil)
+    }
+
+    /// The file once held a single record rather than a list, which reads as none and costs a request.
+    @Test func aSingleRecordFileReadsAsNoRecord() async throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try JSONEncoder().encode(record).write(to: directory.appending(path: "Forecast.json"))
+
+        let cache = ForecastCache(directory: directory)
+        #expect(await cache.record(for: record.key) == nil)
+        #expect(await cache.latestRecord() == nil)
     }
 
     /// A record from before `formatVersion`, whose missing answer would otherwise decode as a
@@ -48,15 +117,15 @@ struct ForecastCacheTests {
         let cache = ForecastCache(directory: directory)
         await cache.store(record)
         let file = directory.appending(path: "Forecast.json")
-        var json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-        json["formatVersion"] = nil
+        var json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
+        json[0]["formatVersion"] = nil
         try JSONSerialization.data(withJSONObject: json).write(to: file)
-        #expect(await cache.record() == nil)
+        #expect(await cache.record(for: record.key) == nil)
 
         // The rewrite alone doesn't spoil the record: with the version back, it reads.
-        json["formatVersion"] = ForecastRecord.formatVersion
+        json[0]["formatVersion"] = ForecastRecord.formatVersion
         try JSONSerialization.data(withJSONObject: json).write(to: file)
-        #expect(await cache.record() == record)
+        #expect(await cache.record(for: record.key) == record)
     }
 
     @Test func removeAllForgetsTheRecord() async {
@@ -65,6 +134,6 @@ struct ForecastCacheTests {
 
         await cache.removeAll()
 
-        #expect(await cache.record() == nil)
+        #expect(await cache.record(for: record.key) == nil)
     }
 }

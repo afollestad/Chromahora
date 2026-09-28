@@ -50,6 +50,7 @@ struct SolarDayTextTests {
 
             #expect(plain(day.timeText(try #require(day.sunrise))) == "6:58 AM")
             #expect(plain(day.rangeText(of: day.segments[1])) == "6:12 – 6:38 AM")
+            #expect(plain(day.hourText(try #require(day.sunrise))) == "6 AM")
         }
     }
 

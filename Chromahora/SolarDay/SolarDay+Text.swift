@@ -13,6 +13,11 @@ nonisolated extension SolarDay {
         date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: calendar.timeZone))
     }
 
+    /// An hour on the ruler, as in "6 AM".
+    func hourText(_ date: Date) -> String {
+        date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).hour())
+    }
+
     /// A date, as in "Sat, Sep 26".
     func dayText(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).weekday(.abbreviated).month(.abbreviated).day())

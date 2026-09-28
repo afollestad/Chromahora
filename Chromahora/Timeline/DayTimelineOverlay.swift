@@ -136,7 +136,7 @@ struct DayTimelineOverlay: View {
                         .accessibilityHidden(true)
 
                     if showsLabel {
-                        Text(mark.date, format: .dateTime.hour())
+                        Text(day.hourText(mark.date))
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(.white.opacity(0.85))
                             .shadow(color: .black.opacity(0.3), radius: 1, y: 0.5)
@@ -260,9 +260,9 @@ struct DayTimelineOverlay: View {
     private func markerLabel(for marker: Marker, scheme: ColorScheme, style: LabelStyle) -> some View {
         switch marker.kind {
         case .event(let title):
-            label("\(title) · \(marker.date.formatted(date: .omitted, time: .shortened))", scheme: scheme, style: style)
+            label("\(title) · \(day.timeText(marker.date))", scheme: scheme, style: style)
         case .now:
-            label("Now · \(marker.date.formatted(date: .omitted, time: .shortened))", scheme: scheme, style: style)
+            label("Now · \(day.timeText(marker.date))", scheme: scheme, style: style)
         case .weather(let spell, let range, let inDaylight):
             switch style {
             case .glass:

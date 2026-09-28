@@ -11,6 +11,8 @@ import SwiftUI
 /// day panel in a wide window.
 struct DayPicker: View {
     @Binding var selection: Date
+    /// The store's, so the calendar marks today and picks days in the zone the days are windowed to.
+    var calendar: Calendar = .current
     var place: Place?
     let onToday: () -> Void
 
@@ -21,6 +23,10 @@ struct DayPicker: View {
             DatePicker("Day", selection: $selection, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .labelsHidden()
+                // Set on the picker alone, the only view that reads them. Left in the device's zone while
+                // days are windowed to another, a tapped date would be built there and could land a day off.
+                .environment(\.calendar, calendar)
+                .environment(\.timeZone, calendar.timeZone)
 
             Button("Today", action: onToday)
                 .buttonStyle(.glass)

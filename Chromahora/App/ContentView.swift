@@ -40,6 +40,7 @@ struct ContentView: View {
                     state: store.state,
                     now: now(from: context.date),
                     selectedDate: $store.selectedDate,
+                    calendar: store.calendar,
                     place: store.place,
                     weather: weather.spells(at: store.place),
                     hours: weather.hours(at: store.place),

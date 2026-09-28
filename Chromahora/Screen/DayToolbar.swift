@@ -13,6 +13,8 @@ struct DayToolbar: ToolbarContent {
     @Binding var skyColor: Color
     @Binding var selectedDate: Date
     let now: Date
+    /// The store's, whose zone reads the selected date.
+    var calendar: Calendar = .current
     var place: Place?
     var showsDayPicker = true
     let onTitleMidY: (CGFloat) -> Void
@@ -20,7 +22,7 @@ struct DayToolbar: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            TitlePill(date: selectedDate, isLoading: isLoading, skyColor: $skyColor)
+            TitlePill(date: selectedDate, timeZone: calendar.timeZone, isLoading: isLoading, skyColor: $skyColor)
                 .onGeometryChange(for: CGFloat.self) { proxy in
                     proxy.frame(in: .global).midY
                 } action: { midY in
@@ -31,7 +33,7 @@ struct DayToolbar: ToolbarContent {
         // An `if` rather than `hidden(_:)`, which iOS doesn't offer for toolbar content.
         if showsDayPicker {
             ToolbarItem(placement: .primaryAction) {
-                DayPickerButton(selection: $selectedDate, now: now, place: place, onToday: onToday)
+                DayPickerButton(selection: $selectedDate, now: now, calendar: calendar, place: place, onToday: onToday)
             }
         }
     }
@@ -42,6 +44,7 @@ struct DayToolbar: ToolbarContent {
 /// so that only this view, not the whole timeline, redraws on each frame of a scroll.
 private struct TitlePill: View {
     let date: Date
+    let timeZone: TimeZone
     /// Another day is on its way while the last one stays on screen.
     let isLoading: Bool
     @Binding var skyColor: Color
@@ -58,7 +61,7 @@ private struct TitlePill: View {
                 }
                 // Primary rather than secondary, which drops below 3:1 on the tinted glass.
                 // The smaller, lighter font already ranks it below the title.
-                Text(date, format: .dateTime.weekday(.wide).month(.wide).day())
+                Text(date.dayTitle(in: timeZone))
                     .font(.caption)
             }
         }
@@ -74,6 +77,7 @@ private struct TitlePill: View {
 private struct DayPickerButton: View {
     @Binding var selection: Date
     let now: Date
+    let calendar: Calendar
     let place: Place?
     let onToday: () -> Void
 
@@ -86,10 +90,10 @@ private struct DayPickerButton: View {
             Label("Choose day", systemImage: "calendar")
         }
         .accessibilityLabel("Choose day")
-        .accessibilityValue(Text(selection, format: .dateTime.weekday(.wide).month(.wide).day()))
+        .accessibilityValue(selection.dayTitle(in: calendar.timeZone))
         .accessibilityHint("Opens a calendar to choose the day to show")
         .popover(isPresented: $isChoosingDay, arrowEdge: .top) {
-            DayPicker(selection: $selection, place: place) {
+            DayPicker(selection: $selection, calendar: calendar, place: place) {
                 // `now`, not `.now`, so Today follows the debug drawer's clock.
                 selection = now
                 isChoosingDay = false

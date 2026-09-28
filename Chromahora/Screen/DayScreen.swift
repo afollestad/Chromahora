@@ -14,6 +14,9 @@ struct DayScreen: View {
     let state: SolarDayStore.LoadState
     let now: Date
     @Binding var selectedDate: Date
+    /// The store's, whose zone the days are windowed to. Dates outside a `SolarDay` read in
+    /// it, since a place in another zone keeps its own clock.
+    var calendar: Calendar = .current
     /// Where the day is for, which the day picker names.
     var place: Place?
     /// The forecast's spells, which the timeline marks on the day they fall on.
@@ -53,6 +56,7 @@ struct DayScreen: View {
                         day: state.day,
                         now: now,
                         selectedDate: $selectedDate,
+                        calendar: calendar,
                         place: place,
                         weather: weather,
                         hours: hours,
@@ -81,6 +85,7 @@ struct DayScreen: View {
                     skyColor: $skyBehindTitle,
                     selectedDate: $selectedDate,
                     now: now,
+                    calendar: calendar,
                     place: place,
                     showsDayPicker: !showsPanel,
                     onTitleMidY: { titleMidY = $0 },
@@ -113,7 +118,7 @@ struct DayScreen: View {
                     .transition(.identity)
             }
             if state.day == nil {
-                DayPlaceholder(state: state, date: selectedDate, isGlowShown: $isGlowShown, onRetry: onRetry)
+                DayPlaceholder(state: state, date: selectedDate, timeZone: calendar.timeZone, isGlowShown: $isGlowShown, onRetry: onRetry)
                     // Inside the full screen below, so the message centers beside the panel while
                     // the night and glow still run under it.
                     .safeAreaPadding(.trailing, panelInset)

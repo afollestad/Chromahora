@@ -239,7 +239,7 @@ private struct DebugCacheSection: View {
 
     private func refresh() async {
         summary = await cache?.summary()
-        lastRequest = await forecastCache?.record()
+        lastRequest = await forecastCache?.latestRecord()
     }
 }
 
