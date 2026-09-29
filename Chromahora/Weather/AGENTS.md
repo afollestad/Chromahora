@@ -4,6 +4,7 @@ These rules cover `Chromahora/Weather/` and its tests in `ChromahoraTests/Weathe
 
 - Only `WeatherKitProvider` imports WeatherKit. Its types have no public initializers, so classification and folding live in `WeatherSpell`, and hourly readings in `SkyHour`, where tests reach them.
 - Every request goes through `ThrottledWeatherProvider`, since every install shares one monthly quota. Failures count toward its interval too, and one request covers the whole forecast window, never a single day.
+- The widgets throttle in `WidgetForecast.json` at `WidgetWeather.interval`, three hours, apart from the app's `Forecast.json`, which they also read, so a failure or a request still out on either side never holds back the other. Only widgets that show weather ask, about eight times a day, some 240 a month, for each place an install's widgets show.
 - `ForecastCache` keeps the last request for each place and window, so switching among places within the interval asks once each. Keep its `capacity` above `RecentPlaces.capacity`, which leaves room for the device's place.
 - Weather never surfaces an error or blocks the day, even with the quota spent. A failure keeps what's shown.
 - Load only once `SolarDayStore.isPlaceSettled`: a lookup has finished, which a chosen place counts as at once, and none that could still move the place is out. The place before then is a stored fix or the time zone's city, and a request for it is spent on a place the device may have left.

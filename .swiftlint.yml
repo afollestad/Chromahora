@@ -2,6 +2,7 @@ strict: true
 included:
   - Chromahora
   - ChromahoraTests
+  - ChromahoraWidgets
 excluded:
   - .build
 line_length:

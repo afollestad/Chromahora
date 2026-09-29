@@ -115,15 +115,9 @@ private struct TitlePill: View {
         }
     }
 
-    /// The place as VoiceOver reads it, saying what the hidden glyph shows: where the device is, or
-    /// a stand-in for it from the time zone.
+    /// The place as VoiceOver reads it, saying what the hidden glyph shows.
     private var spokenPlace: String {
-        let title = place?.title(deviceName: deviceName) ?? Place.unplacedTitle
-        return switch place?.source {
-        case .device: deviceName.map { "Current location, \($0)" } ?? title
-        case .timeZone: "Approximate location, \(title)"
-        case .chosen, nil: title
-        }
+        place?.spokenTitle(deviceName: deviceName) ?? Place.unplacedTitle
     }
 }
 

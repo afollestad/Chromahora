@@ -66,6 +66,17 @@ nonisolated struct Place: Hashable, Codable, Sendable {
         }
     }
 
+    /// The title as VoiceOver reads it, saying what the glyph beside it shows: where the device
+    /// is, or a stand-in for it from the time zone.
+    func spokenTitle(deviceName: String?) -> String {
+        let title = title(deviceName: deviceName)
+        return switch source {
+        case .device: deviceName.map { "Current location, \($0)" } ?? title
+        case .timeZone: "Approximate location, \(title)"
+        case .chosen: title
+        }
+    }
+
     /// The symbol beside the title, which tells the device's place from a stand-in for it. The
     /// stand-in shows while the first permission prompt is up, so it isn't marked as denied.
     var glyph: String? {

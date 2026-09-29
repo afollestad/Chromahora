@@ -197,7 +197,8 @@ private struct DebugPanel: View {
 }
 
 /// The cache's size and the last forecast request, and a way to empty both and reload as
-/// if launching cold, which also lets the next load ask WeatherKit at once.
+/// if launching cold, which also lets the next load ask WeatherKit at once. It empties the
+/// widgets' forecast record too, so their next reload may ask at once as well.
 private struct DebugCacheSection: View {
     let store: SolarDayStore
     let cache: SolarDayCache?
@@ -217,6 +218,7 @@ private struct DebugCacheSection: View {
                 Task {
                     await cache?.removeAll()
                     await forecastCache?.removeAll()
+                    await ForecastCache(fileName: WidgetWeather.cacheFileName).removeAll()
                     store.discardLoadedDays()
                     store.reload()
                     await refresh()
