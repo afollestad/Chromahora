@@ -50,7 +50,7 @@ struct InfoButton: View {
         // the width and cut its text off. The edge is the popover's own, where its arrow sits.
         .popover(isPresented: $isPresented, arrowEdge: isInUpperHalf ? .top : .bottom) {
             TopicDetails(topic: topic)
-                .presentationCompactAdaptation(.popover)
+                .popoverContent()
         }
         .padding(.vertical, -Self.arrowGap)
         .padding(.leading, 5)

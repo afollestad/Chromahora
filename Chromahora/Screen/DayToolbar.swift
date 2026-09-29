@@ -167,7 +167,7 @@ private struct DayPickerButton: View {
             // `Color.primary`, since `.primary` is a level of that white.
             .foregroundStyle(Color.primary)
             .tint(.accentColor)
-            .presentationCompactAdaptation(.popover)
+            .popoverContent()
         }
         .onChange(of: selection) {
             isChoosingDay = false

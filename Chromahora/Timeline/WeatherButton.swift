@@ -34,7 +34,7 @@ struct WeatherButton: View {
         .accessibilityLabel(spell.description(range: range))
         .popover(isPresented: $isPresented, arrowEdge: .leading) {
             WeatherDetails(spell: spell, range: range, inDaylight: inDaylight)
-                .presentationCompactAdaptation(.popover)
+                .popoverContent()
         }
     }
 

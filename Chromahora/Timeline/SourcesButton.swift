@@ -47,7 +47,7 @@ struct SourcesButton: View {
         .animation(.smooth, value: showsWeather)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             SourcesDetails(showsWeather: showsWeather)
-                .presentationCompactAdaptation(.popover)
+                .popoverContent()
         }
     }
 

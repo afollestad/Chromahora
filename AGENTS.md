@@ -57,5 +57,6 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Every view has a `#Preview`. Use `@Previewable @State` for bindings.
 - Doc comments explain why a constant has its value, not what the code does.
 - Read state that changes while scrolling, like the sky behind the chrome or the scheme it picks, only in the small view or modifier that shows it, passed down as a binding. Read in `DayScreen`'s or `DayPager`'s body, it rebuilds every page and the details on each change.
+- Present popover content with `popoverContent()`, never `presentationCompactAdaptation(.popover)` alone, since iOS 27 can center it in a container longer than its glass.
 - Unit tests cover the model and snapshots cover screens.
 - Write test files into a `TemporaryDirectory` held by the suite, which removes it after each test, since the simulator doesn't empty a test host's `tmp` between runs. Await any task that outlives the call under test, such as a prefetch, or it writes the directory back after removal.
