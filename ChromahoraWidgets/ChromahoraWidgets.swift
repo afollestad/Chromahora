@@ -10,5 +10,10 @@ import WidgetKit
 struct ChromahoraWidgets: WidgetBundle {
     var body: some Widget {
         NextMagicHourWidget()
+        SunTimesWidget()
+        MoonDarkSkyWidget()
+        DayStripWidget()
+        MorningEveningWidget()
+        NextPhasesWidget()
     }
 }

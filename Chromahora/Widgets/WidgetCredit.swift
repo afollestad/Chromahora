@@ -33,6 +33,8 @@ struct WidgetCredit: View {
             }
         }
         .font(.caption2)
+        // Primary rather than the accent, which a golden-hour sky would swallow.
+        .foregroundStyle(.primary)
         .lineLimit(1)
         // Shrinks rather than truncates at large sizes, since the terms want the credit whole.
         .minimumScaleFactor(0.7)

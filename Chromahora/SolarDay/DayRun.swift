@@ -113,9 +113,35 @@ nonisolated struct DayRun: Sendable {
         days[0].timeText(date)
     }
 
-    /// When `interval` runs, in the run's zone, as a day words its phases.
+    /// When `interval` runs, in the run's zone, as a day words its phases. One that crosses
+    /// midnight gives only its times, as in "10:07 PM – 5:23 AM", since the interval style would
+    /// add both dates, which a day's own ranges never need.
     func rangeText(_ interval: DateInterval, span: DaySegment.Span, startsLine: Bool = false) -> String {
-        days[0].rangeText(interval, span: span, startsLine: startsLine)
+        guard span == .range, !days[0].calendar.isDate(interval.start, inSameDayAs: interval.end) else {
+            return days[0].rangeText(interval, span: span, startsLine: startsLine)
+        }
+        return timeText(interval.start) + rangeSeparator + timeText(interval.end)
+    }
+
+    /// What the interval style sets between two times in the current locale, as in thin spaces
+    /// around an en dash in English, or a bare en dash in German. Taken from a range within one
+    /// day, and a thin-spaced en dash where the style words times other than `timeText` does, as
+    /// Japanese does.
+    private var rangeSeparator: String {
+        let fallback = "\u{2009}–\u{2009}"
+        let day = days[0]
+        // Morning to evening, so a 12-hour clock prints both halves in full.
+        guard let morning = day.calendar.date(bySettingHour: 10, minute: 7, second: 0, of: day.dayStart),
+              let evening = day.calendar.date(bySettingHour: 17, minute: 23, second: 0, of: day.dayStart) else {
+            return fallback
+        }
+        let range = (morning..<evening).formatted(Date.IntervalFormatStyle(date: .omitted, time: .shortened, timeZone: day.calendar.timeZone))
+        let first = timeText(morning)
+        let last = timeText(evening)
+        guard range.hasPrefix(first), range.hasSuffix(last), range.count > first.count + last.count else {
+            return fallback
+        }
+        return String(range.dropFirst(first.count).dropLast(last.count))
     }
 
     /// How `interval` sits between `start` and `end`, as a phase's span does in a day.

@@ -176,7 +176,7 @@ struct DayDetails: View {
         let lit = moon.illumination.map { "\($0.formatted(Self.percent)) illuminated" }
         let reading = DetailReading(topic: .moonPhase, title: name, details: [lit], label: [name, lit].compactMap(\.self).joined(separator: ", "))
         return row(reading, to: nil) {
-            icon(moon.phase?.symbolName ?? "moon.fill")
+            MoonGlyph(phase: moon.phase, illumination: moon.illumination, size: 18, relativeTo: .body)
         }
     }
 

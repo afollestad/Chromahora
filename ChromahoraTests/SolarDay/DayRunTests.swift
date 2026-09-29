@@ -199,6 +199,17 @@ struct DayRunTests {
         #expect(DayRun(known, then: [unknown]).darkSky(at: try time(12)) == tonight)
     }
 
+    /// The interval style would name both dates for a range that crosses midnight.
+    @Test func aRangeAcrossMidnightGivesOnlyItsTimes() throws {
+        let run = try run(.typical)
+        let tonight = DateInterval(start: try time(22, 7), end: try time(day: 17, 5, 23))
+        let evening = DateInterval(start: try time(18, 5), end: try time(19, 10))
+
+        #expect(run.rangeText(tonight, span: .range) == "\(run.timeText(tonight.start))\u{2009}–\u{2009}\(run.timeText(tonight.end))")
+        #expect(run.rangeText(evening, span: .range) == run.days[0].rangeText(evening, span: .range))
+        #expect(!run.rangeText(tonight, span: .range).contains("2026"))
+    }
+
     @Test func featuredDayTurnsOverOnceItsLastMagicHourEnds() throws {
         let run = try run(.typical)
 

@@ -22,6 +22,16 @@ nonisolated enum DayPhase: Sendable {
         }
     }
 
+    /// The title where space is short, as in a widget's columns.
+    var shortTitle: String {
+        switch self {
+        case .night: "Night"
+        case .blueHour: "Blue"
+        case .goldenHour: "Golden"
+        case .daylight: "Daylight"
+        }
+    }
+
     var color: Color {
         switch self {
         case .night: Color(red: 0.05, green: 0.07, blue: 0.20)

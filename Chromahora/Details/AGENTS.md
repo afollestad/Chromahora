@@ -7,3 +7,4 @@ These rules cover `Chromahora/Details/`: the day's details that `DayPanel` lists
 - Check changes in both hosts: the panel's 320 pt column on the iPad mini and the page on an iPhone, each at `accessibility1` too, where rows stack their details under the name rather than break a time range beside it.
 - Leave out rows the day can't back, like dark sky when neither a moonrise nor a moonset places the moon, but say so when the answer is none, as a full moon's night has no dark sky.
 - Present an info popover above or below its icon, picking the arrow edge from where the icon sits in its scroll view. Left to the system, an icon near the leading edge opens its popover beside it, squeezed into the width that's left, which cuts its text off.
+- Draw the moon's phase with `MoonGlyph`, never the `moonphase` symbols. They fill the shadow, which glows in light text and reads the phase inverted, and their layers overlap, so a tinted Home Screen draws every phase full.
