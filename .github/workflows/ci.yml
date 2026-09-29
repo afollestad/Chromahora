@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Hosted test subprocesses can fall back to the system selection instead of DEVELOPER_DIR.
+      - name: Select Xcode
+        run: sudo xcode-select --switch "$DEVELOPER_DIR"
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+          xcrun swift --version
+
+      - name: Cache Swift packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.swiftpm/cache
+            ~/Library/Caches/org.swift.swiftpm
+            .build/xcode/SourcePackages
+          key: ${{ runner.os }}-xcode-27.0-swiftpm-${{ hashFiles('Chromahora.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-27.0-swiftpm-
+
+      - name: Setup
+        run: ./scripts/setup.sh
+
+      - name: Lint
+        run: ./scripts/lint.sh
+
+      - name: Build
+        run: ./scripts/build.sh
+
+      # Runs each snapshot suite on its own device, so the runner needs both simulators.
+      - name: Test
+        run: ./scripts/test.sh
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcode-test-logs
+          path: |
+            .build/xcode/Logs/Test
+            .build/snapshot-failures
+            **/*.xcresult
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7

@@ -1,6 +1,24 @@
 # shellcheck shell=bash
 # Shared by test.sh and snapshots.sh, which source it after `cd`-ing to the repo root.
 
+# Snapshot baselines only hold on the device they were recorded on, and fail anywhere else, so
+# each suite runs only on its own device. Matches `SnapshotDevice`.
+snapshot_phone_device="iPhone 18 Pro"
+snapshot_wide_device="iPad mini (A17 Pro)"
+snapshot_suites=(ChromahoraTests/SnapshotTests ChromahoraTests/WideSnapshotTests)
+
+# Prints the device a snapshot test identifier runs on, or nothing for any other identifier.
+snapshot_device() {
+  case "$1" in
+    ChromahoraTests/SnapshotTests|ChromahoraTests/SnapshotTests/*)
+      echo "$snapshot_phone_device"
+      ;;
+    ChromahoraTests/WideSnapshotTests|ChromahoraTests/WideSnapshotTests/*)
+      echo "$snapshot_wide_device"
+      ;;
+  esac
+}
+
 # Failed snapshot comparisons write the new image here, and a run's images replace the last
 # run's, so they always describe its failures. A custom SNAPSHOT_ARTIFACTS is left alone.
 # The simulator doesn't inherit this shell's environment; xcodebuild forwards `TEST_RUNNER_`

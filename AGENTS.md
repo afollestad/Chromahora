@@ -21,7 +21,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint`, `xcsift` and `axe` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.
 - Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).
-- Tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`. It includes the snapshot suite pinned to `SIMULATOR`'s device, `SnapshotTests` on iPhone 18 Pro or `WideSnapshotTests` on iPad mini (A17 Pro), and skips the other.
+- Tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`. It runs snapshot suites on their own devices, `SnapshotTests` on iPhone 18 Pro and `WideSnapshotTests` on iPad mini (A17 Pro), and everything else on `SIMULATOR`'s.
 - Snapshots: `./scripts/snapshots.sh verify`, or `record` to rewrite baselines and then verify them. It runs each suite on its own device, and `ChromahoraTests/Snapshots/AGENTS.md` covers both.
 - Lint: `./scripts/lint.sh` from the repo root. SwiftLint runs in strict mode and Swift warnings are errors, so both fail on any warning.
 - Keep `-parallel-testing-enabled NO` and `-collect-test-diagnostics never` in the test scripts. Parallel testing runs on clones that shut the original simulator down, and failure diagnostics take a sysdiagnose that stalls every failing run for about ten minutes.

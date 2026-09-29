@@ -47,9 +47,6 @@ private let snapshotScale: CGFloat = 2
 private let settleTimeout: Duration = .seconds(3)
 private let settleInterval: Duration = .milliseconds(100)
 
-/// Whether this test process has rendered a screen yet.
-@MainActor private var hasRenderedScreen = false
-
 /// Renders `view` full screen in its own window on the host app's scene, waits for it
 /// to settle, and compares it against the stored baseline.
 ///
@@ -82,12 +79,6 @@ func assertScreenSnapshot<V: View>(
         return
     }
 
-    // The first screen a test process renders can lay the day panel's calendar out at either
-    // of two heights, while every later one takes the same, so it renders once to throw away.
-    if !hasRenderedScreen {
-        hasRenderedScreen = true
-        _ = await render(view, on: scene)
-    }
     let image = await render(view, on: scene)
     assertSnapshot(
         of: image,
@@ -108,6 +99,9 @@ private func render<V: View>(_ view: V, on scene: UIWindowScene) async -> UIImag
     window.frame = scene.effectiveGeometry.coordinateSpace.bounds
     // Above the host app's own window, which keeps running underneath.
     window.windowLevel = .alert + 1
+    // Light, as a new simulator starts, rather than whatever this one was left in. Screens that
+    // follow the system scheme, like the details page's glass, otherwise differ between Macs.
+    window.overrideUserInterfaceStyle = .light
     window.rootViewController = UIHostingController(
         rootView: view
             .transaction { $0.animation = nil }
@@ -168,6 +162,10 @@ private func settledImage(of window: UIWindow) async -> UIImage {
     }
 
     var previous = capture().pngData()
+    // Every graphical calendar after a process's first stops at a taller interim height, and only
+    // re-measuring it reaches the height the app shows. A slower Mac can land either, so each
+    // screen re-measures once its first capture has laid it out.
+    invalidateDatePickerSizes(in: window)
     let deadline = ContinuousClock.now + settleTimeout
     while ContinuousClock.now < deadline {
         try? await Task.sleep(for: settleInterval)
@@ -178,4 +176,13 @@ private func settledImage(of window: UIWindow) async -> UIImage {
         previous = data
     }
     return capture(afterScreenUpdates: false)
+}
+
+/// Asks every date picker under `view` to measure itself again.
+@MainActor
+private func invalidateDatePickerSizes(in view: UIView) {
+    if let picker = view as? UIDatePicker {
+        picker.invalidateIntrinsicContentSize()
+    }
+    view.subviews.forEach(invalidateDatePickerSizes)
 }

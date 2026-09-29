@@ -47,24 +47,22 @@ case "$mode" in
     ;;
 esac
 
+# shellcheck source=lib/testing.sh
+source "$repo_root/scripts/lib/testing.sh"
+
 if [ "$#" -eq 0 ]; then
-  set -- "ChromahoraTests/SnapshotTests" "ChromahoraTests/WideSnapshotTests"
+  set -- "${snapshot_suites[@]}"
 fi
 
-# Pinned rather than read from SIMULATOR: baselines only hold on the device they were
-# recorded on, and fail anywhere else. Matches `SnapshotDevice`.
-phone_device="iPhone 18 Pro"
-wide_device="iPad mini (A17 Pro)"
-
-# Sorted by suite, since each suite runs on its own device.
+# Sorted by suite, since each suite runs on its own device rather than SIMULATOR's.
 phone_tests=()
 wide_tests=()
 for test_name in "$@"; do
-  case "$test_name" in
-    ChromahoraTests/SnapshotTests|ChromahoraTests/SnapshotTests/*)
+  case "$(snapshot_device "$test_name")" in
+    "$snapshot_phone_device")
       phone_tests+=("-only-testing:$test_name")
       ;;
-    ChromahoraTests/WideSnapshotTests|ChromahoraTests/WideSnapshotTests/*)
+    "$snapshot_wide_device")
       wide_tests+=("-only-testing:$test_name")
       ;;
     *)
@@ -74,8 +72,6 @@ for test_name in "$@"; do
   esac
 done
 
-# shellcheck source=lib/testing.sh
-source "$repo_root/scripts/lib/testing.sh"
 prepare_snapshot_artifacts
 
 raw_log=$(mktemp -t chromahora-snapshots.XXXXXX)
@@ -116,11 +112,11 @@ run_snapshot_tests() {
 run_verify() {
   export TEST_RUNNER_SNAPSHOT_TESTING_RECORD=missing
   if [ "${#phone_tests[@]}" -gt 0 ]; then
-    run_snapshot_tests "$phone_device" "${phone_tests[@]}"
+    run_snapshot_tests "$snapshot_phone_device" "${phone_tests[@]}"
     require_every_test_ran "$raw_log"
   fi
   if [ "${#wide_tests[@]}" -gt 0 ]; then
-    run_snapshot_tests "$wide_device" "${wide_tests[@]}"
+    run_snapshot_tests "$snapshot_wide_device" "${wide_tests[@]}"
     require_every_test_ran "$raw_log"
   fi
 }
@@ -138,10 +134,10 @@ export TEST_RUNNER_SNAPSHOT_TESTING_RECORD=all
 set +e
 record_status=0
 if [ "${#phone_tests[@]}" -gt 0 ]; then
-  run_snapshot_tests "$phone_device" "${phone_tests[@]}" || record_status=$?
+  run_snapshot_tests "$snapshot_phone_device" "${phone_tests[@]}" || record_status=$?
 fi
 if [ "${#wide_tests[@]}" -gt 0 ]; then
-  run_snapshot_tests "$wide_device" "${wide_tests[@]}" || record_status=$?
+  run_snapshot_tests "$snapshot_wide_device" "${wide_tests[@]}" || record_status=$?
 fi
 set -e
 
