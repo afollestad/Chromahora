@@ -44,7 +44,9 @@ struct DayTimeline: View {
     /// Called when a drag that began at one of the ends lets go past it, beyond `EdgePull.threshold`.
     var onPullThrough: ((VerticalEdge) -> Void)?
     /// Where the scroll puts the day's top edge on screen, for the copy of the sky `DayPager`
-    /// keeps behind the details page. Only the page on screen writes it.
+    /// keeps behind the pages, which overscrolling uncovers. The timeline paints none of its own,
+    /// which would be a second copy to move on every frame of a scroll. Only the page on screen
+    /// writes it.
     @Binding var pagerSkyTop: CGFloat
     var pointsPerHour = Self.defaultPointsPerHour
 
@@ -67,11 +69,8 @@ struct DayTimeline: View {
     private static let darkBarLuminance = (crossoverLuminance - 0.01)...(crossoverLuminance + 0.01)
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Where the scroll puts the day's top edge on screen. Only `ScrolledSky` reads it, so
-    /// scrolling redraws that copy of the sky rather than the whole timeline.
-    @State private var dayTop: CGFloat = 0
     /// How far the timeline is pulled past the end it can page through, if it is. Only
-    /// `EdgePullHint` reads it, for the same reason.
+    /// `EdgePullHint` reads it, so a pull redraws the hint rather than the whole timeline.
     @State private var edgePull: EdgePull?
     /// The end the current drag began at, the only one it can page through, until it lets go
     /// short of it. A drag that scrolls into an end, like a fling, meets the rubber band without
@@ -79,6 +78,8 @@ struct DayTimeline: View {
     @State private var pageableEdge: VerticalEdge?
 
     var body: some View {
+        // Worked out once here, not on each frame the sky behind the title and the sources button is sampled.
+        let skyStops = SkyGradient.stops(for: day)
         ScrollViewReader { proxy in
             ScrollView {
                 ZStack {
@@ -127,19 +128,6 @@ struct DayTimeline: View {
             // would move its sky copy mid-push, outside the push's animation, and leave the copy
             // standing where the push ends.
             .defaultScrollAnchor(opening == .end ? .bottom : nil, for: .initialOffset)
-            // Overscrolling past either end uncovers this, so each half continues the sky at
-            // its end and the scrim runs on without a seam. Standing alone, as in previews, the
-            // timeline's own soft edge effect fades the content toward it too, so it also carries
-            // the sky wherever the scroll puts it. Inside `DayPager`, the bars take their effect
-            // from the pager's scroll view, which fades toward the same copy behind the pages.
-            .background {
-                ZStack {
-                    DaySky(day: day, height: contentHeight, top: $dayTop)
-                    RulerScrim(leadingInset: safeAreaInsets.leading)
-                }
-                .ignoresSafeArea()
-                .accessibilityHidden(true)
-            }
             .overlay {
                 EdgePullHint(pull: $edgePull, day: day, insets: labelInsets, clearance: Self.edgeClearance)
             }
@@ -170,14 +158,14 @@ struct DayTimeline: View {
                 }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
-                sky(atGlobalY: titleMidY, in: geometry)
+                sky(atGlobalY: titleMidY, in: geometry, stops: skyStops)
             } action: { _, color in
                 if isCurrent {
                     skyBehindTitle = color
                 }
             }
             .onScrollGeometryChange(for: Color.self) { geometry in
-                sky(atGlobalY: sourcesMidY, in: geometry)
+                sky(atGlobalY: sourcesMidY, in: geometry, stops: skyStops)
             } action: { _, color in
                 if isCurrent {
                     updateSourcesScheme(over: color)
@@ -209,10 +197,9 @@ struct DayTimeline: View {
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 topClearance - geometry.visibleRect.minY
             } action: { _, top in
-                // Unanimated, so the copies can't trail the content through an animated scroll.
-                withTransaction(\.disablesAnimations, true) {
-                    dayTop = top
-                    if isCurrent {
+                // Unanimated, so the copy can't trail the content through an animated scroll.
+                if isCurrent {
+                    withTransaction(\.disablesAnimations, true) {
                         pagerSkyTop = top
                     }
                 }
@@ -241,10 +228,11 @@ struct DayTimeline: View {
         safeAreaInsets.top + Self.edgeClearance
     }
 
-    /// The sky scrolled to a point on screen, such as behind the title or the sources button.
-    private func sky(atGlobalY globalY: CGFloat, in geometry: ScrollGeometry) -> Color {
+    /// The sky scrolled to a point on screen, such as behind the title or the sources button,
+    /// from the day's gradient `stops`.
+    private func sky(atGlobalY globalY: CGFloat, in geometry: ScrollGeometry, stops: [Gradient.Stop]) -> Color {
         let y = geometry.visibleRect.minY + globalY - timelineMinY - topClearance
-        return SkyGradient.color(at: y / contentHeight, in: day)
+        return SkyGradient.color(at: y / contentHeight, in: stops)
     }
 
     /// Assigned only when it flips, so scrolling doesn't redraw the pager every frame.
@@ -328,9 +316,10 @@ extension DayTimeline {
     @Previewable @State var sky = DayPhase.night.color
     @Previewable @State var isSourcesDark = true
     @Previewable @State var skyTop: CGFloat = 0
+    let day = SolarDay.mock()
     // An iPhone's status bar and home indicator, which `DayPager` would measure.
     DayTimeline(
-        day: .mock(),
+        day: day,
         now: .now,
         weather: WeatherSpell.mock(),
         skyBehindTitle: $sky,
@@ -338,4 +327,12 @@ extension DayTimeline {
         safeAreaInsets: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0),
         pagerSkyTop: $skyTop
     )
+    // The copy of the sky `DayPager` keeps behind its pages.
+    .background {
+        ZStack {
+            DaySky(day: day, height: DayTimeline.contentHeight(of: day), top: $skyTop)
+            RulerScrim(leadingInset: 0)
+        }
+        .ignoresSafeArea()
+    }
 }

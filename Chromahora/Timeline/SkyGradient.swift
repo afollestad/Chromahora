@@ -35,7 +35,11 @@ struct SkyGradient: View {
 
     /// The painted color `fraction` of the way down the day, blended the same way as the gradient.
     static func color(at fraction: Double, in day: SolarDay) -> Color {
-        let stops = stops(for: day)
+        color(at: fraction, in: stops(for: day))
+    }
+
+    /// The painted color `fraction` of the way down a day with gradient `stops`.
+    static func color(at fraction: Double, in stops: [Gradient.Stop]) -> Color {
         guard let upper = stops.firstIndex(where: { $0.location >= fraction }) else {
             return stops.last?.color ?? DayPhase.night.color
         }

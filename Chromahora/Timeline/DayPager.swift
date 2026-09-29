@@ -81,6 +81,7 @@ struct DayPager: View {
     @State private var timelineMinY: CGFloat = 0
     /// The sources button's center in global coordinates, which places the sky sample behind it.
     @State private var sourcesMidY: CGFloat = 0
+    /// Only `SourcesBar` draws with it, so a scroll that flips it redraws the bar rather than every page.
     @State private var isSourcesDark = true
     /// Where the page on screen puts the day's top edge. Passed down as a binding and read only
     /// by the copy of the sky, so scrolling doesn't redraw the pager.
@@ -112,9 +113,10 @@ struct DayPager: View {
             } action: { height in
                 self.height = height
             }
-            // Uncovered only as the timeline slides away or a sideways swipe overscrolls. The bars'
-            // soft edge effect fades toward it too, so each page's copy moves with the page
-            // through a push between days, and it carries the ruler's scrim where the timeline has it.
+            // Uncovered as the timeline overscrolls past either end or slides away, or a sideways
+            // swipe overscrolls. The bars' soft edge effect fades toward it too, so each page's copy
+            // moves with the page through a push between days, and it carries the ruler's scrim
+            // where the timeline has it.
             .background {
                 ZStack {
                     ForEach(pages) { page in
@@ -139,15 +141,7 @@ struct DayPager: View {
             }
             // Outside the pages, so the inset measured above clears the button and it stays put.
             .safeAreaBar(edge: .bottom, spacing: 0) {
-                SourcesButton(showsWeather: showsWeather, scheme: isSourcesDark ? .dark : .light)
-                    // An overlay, so the dots add nothing to the bar's height, which sets the band
-                    // the edge effect blurs.
-                    .overlay(alignment: .bottom) {
-                        if showsDetails {
-                            PageDots(pane: currentPane, scheme: isSourcesDark ? .dark : .light) { show($0) }
-                                .offset(y: PageDots.offset)
-                        }
-                    }
+                SourcesBar(showsWeather: showsWeather, pane: showsDetails ? currentPane : nil, isDark: $isSourcesDark) { show($0) }
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.frame(in: .global).midY
                     } action: { midY in
@@ -326,6 +320,29 @@ struct DayPager: View {
         case .bottom: height
         case nil: 0
         }
+    }
+}
+
+/// The sources button, with the page dots under it while the details sit beside the timeline,
+/// in the scheme of the sky behind them.
+private struct SourcesBar: View {
+    let showsWeather: Bool
+    /// The page on screen, or nil without the details, which leaves out the dots.
+    let pane: DayPager.Pane?
+    @Binding var isDark: Bool
+    let onSelect: (DayPager.Pane) -> Void
+
+    var body: some View {
+        let scheme: ColorScheme = isDark ? .dark : .light
+        SourcesButton(showsWeather: showsWeather, scheme: scheme)
+            // An overlay, so the dots add nothing to the bar's height, which sets the band
+            // the edge effect blurs.
+            .overlay(alignment: .bottom) {
+                if let pane {
+                    PageDots(pane: pane, scheme: scheme, onSelect: onSelect)
+                        .offset(y: PageDots.offset)
+                }
+            }
     }
 }
 

@@ -40,6 +40,7 @@ struct DayScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var skyBehindTitle = DayPhase.night.color
+    /// Only `BarColorScheme` draws with it, so a flip doesn't run this body.
     @State private var isBarDark = true
     @State private var titleMidY: CGFloat = 0
     @State private var focus = DayTimeline.Focus()
@@ -79,7 +80,7 @@ struct DayScreen: View {
             .background {
                 BarScheme(sky: $skyBehindTitle, isDark: $isBarDark)
             }
-            .toolbarColorScheme(isBarDark ? .dark : .light, for: .navigationBar)
+            .modifier(BarColorScheme(isDark: $isBarDark))
             .navigationTitle("Chromahora")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -181,6 +182,19 @@ private struct BarScheme: View {
             .onChange(of: sky) {
                 isDark = DayTimeline.prefersDarkBar(over: sky, wasDark: isDark)
             }
+    }
+}
+
+/// Gives the navigation bar the scheme `BarScheme` picks. It reads the scheme in place of
+/// `DayScreen`, so a flip doesn't rebuild the pager, the day panel and the details, and apart
+/// from the sky, so the bar's preferences reach UIKit only when the scheme flips, not on every
+/// frame of a blend.
+private struct BarColorScheme: ViewModifier {
+    @Binding var isDark: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
     }
 }
 

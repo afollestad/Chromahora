@@ -55,8 +55,8 @@ struct DayToolbar: ToolbarContent {
 
 /// The place and day on glass tinted with the sky behind it, so the glass carries its
 /// backdrop's hue through the blended phases, which opens the location sheet. It takes the
-/// color as a binding so that only this view, not the whole timeline, redraws on each frame
-/// of a scroll.
+/// color as a binding, which only `SkyTintedGlass` reads, so each frame of a scroll across a
+/// blend retints the glass without redrawing the pill or the timeline.
 private struct TitlePill: View {
     let date: Date
     let timeZone: TimeZone
@@ -102,7 +102,7 @@ private struct TitlePill: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
             .contentShape(Capsule())
-            .glassEffect(.regular.tint(skyColor.opacity(0.5)).interactive(), in: Capsule())
+            .modifier(SkyTintedGlass(sky: $skyColor))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(spokenPlace), \(date.dayTitle(in: timeZone))")
@@ -124,6 +124,16 @@ private struct TitlePill: View {
         case .timeZone: "Approximate location, \(title)"
         case .chosen, nil: title
         }
+    }
+}
+
+/// The title pill's glass, tinted with the sky behind it.
+private struct SkyTintedGlass: ViewModifier {
+    @Binding var sky: Color
+
+    func body(content: Content) -> some View {
+        content
+            .glassEffect(.regular.tint(sky.opacity(0.5)).interactive(), in: Capsule())
     }
 }
 
