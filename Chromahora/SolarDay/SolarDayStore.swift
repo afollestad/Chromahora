@@ -297,6 +297,23 @@ final class SolarDayStore {
         return true
     }
 
+    /// Selects today again once the clock passes midnight, if the selection was on the day
+    /// before, so a screen that stays open overnight, as the watch's does in memory, follows
+    /// today rather than stay on yesterday. A day paged to stays. Today shows at once if it's
+    /// held, as the neighbor `loadAdjacentDays()` loaded usually is.
+    ///
+    /// `previous` is the time the screen last read as now.
+    func advanceToToday(from previous: Date, to now: Date) {
+        guard !calendar.isDate(previous, inSameDayAs: now), calendar.isDate(selectedDate, inSameDayAs: previous) else {
+            return
+        }
+        selectedDate = now
+        if let key = currentKey, let loaded = loadedDays[key] {
+            state = .loaded(loaded)
+            shownPlace = key.place
+        }
+    }
+
     /// Windows days to `timeZone`, keeping the day the person was looking at: today stays today,
     /// as it reads there, and any other day keeps its date.
     private func moveCalendar(to timeZone: TimeZone, now: Date) {

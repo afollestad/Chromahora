@@ -352,7 +352,7 @@ struct DayTimelineOverlay: View {
         // Ties break by id, so markers at the same instant keep one order.
         markers.sort { ($0.date, $0.id) < ($1.date, $1.id) }
         let lineYs = markers.map { y(for: $0.date, in: size) }
-        let labelYs = Self.spaced(lineYs, pinned: markers.map(drawsLine), spacing: labelSpacing)
+        let labelYs = LabelSpacing.spaced(lineYs, pinned: markers.map(drawsLine), spacing: labelSpacing)
 
         return zip(zip(markers, lineYs), labelYs).map { pair, labelY in
             PlacedMarker(marker: pair.0, lineY: pair.1, labelY: labelY)
@@ -367,7 +367,7 @@ struct DayTimelineOverlay: View {
         // short, and the blue hour labels already mark where it begins and ends.
         // A night that fills the day is the exception, since nothing else would.
         let segments = day.segments.filter { $0.phase != .night || $0.span == .allDay }
-        let labelYs = Self.spaced(segments.map { y(for: $0.midpoint, in: size) }, spacing: labelSpacing)
+        let labelYs = LabelSpacing.spaced(segments.map { y(for: $0.midpoint, in: size) }, spacing: labelSpacing)
 
         return segments.indices.map { index in
             let segment = segments[index]
@@ -390,35 +390,6 @@ struct DayTimelineOverlay: View {
                 slack: (min(highest, labelY) - labelY)...(max(lowest, labelY) - labelY)
             )
         }
-    }
-
-    /// Pushes ascending positions down as needed so neighbors sit at least `spacing` apart.
-    /// A pinned position first lifts the unpinned ones right above it to make room, since a
-    /// label off its line reads as marking another time, and one without a line has none to
-    /// leave. They rise no higher than the pinned one above them allows, or than the top of
-    /// the day, where `DayTimeline` leaves only enough room for a label centered on it.
-    static func spaced(_ positions: [CGFloat], pinned: [Bool] = [], spacing: CGFloat) -> [CGFloat] {
-        var result: [CGFloat] = []
-        for (index, y) in positions.enumerated() {
-            if pinned.indices.contains(index), pinned[index] {
-                var start = result.endIndex
-                while start > 0, !pinned[start - 1] {
-                    start -= 1
-                }
-                let highest = start > 0 ? result[start - 1] + spacing : 0
-                for lifted in start..<result.endIndex {
-                    let wanted = y - CGFloat(result.endIndex - lifted) * spacing
-                    let allowed = highest + CGFloat(lifted - start) * spacing
-                    result[lifted] = min(result[lifted], max(wanted, allowed))
-                }
-            }
-            if let previous = result.last, y - previous < spacing {
-                result.append(previous + spacing)
-            } else {
-                result.append(y)
-            }
-        }
-        return result
     }
 }
 

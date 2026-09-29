@@ -105,7 +105,7 @@ struct DayTimeline: View {
                     Color.clear
                         .frame(height: 1)
                         .id(focusAnchorID)
-                        .padding(.top, contentHeight * day.fraction(of: focusDate))
+                        .padding(.top, contentHeight * day.fraction(of: day.focusDate(now: now)))
                 }
                 .overlay(alignment: .top) {
                     // The same for the time the day panel last asked for.
@@ -252,24 +252,9 @@ struct DayTimeline: View {
         return wasDark
     }
 
-    /// The time the view centers on: now when it falls on this day, otherwise the middle
-    /// of the brightest phase the day reaches, since a high-latitude winter day may have no daylight.
-    private var focusDate: Date {
-        if day.contains(now) {
-            return now
-        }
-        let segments = day.segments
-        for phase in [DayPhase.daylight, .goldenHour, .blueHour] {
-            if let segment = segments.first(where: { $0.phase == phase }) {
-                return segment.midpoint
-            }
-        }
-        return day.dayStart.addingTimeInterval(day.duration / 2)
-    }
-
     /// The time the day panel last asked for, or the focus time once the day no longer holds it.
     private var requestedDate: Date {
-        focus.date.flatMap { day.contains($0) ? $0 : nil } ?? focusDate
+        focus.date.flatMap { day.contains($0) ? $0 : nil } ?? day.focusDate(now: now)
     }
 }
 

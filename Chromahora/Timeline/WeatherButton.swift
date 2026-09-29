@@ -33,7 +33,11 @@ struct WeatherButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(spell.description(range: range))
         .popover(isPresented: $isPresented, arrowEdge: .leading) {
-            WeatherDetails(spell: spell, range: range, inDaylight: inDaylight)
+            WeatherSpellDetails(spell: spell, range: range, inDaylight: inDaylight)
+                .padding()
+                // Stops growing at accessibility1, like the timeline's labels. Past it, the popover runs
+                // out of room beside its marker and truncates the time range and the credit.
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .popoverContent()
         }
     }
@@ -46,32 +50,6 @@ struct WeatherButton: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 7)
             .padding(.vertical, 5)
-    }
-}
-
-/// The popover's content: the condition, when it runs, the detail worth knowing, and the credit.
-private struct WeatherDetails: View {
-    let spell: WeatherSpell
-    let range: String
-    let inDaylight: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label(spell.title, systemImage: spell.condition.symbolName(inDaylight: inDaylight))
-                .font(.headline)
-            // The range reads mid-sentence elsewhere, as in "until 4:00 AM", so it starts a line here capitalized.
-            Text(range.prefix(1).uppercased() + range.dropFirst())
-            if let summary = spell.summary {
-                Text(summary)
-            }
-            AppleWeatherCredit()
-                .font(.footnote)
-                .padding(.top, 8)
-        }
-        .padding()
-        // Stops growing at accessibility1, like the timeline's labels. Past it, the popover runs
-        // out of room beside its marker and truncates the time range and the credit.
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 }
 

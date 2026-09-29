@@ -59,8 +59,11 @@ final class DebugSettings {
     /// A place chosen at launch, as if picked from the location sheet.
     var chosenPlace: Place?
     var opensPanelOnLaunch: Bool
-    /// The page beside the timeline the app opens on, since `simctl` can't swipe to it.
+    #if os(iOS)
+    /// The page beside the timeline the app opens on, since `simctl` can't swipe to it. The
+    /// phone's alone, since the watch has no page beside its timeline.
     var initialPane: DayPager.Pane
+    #endif
     /// The app's sun-time cache, which the drawer summarizes and clears.
     var cache: SolarDayCache?
     /// The app's place provider, whose stored fix the drawer can forget.
@@ -81,7 +84,9 @@ final class DebugSettings {
         placeOverride = (arguments["DebugPlace"] as? String).flatMap(Self.place(from:))
         chosenPlace = (arguments["DebugChosenPlace"] as? String).flatMap(Self.chosenPlace(from:))
         opensPanelOnLaunch = (arguments["DebugPanel"] as? String).map(Self.isTrue) ?? false
+        #if os(iOS)
         initialPane = (arguments["DebugPane"] as? String).flatMap(DayPager.Pane.init(rawValue:)) ?? .timeline
+        #endif
     }
 
     /// Settings from this process's launch arguments. Only the argument domain is read, so
