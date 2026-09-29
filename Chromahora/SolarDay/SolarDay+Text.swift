@@ -13,6 +13,12 @@ nonisolated extension SolarDay {
         date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: calendar.timeZone))
     }
 
+    /// A time of day without its half of the day, as in "6:58", for where "6:58 AM" won't fit, like
+    /// the ring of a complication counting down a golden or blue hour, whose end is never far off.
+    func clockText(_ date: Date) -> String {
+        date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).hour(.defaultDigits(amPM: .omitted)).minute())
+    }
+
     /// An hour on the ruler, as in "6 AM".
     func hourText(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).hour())

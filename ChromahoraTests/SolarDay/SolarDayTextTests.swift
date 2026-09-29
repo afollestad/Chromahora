@@ -49,6 +49,7 @@ struct SolarDayTextTests {
             let day = SolarDay.mock(for: date, calendar: calendar(zone))
 
             #expect(plain(day.timeText(try #require(day.sunrise))) == "6:58 AM")
+            #expect(day.clockText(try #require(day.sunrise)) == "6:58")
             #expect(plain(day.rangeText(of: day.segments[1])) == "6:12 – 6:38 AM")
             #expect(plain(day.hourText(try #require(day.sunrise))) == "6 AM")
         }

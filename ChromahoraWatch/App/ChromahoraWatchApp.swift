@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 @main
 struct ChromahoraWatchApp: App {
@@ -16,6 +17,7 @@ struct ChromahoraWatchApp: App {
     #if DEBUG
     @State private var debug: DebugSettings
     #endif
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let provider = SunriseSunsetProvider(cache: cache)
@@ -44,6 +46,14 @@ struct ChromahoraWatchApp: App {
                 .task {
                     await cache.prune(now: .now)
                 }
+        }
+        // A visit may bring a new fix, which the complications place themselves by, so the app
+        // tells them whenever it stops being active, as lowering the wrist starts with, while a
+        // reload doesn't count against their budget.
+        .onChange(of: scenePhase) { oldPhase, _ in
+            if oldPhase == .active {
+                WidgetCenter.shared.reloadAllTimelines()
+            }
         }
     }
 

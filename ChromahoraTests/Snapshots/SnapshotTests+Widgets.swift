@@ -117,7 +117,8 @@ extension SnapshotTests {
 
     /// `place`'s `scenario` day containing `now` and the next, with `WeatherSpell.mock`'s sky over
     /// both, as `SkyLoader` would load them. San Francisco is the device's, with its town named.
-    private func content(_ scenario: MockScenario, at now: Date, place: Place) -> SkyContent {
+    /// The complications' snapshots load theirs the same way.
+    func content(_ scenario: MockScenario, at now: Date, place: Place = MockPlaceProvider.sanFrancisco) -> SkyContent {
         let today = SolarDay.mock(scenario, for: now)
         let tomorrow = SolarDay.mock(scenario, for: today.dayEnd)
         return SkyContent(

@@ -10,6 +10,7 @@
 		D98A871B30685002007D5F92 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = D98A871A30685002007D5F92 /* SnapshotTesting */; };
 		D98A872230685003007D5F92 /* ChromahoraWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D98A872130685003007D5F92 /* ChromahoraWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D98A873130685004007D5F92 /* ChromahoraWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D98A873030685004007D5F92 /* ChromahoraWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D98A874130685005007D5F92 /* ChromahoraWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D98A874030685005007D5F92 /* ChromahoraWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,13 @@
 			remoteGlobalIDString = D98A873830685004007D5F92;
 			remoteInfo = ChromahoraWatch;
 		};
+		D98A874330685005007D5F92 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D98A86E830685001007D5F92 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D98A874930685005007D5F92;
+			remoteInfo = ChromahoraWatchWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -55,6 +63,15 @@
 			);
 			name = "Embed Watch Content";
 		};
+		D98A874230685005007D5F92 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				D98A874130685005007D5F92 /* ChromahoraWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -62,6 +79,7 @@
 		D98A86FD30685002007D5F92 /* ChromahoraTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChromahoraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D98A872130685003007D5F92 /* ChromahoraWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ChromahoraWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D98A873030685004007D5F92 /* ChromahoraWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChromahoraWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D98A874030685005007D5F92 /* ChromahoraWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ChromahoraWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -219,6 +237,58 @@
 			);
 			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
 		};
+		D98A874630685005007D5F92 /* Exceptions for "ChromahoraWatchWidgets" folder in "ChromahoraWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AGENTS.md,
+				CLAUDE.md,
+				Info.plist,
+			);
+			target = D98A874930685005007D5F92 /* ChromahoraWatchWidgets */;
+		};
+		D98A874730685005007D5F92 /* Exceptions for "Chromahora" folder in "ChromahoraWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/AppGroup.swift,
+				Location/DevicePlaceProvider.swift,
+				Location/Place.swift,
+				Location/PlaceProvider.swift,
+				Location/StoredPlaceName.swift,
+				"Location/zone-links.txt",
+				Location/zone.tab,
+				SolarDay/DayRun.swift,
+				SolarDay/MockScenario.swift,
+				SolarDay/SolarDay.swift,
+				"SolarDay/SolarDay+Moon.swift",
+				"SolarDay/SolarDay+Text.swift",
+				SolarDay/SolarDayProvider.swift,
+				SunriseSunset/SolarDayCache.swift,
+				SunriseSunset/SolarDayRecord.swift,
+				SunriseSunset/SunriseSunsetClient.swift,
+				SunriseSunset/SunriseSunsetProvider.swift,
+				Timeline/SkyGradient.swift,
+				Weather/ForecastCache.swift,
+				Weather/SkyHour.swift,
+				Weather/ThrottledWeatherProvider.swift,
+				Weather/WeatherProvider.swift,
+				Weather/WeatherSpell.swift,
+				Widgets/PhaseComplicationView.swift,
+				Widgets/PhaseDot.swift,
+				Widgets/SkyBackground.swift,
+				Widgets/SkyEntry.swift,
+				Widgets/SkyLoader.swift,
+				Widgets/WidgetCountdown.swift,
+				Widgets/WidgetWeather.swift,
+			);
+			target = D98A874930685005007D5F92 /* ChromahoraWatchWidgets */;
+		};
+		D98A874830685005007D5F92 /* Exceptions for "ChromahoraWidgets" folder in "ChromahoraWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				SkyTimelineProvider.swift,
+			);
+			target = D98A874930685005007D5F92 /* ChromahoraWatchWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -228,6 +298,7 @@
 				D98A871D30685002007D5F92 /* Exceptions for "Chromahora" folder in "Chromahora" target */,
 				D98A872830685003007D5F92 /* Exceptions for "Chromahora" folder in "ChromahoraWidgets" target */,
 				D98A873730685004007D5F92 /* Exceptions for "Chromahora" folder in "ChromahoraWatch" target */,
+				D98A874730685005007D5F92 /* Exceptions for "Chromahora" folder in "ChromahoraWatchWidgets" target */,
 			);
 			path = Chromahora;
 			sourceTree = "<group>";
@@ -244,6 +315,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				D98A872730685003007D5F92 /* Exceptions for "ChromahoraWidgets" folder in "ChromahoraWidgets" target */,
+				D98A874830685005007D5F92 /* Exceptions for "ChromahoraWidgets" folder in "ChromahoraWatchWidgets" target */,
 			);
 			path = ChromahoraWidgets;
 			sourceTree = "<group>";
@@ -254,6 +326,14 @@
 				D98A873630685004007D5F92 /* Exceptions for "ChromahoraWatch" folder in "ChromahoraWatch" target */,
 			);
 			path = ChromahoraWatch;
+			sourceTree = "<group>";
+		};
+		D98A874530685005007D5F92 /* ChromahoraWatchWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D98A874630685005007D5F92 /* Exceptions for "ChromahoraWatchWidgets" folder in "ChromahoraWatchWidgets" target */,
+			);
+			path = ChromahoraWatchWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -280,6 +360,11 @@
 			files = (
 			);
 		};
+		D98A874B30685005007D5F92 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -290,6 +375,7 @@
 				D98A870030685002007D5F92 /* ChromahoraTests */,
 				D98A872630685003007D5F92 /* ChromahoraWidgets */,
 				D98A873530685004007D5F92 /* ChromahoraWatch */,
+				D98A874530685005007D5F92 /* ChromahoraWatchWidgets */,
 				D98A86F130685001007D5F92 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -301,6 +387,7 @@
 				D98A86FD30685002007D5F92 /* ChromahoraTests.xctest */,
 				D98A872130685003007D5F92 /* ChromahoraWidgets.appex */,
 				D98A873030685004007D5F92 /* ChromahoraWatch.app */,
+				D98A874030685005007D5F92 /* ChromahoraWatchWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -381,8 +468,12 @@
 				D98A873930685004007D5F92 /* Sources */,
 				D98A873A30685004007D5F92 /* Frameworks */,
 				D98A873B30685004007D5F92 /* Resources */,
+				D98A874230685005007D5F92 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				D98A874430685005007D5F92 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				D98A873530685004007D5F92 /* ChromahoraWatch */,
@@ -391,6 +482,24 @@
 			productName = ChromahoraWatch;
 			productReference = D98A873030685004007D5F92 /* ChromahoraWatch.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D98A874930685005007D5F92 /* ChromahoraWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D98A874D30685005007D5F92 /* Build configuration list for PBXNativeTarget "ChromahoraWatchWidgets" */;
+			buildPhases = (
+				D98A874A30685005007D5F92 /* Sources */,
+				D98A874B30685005007D5F92 /* Frameworks */,
+				D98A874C30685005007D5F92 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				D98A874530685005007D5F92 /* ChromahoraWatchWidgets */,
+			);
+			name = ChromahoraWatchWidgets;
+			productName = ChromahoraWatchWidgets;
+			productReference = D98A874030685005007D5F92 /* ChromahoraWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -413,6 +522,9 @@
 						CreatedOnToolsVersion = 27.0;
 					};
 					D98A873830685004007D5F92 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					D98A874930685005007D5F92 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -438,6 +550,7 @@
 				D98A86FC30685002007D5F92 /* ChromahoraTests */,
 				D98A872030685003007D5F92 /* ChromahoraWidgets */,
 				D98A873830685004007D5F92 /* ChromahoraWatch */,
+				D98A874930685005007D5F92 /* ChromahoraWatchWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -459,6 +572,11 @@
 			);
 		};
 		D98A873B30685004007D5F92 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		D98A874C30685005007D5F92 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -486,6 +604,11 @@
 			files = (
 			);
 		};
+		D98A874A30685005007D5F92 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -503,6 +626,11 @@
 			isa = PBXTargetDependency;
 			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
 			targetProxy = D98A873330685004007D5F92 /* PBXContainerItemProxy */;
+		};
+		D98A874430685005007D5F92 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D98A874930685005007D5F92 /* ChromahoraWatchWidgets */;
+			targetProxy = D98A874330685005007D5F92 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -872,6 +1000,66 @@
 			};
 			name = Release;
 		};
+		D98A874E30685005007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraWatchWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ChromahoraWatchWidgets/ChromahoraWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChromahoraWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Chromahora;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.Chromahora.watchkitapp.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		D98A874F30685005007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraWatchWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ChromahoraWatchWidgets/ChromahoraWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DHWPN889K5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChromahoraWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Chromahora;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.afollestad.Chromahora.watchkitapp.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -912,6 +1100,14 @@
 			buildConfigurations = (
 				D98A873D30685004007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraWatch" */,
 				D98A873E30685004007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraWatch" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D98A874D30685005007D5F92 /* Build configuration list for PBXNativeTarget "ChromahoraWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D98A874E30685005007D5F92 /* Debug configuration for PBXNativeTarget "ChromahoraWatchWidgets" */,
+				D98A874F30685005007D5F92 /* Release configuration for PBXNativeTarget "ChromahoraWatchWidgets" */,
 			);
 			defaultConfigurationName = Release;
 		};

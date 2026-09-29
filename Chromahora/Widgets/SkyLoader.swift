@@ -36,7 +36,9 @@ final class SkyLoader {
 
     private let placeProvider: any PlaceProvider
     private let solarDays: any SolarDayProvider
-    private let weather: any WeatherProvider
+    /// Nil where no widget shows weather, like the watch's complications, which have no room for
+    /// Apple Weather's credit, so none of them can spend the quota.
+    private let weather: (any WeatherProvider)?
     private let defaults: UserDefaults
     /// The device's calendar, read at each load, since its zone can change between them.
     private let calendar: () -> Calendar
@@ -48,7 +50,7 @@ final class SkyLoader {
     init(
         placeProvider: any PlaceProvider,
         solarDays: any SolarDayProvider,
-        weather: any WeatherProvider,
+        weather: (any WeatherProvider)?,
         defaults: UserDefaults = AppGroup.defaults,
         calendar: @escaping () -> Calendar = { .current },
         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
@@ -148,7 +150,7 @@ final class SkyLoader {
     /// device's own fix, as the app does once a lookup settles: a time zone's city is a guess
     /// the device may be far from, and a request for it would spend the quota for nothing.
     private func weatherSpells(at place: Place, now: Date, calendar: Calendar) async -> [WeatherSpell] {
-        guard case .device = place.source, let window = Forecast.window(at: now, calendar: calendar) else {
+        guard let weather, case .device = place.source, let window = Forecast.window(at: now, calendar: calendar) else {
             return []
         }
         let (answers, answer) = AsyncStream<[WeatherSpell]>.makeStream()

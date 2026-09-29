@@ -136,6 +136,17 @@ struct SkyLoaderTests {
         #expect(weather.requestedPlaces.isEmpty)
     }
 
+    /// The watch's complications have no weather to show, so their loader has none to ask,
+    /// whatever a widget asks for.
+    @Test func aLoaderWithoutWeatherGivesNone() async throws {
+        let loader = SkyLoader(placeProvider: places, solarDays: days, weather: nil, defaults: defaults, calendar: { [calendar] in calendar })
+
+        let content = try #require(await loader.content(now: try time(16, 30), withWeather: true))
+
+        #expect(content.spells.isEmpty)
+        #expect(content.run.days.count == 2)
+    }
+
     @Test func aFailedLoadIsTriedAgain() async throws {
         days.error = StubError()
         let loader = makeLoader()
