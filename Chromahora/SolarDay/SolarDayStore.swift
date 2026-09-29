@@ -61,6 +61,11 @@ final class SolarDayStore {
     /// Counts lookups that finished, found or not. Weather waits for one, so it never spends
     /// a request on the stored place the device may have left.
     private(set) var locatedCount = 0
+    /// Numbers each device lookup as it starts.
+    @ObservationIgnored private var lookupsStarted = 0
+    /// The newest device lookup's number while it's out. A lookup it replaced can still be out
+    /// beside it, but that one's answer is dropped, so only the newest can move the place.
+    @ObservationIgnored private var newestLookupOut: Int?
 
     /// Days are windowed to its time zone: the device's, which `changeTimeZone(to:)` follows, or a
     /// chosen place's own.
@@ -91,6 +96,14 @@ final class SolarDayStore {
         if case .chosen = place?.source { true } else { false }
     }
 
+    /// Whether weather may load for `place`: a lookup has finished, and none is out that could
+    /// still move it, which none can while a place is chosen. Until then the place may be a stored
+    /// fix or a time zone's city the device has left, and a forecast for it would spend a request
+    /// for nothing.
+    var isPlaceSettled: Bool {
+        locatedCount > 0 && (isPlaceChosen || newestLookupOut == nil)
+    }
+
     /// Identifies the selected day regardless of the time picked within it.
     var selectedDayStart: Date {
         calendar.startOfDay(for: selectedDate)
@@ -114,19 +127,30 @@ final class SolarDayStore {
             }
             return
         }
+        lookupsStarted += 1
+        let lookup = lookupsStarted
+        newestLookupOut = lookup
+        let found: Result<Place, any Error>
         do {
-            let found = try await placeProvider.currentPlace(in: deviceTimeZone)
-            if !Task.isCancelled, !isPlaceChosen {
-                place = found
-            }
+            found = .success(try await placeProvider.currentPlace(in: deviceTimeZone))
         } catch {
-            if place == nil, !Task.isCancelled, !isPlaceChosen {
+            found = .failure(error)
+        }
+        if newestLookupOut == lookup {
+            newestLookupOut = nil
+        }
+        guard !Task.isCancelled, !isPlaceChosen else {
+            return
+        }
+        switch found {
+        case .success(let place):
+            self.place = place
+        case .failure(let error):
+            if place == nil {
                 state = .failed(error)
             }
         }
-        if !Task.isCancelled, !isPlaceChosen {
-            locatedCount += 1
-        }
+        locatedCount += 1
     }
 
     /// Shows days for `place`, a place the person searched for, windowed to its own zone. The

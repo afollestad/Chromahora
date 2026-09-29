@@ -39,11 +39,11 @@ struct MapKitPlaceSearch: PlaceSearch {
         let completions: [MKLocalSearchCompletion]
         do {
             completions = try await withTaskCancellationHandler {
-                try await waiter.wait { completer.queryFragment = query }
+                try await waiter.answer.wait { completer.queryFragment = query }
             } onCancel: {
                 Task { @MainActor in
                     completer.cancel()
-                    waiter.cancel()
+                    waiter.answer.cancel()
                 }
             }
         } catch let error as MKError where error.code == .placemarkNotFound {
@@ -94,26 +94,51 @@ struct MapKitPlaceSearch: PlaceSearch {
         guard let request = MKReverseGeocodingRequest(location: CLLocation(latitude: place.latitude, longitude: place.longitude)) else {
             return nil
         }
+        // The completion handler rather than the async `mapItems`, which never returns once cancelled.
+        let answer = OneShot<[MKMapItem]>()
         let items = try await withTaskCancellationHandler {
-            try await request.mapItems
+            try await answer.wait {
+                request.getMapItems { items, error in
+                    answer.finish(items.map { .success($0) } ?? .failure(error ?? MKError(.unknown)))
+                }
+            }
         } onCancel: {
             Task { @MainActor in
                 request.cancel()
+                answer.cancel()
             }
         }
         return items.first?.addressRepresentations?.cityName
     }
 }
 
-/// Waits for a completer's first answer to its query. The completer calls its delegate on the
-/// main thread.
+/// Hands a completer's answer to its query to a wait. The completer calls its delegate on the
+/// main thread, once per query.
 private final class CompleterWaiter: NSObject, MKLocalSearchCompleterDelegate {
-    private var continuation: CheckedContinuation<[MKLocalSearchCompletion], any Error>?
+    let answer = OneShot<[MKLocalSearchCompletion]>()
+
+    nonisolated func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        MainActor.assumeIsolated {
+            answer.finish(.success(completer.results))
+        }
+    }
+
+    nonisolated func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: any Error) {
+        MainActor.assumeIsolated {
+            answer.finish(.failure(error))
+        }
+    }
+}
+
+/// Waits for one answer to a request sent inside the wait, and ends the wait itself when
+/// cancelled, since some of MapKit's requests never answer once cancelled.
+private final class OneShot<Value> {
+    private var continuation: CheckedContinuation<Value, any Error>?
     private var isCancelled = false
 
-    /// Runs `start`, which sets the query, then waits for its results. Cancelled beforehand, it
-    /// throws without starting.
-    func wait(starting start: () -> Void) async throws -> [MKLocalSearchCompletion] {
+    /// Runs `start`, which sends the request, then waits for its answer. Cancelled beforehand, it
+    /// throws without sending.
+    func wait(starting start: () -> Void) async throws -> Value {
         try await withCheckedThrowingContinuation { continuation in
             guard !isCancelled else {
                 continuation.resume(throwing: CancellationError())
@@ -129,21 +154,8 @@ private final class CompleterWaiter: NSObject, MKLocalSearchCompleterDelegate {
         finish(.failure(CancellationError()))
     }
 
-    nonisolated func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        MainActor.assumeIsolated {
-            finish(.success(completer.results))
-        }
-    }
-
-    nonisolated func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: any Error) {
-        MainActor.assumeIsolated {
-            finish(.failure(error))
-        }
-    }
-
-    /// Answers the wait once. A completer can refine its results with later updates, which
-    /// find the wait already answered.
-    private func finish(_ result: Result<[MKLocalSearchCompletion], any Error>) {
+    /// Answers the wait once. An answer after a cancel, or any after the first, finds it answered.
+    func finish(_ result: Result<Value, any Error>) {
         continuation?.resume(with: result)
         continuation = nil
     }

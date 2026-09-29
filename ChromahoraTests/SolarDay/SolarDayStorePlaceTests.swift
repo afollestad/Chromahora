@@ -239,6 +239,71 @@ struct SolarDayStorePlaceTests {
 
     // MARK: Late lookups
 
+    /// Returning to the device leaves a stored fix standing in while the lookup runs. A reload then,
+    /// as Try Again does, mustn't spend a forecast request on it.
+    @Test func weatherWaitsForALookupStillOut() async throws {
+        let store = makeStore()
+        #expect(!store.isPlaceSettled)
+        await store.locate()
+        #expect(store.isPlaceSettled)
+
+        store.choose(kyoto, now: monday)
+        await store.locate()
+        #expect(store.isPlaceSettled)
+
+        places.holdsResponses = true
+        var requests = places.heldRequests.makeAsyncIterator()
+        store.useCurrentLocation(now: monday)
+        let locating = Task { await store.locate() }
+        let request = try #require(await requests.next())
+        store.reload()
+        #expect(!store.isPlaceSettled)
+
+        request.answer(Place(latitude: 41.85, longitude: -87.65, source: .device))
+        await locating.value
+        #expect(store.isPlaceSettled)
+    }
+
+    /// A place chosen while the device's lookup is out needs no lookup, and the device's can't move it.
+    @Test func weatherDoesntWaitOnTheDeviceForAChosenPlace() async throws {
+        places.holdsResponses = true
+        var requests = places.heldRequests.makeAsyncIterator()
+        let store = makeStore()
+        let locating = Task { await store.locate() }
+        let request = try #require(await requests.next())
+        locating.cancel()
+
+        store.choose(kyoto, now: monday)
+        await store.locate()
+        #expect(store.isPlaceSettled)
+
+        request.answer(Place(latitude: 41.85, longitude: -87.65, source: .device))
+        await locating.value
+        #expect(store.isPlaceSettled)
+    }
+
+    /// A lookup cancelled by a zone change can answer after the one that replaced it, and mustn't
+    /// hold weather back, since its answer is dropped and nothing counts it as finished.
+    @Test func aReplacedLookupStillOutDoesntHoldWeatherBack() async throws {
+        places.holdsResponses = true
+        var requests = places.heldRequests.makeAsyncIterator()
+        let store = makeStore()
+        let first = Task { await store.locate() }
+        let firstRequest = try #require(await requests.next())
+        first.cancel()
+
+        store.changeTimeZone(to: try zone("America/Los_Angeles"))
+        let second = Task { await store.locate() }
+        let secondRequest = try #require(await requests.next())
+        secondRequest.answer(Place(latitude: 34.1, longitude: -118.2, source: .device))
+        await second.value
+        #expect(store.isPlaceSettled)
+
+        firstRequest.answer(Place(latitude: 41.85, longitude: -87.65, source: .device))
+        await first.value
+        #expect(store.isPlaceSettled)
+    }
+
     @Test func aLookupAnsweringAfterAChoiceIsDropped() async throws {
         places.holdsResponses = true
         var requests = places.heldRequests.makeAsyncIterator()

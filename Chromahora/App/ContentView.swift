@@ -93,9 +93,10 @@ struct ContentView: View {
             }
         }
         // Waits for each location lookup, so no request goes to a stored place the device has
-        // left, and only asks WeatherKit when its throttle allows.
+        // left, and only asks WeatherKit when its throttle allows. A reload while a lookup is out
+        // waits for it too, and the lookup finishing loads the forecast.
         .task(id: WeatherStore.Trigger(locatedCount: store.locatedCount, reloadCount: store.reloadCount)) {
-            if store.locatedCount > 0, scenePhase != .background {
+            if store.isPlaceSettled, scenePhase != .background {
                 await weather.load(at: store.place, now: now(from: .now), calendar: store.calendar)
             }
         }

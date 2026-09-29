@@ -58,6 +58,31 @@ struct PlaceNamesTests {
         #expect(search.townNameRequests.count == 2)
     }
 
+    /// A place in no town, like one out at sea, is asked about once, not after every lookup.
+    @Test func aPlaceInNoTownIsntAskedAgain() async {
+        let names = makeNames()
+        search.townName = nil
+
+        await names.load(sanFrancisco)
+        await names.load(sanFrancisco)
+
+        #expect(names.name(for: sanFrancisco) == nil)
+        #expect(search.townNameRequests.count == 1)
+    }
+
+    /// A lookup that never answers gives up, so it can't hold later lookups for the place joined to it.
+    @Test func aLookupThatNeverAnswersGivesUp() async {
+        let names = PlaceNames(search: search, defaults: defaults) { _ in }
+        search.holdsResponses = true
+
+        await names.load(sanFrancisco)
+        #expect(names.name(for: sanFrancisco) == nil)
+
+        search.holdsResponses = false
+        await names.load(sanFrancisco)
+        #expect(names.name(for: sanFrancisco) == "San Francisco")
+    }
+
     /// A relaunch names the last place at once, even offline.
     @Test func theLastNameOutlivesARelaunch() async {
         await makeNames().load(sanFrancisco)
