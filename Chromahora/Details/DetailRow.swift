@@ -16,10 +16,10 @@ struct DetailReading {
 }
 
 /// A row of the day's details: the reading's name with its info button, then its details on
-/// the trailing side, or under the name at accessibility sizes, where a column beside it would
-/// break a time range in two. With a `date`, a tap anywhere but the info button scrolls the
-/// timeline there, since a button nested in another's label never gets the tap. The phase under
-/// way now is tinted with its color.
+/// the trailing side, or under the name at accessibility sizes and on the watch, where a column
+/// beside it would break a time range in two. With a `date`, a tap anywhere but the info button
+/// scrolls the timeline there, since a button nested in another's label never gets the tap. The
+/// phase under way now is tinted with its color.
 struct DetailRow<Leading: View>: View {
     let reading: DetailReading
     let date: Date?
@@ -30,9 +30,6 @@ struct DetailRow<Leading: View>: View {
     let onFocus: (Date) -> Void
     let leading: Leading
 
-    /// The column icons and swatches center in.
-    private static var leadingWidth: CGFloat { 22 }
-
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -41,7 +38,7 @@ struct DetailRow<Leading: View>: View {
                 VStack(alignment: .leading, spacing: 2) {
                     heading
                     lines
-                        .padding(.leading, Self.leadingWidth + 12)
+                        .padding(.leading, DetailMetrics.leadingWidth + DetailMetrics.leadingSpacing)
                 }
                 Spacer(minLength: 0)
             } else {
@@ -53,8 +50,8 @@ struct DetailRow<Leading: View>: View {
                 lines
             }
         }
-        .padding(.leading, 8)
-        .padding(.trailing, 12)
+        .padding(.leading, DetailMetrics.innerLeading)
+        .padding(.trailing, DetailMetrics.innerTrailing)
         .padding(.vertical, 4)
         // A full-size target even for a single line.
         .frame(minHeight: 44)
@@ -70,18 +67,24 @@ struct DetailRow<Leading: View>: View {
                 onFocus(date)
             }
         }
+        #if os(iOS)
         .hoverEffect(.highlight, isEnabled: date != nil)
-        .padding(.horizontal, 8)
+        #endif
+        .padding(.horizontal, DetailMetrics.margin)
     }
 
     private var isStacked: Bool {
+        #if os(watchOS)
+        true
+        #else
         dynamicTypeSize.isAccessibilitySize
+        #endif
     }
 
     private var heading: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DetailMetrics.leadingSpacing) {
             leading
-                .frame(width: Self.leadingWidth)
+                .frame(width: DetailMetrics.leadingWidth)
                 .accessibilityHidden(true)
             // The name, which VoiceOver reads the whole row from, with its info button.
             HStack(spacing: 0) {
@@ -110,6 +113,33 @@ struct DetailRow<Leading: View>: View {
         .multilineTextAlignment(isStacked ? .leading : .trailing)
         // The name's label already says it.
         .accessibilityHidden(true)
+    }
+}
+
+/// How a row spaces its content, tighter on the watch, whose width barely holds a name and its
+/// info button beside the leading column.
+enum DetailMetrics {
+    #if os(watchOS)
+    /// The column icons and swatches center in.
+    static let leadingWidth: CGFloat = 18
+    /// Between that column and the name.
+    static let leadingSpacing: CGFloat = 8
+    /// Inside the current phase's tint.
+    static let innerLeading: CGFloat = 6
+    static let innerTrailing: CGFloat = 6
+    /// Outside the tint, on both sides.
+    static let margin: CGFloat = 4
+    #else
+    static let leadingWidth: CGFloat = 22
+    static let leadingSpacing: CGFloat = 12
+    static let innerLeading: CGFloat = 8
+    static let innerTrailing: CGFloat = 12
+    static let margin: CGFloat = 8
+    #endif
+
+    /// Where a row's leading column starts, which section headings line up with.
+    static var contentInset: CGFloat {
+        margin + innerLeading
     }
 }
 

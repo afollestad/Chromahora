@@ -13,8 +13,9 @@ struct WatchTimeline: View {
     let now: Date
     /// The forecast's spells, of any day. Those overlapping this one get a marker each.
     let weather: [WeatherSpell]
-    /// Bumped to center the view on its focus again.
-    let focusRequest: Int
+    /// Scrolls whenever it changes: to the focus time for Today, or to a time a row of the
+    /// details names.
+    let focus: TimelineFocus
 
     /// Past the phone's 72, since the watch's labels share one column: at this zoom the changes
     /// of light around sunrise, often under half an hour apart, sit on or near their lines.
@@ -25,6 +26,7 @@ struct WatchTimeline: View {
     private static let edgeClearance: CGFloat = 16
 
     private let focusAnchorID = "focus"
+    private let requestAnchorID = "request"
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
     var body: some View {
@@ -38,11 +40,10 @@ struct WatchTimeline: View {
                         .frame(height: height)
                         .background(SkyGradient(day: day).overlay(dimming))
                         .overlay(alignment: .top) {
-                            Color.clear
-                                .frame(height: 1)
-                                .id(focusAnchorID)
-                                .padding(.top, height * day.fraction(of: day.focusDate(now: now)))
-                                .accessibilityHidden(true)
+                            anchor(focusAnchorID, at: day.focusDate(now: now), in: height)
+                        }
+                        .overlay(alignment: .top) {
+                            anchor(requestAnchorID, at: requestedDate, in: height)
                         }
                     WatchSourcesButton(showsWeather: showsWeather)
                         .padding(8)
@@ -59,12 +60,26 @@ struct WatchTimeline: View {
             .onAppear {
                 proxy.scrollTo(focusAnchorID, anchor: .center)
             }
-            .onChange(of: focusRequest) {
+            .onChange(of: focus) {
                 withAnimation {
-                    proxy.scrollTo(focusAnchorID, anchor: .center)
+                    proxy.scrollTo(focus.date == nil ? focusAnchorID : requestAnchorID, anchor: .center)
                 }
             }
         }
+    }
+
+    /// An invisible scroll target, whose padding keeps its one-point frame at `date`.
+    private func anchor(_ id: String, at date: Date, in height: CGFloat) -> some View {
+        Color.clear
+            .frame(height: 1)
+            .id(id)
+            .padding(.top, height * day.fraction(of: date))
+            .accessibilityHidden(true)
+    }
+
+    /// The time the details last asked for, or the focus time once the day no longer holds it.
+    private var requestedDate: Date {
+        focus.date.flatMap { day.contains($0) ? $0 : nil } ?? day.focusDate(now: now)
     }
 
     /// Always On dims the sky, as the system dims a watch face's colors.
@@ -85,5 +100,5 @@ struct WatchTimeline: View {
 
 #Preview {
     let now = Date.now
-    WatchTimeline(day: .mock(for: now), now: now, weather: WeatherSpell.mock(), focusRequest: 0)
+    WatchTimeline(day: .mock(for: now), now: now, weather: WeatherSpell.mock(), focus: TimelineFocus())
 }

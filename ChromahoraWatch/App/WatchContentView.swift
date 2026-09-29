@@ -37,6 +37,7 @@ struct WatchContentView: View {
                 deviceName: placeNames.name(for: store.place),
                 // For the day on screen, which keeps the last place's until the new one's loads.
                 weather: weather.spells(at: store.shownPlace),
+                hours: weather.hours(at: store.shownPlace),
                 onRetry: store.reload,
                 onPage: store.selectDay(offsetBy:from:),
                 onToday: { [store] in store.selectedDate = now }

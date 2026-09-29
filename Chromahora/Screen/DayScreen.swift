@@ -43,7 +43,7 @@ struct DayScreen: View {
     /// Only `BarColorScheme` draws with it, so a flip doesn't run this body.
     @State private var isBarDark = true
     @State private var titleMidY: CGFloat = 0
-    @State private var focus = DayTimeline.Focus()
+    @State private var focus = TimelineFocus()
     @State private var isGlowShown = false
     /// Starts unbounded, so a regular window shows the panel from its first frame.
     @State private var width = CGFloat.infinity

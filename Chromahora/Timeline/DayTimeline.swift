@@ -25,7 +25,7 @@ struct DayTimeline: View {
     var sourcesMidY: CGFloat = 0
     /// Scrolls whenever it changes: to the focus time for Today, or to a phase or spell the
     /// day panel asks for.
-    var focus = Focus()
+    var focus = TimelineFocus()
     /// The day panel's footprint on the trailing edge, zero without one. Labels clear it, and
     /// lines and the sources button stop short of it, since its glass would show a line through
     /// its text. It isn't safe area, which would reach the lines only mixed with the device's.
@@ -265,19 +265,6 @@ extension DayTimeline {
         case focus
         case start
         case end
-    }
-
-    /// A request to scroll, as Today and the day panel's rows make. Each gets a new `id`, so
-    /// asking for the same time again scrolls back to it.
-    struct Focus: Equatable {
-        private(set) var id = 0
-        /// The time to center on, or nil for the view's own focus time.
-        private(set) var date: Date?
-
-        mutating func request(_ date: Date? = nil) {
-            id += 1
-            self.date = date
-        }
     }
 }
 

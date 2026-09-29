@@ -162,7 +162,7 @@ struct DayDetails: View {
                 if showsWeatherCredit {
                     AppleWeatherCredit()
                         .font(.footnote)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, DetailMetrics.contentInset)
                         .padding(.top, 4)
                 }
             }
@@ -245,7 +245,7 @@ struct DayDetails: View {
             Text(title)
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, DetailMetrics.contentInset)
                 .padding(.bottom, 4)
             rows()
         }

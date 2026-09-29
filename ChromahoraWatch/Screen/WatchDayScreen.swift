@@ -5,10 +5,17 @@
 
 import SwiftUI
 
-/// The watch's one screen: the day's timeline under the place's name, or what stands in for
-/// it, with buttons along the bottom that move a day at a time and return to today. The Crown
-/// scrolls the timeline, so it's left to that alone.
+/// The watch's one screen: the day's timeline under the place's name, with its details a swipe
+/// away as on the phone, or what stands in for them, with buttons along the bottom that move a
+/// day at a time and return to today. The Crown scrolls the page on screen, so it's left to that
+/// alone.
 struct WatchDayScreen: View {
+    /// The page a sideways swipe moves between.
+    enum Pane: Hashable {
+        case timeline
+        case details
+    }
+
     let state: SolarDayStore.LoadState
     let now: Date
     /// The day to show, which the day on screen trails while it loads.
@@ -19,13 +26,17 @@ struct WatchDayScreen: View {
     let deviceName: String?
     /// The forecast's spells, of any day.
     let weather: [WeatherSpell]
+    /// The forecast's hours, of any day, which the details read the day's light and sky from.
+    let hours: [SkyHour]
     let onRetry: () -> Void
     /// Selects the day `offset` days from `day`, as `SolarDayStore.selectDay(offsetBy:from:)` does.
     let onPage: (Int, SolarDay) -> Bool
     let onToday: () -> Void
 
-    /// Bumped by the day button on today, which centers the timeline on now again.
-    @State private var focusRequest = 0
+    /// Where the timeline scrolls: to now for the day button on today, or to a row's time.
+    @State private var focus = TimelineFocus()
+    @State private var pane = Pane.timeline
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack {
@@ -56,9 +67,20 @@ struct WatchDayScreen: View {
     @ViewBuilder
     private var content: some View {
         if let day = state.day {
-            WatchTimeline(day: day, now: now, weather: weather, focusRequest: focusRequest)
-                // A new scroll view for each day, so every day opens on its own focus.
-                .id(day.dayStart)
+            TabView(selection: $pane) {
+                WatchTimeline(day: day, now: now, weather: weather, focus: focus)
+                    // A new scroll view for each day, so every day opens on its own focus.
+                    .id(day.dayStart)
+                    .tag(Pane.timeline)
+                WatchDetailsPage(day: day, now: now, weather: weather, hours: hours) { date in
+                    // Once back, so the timeline's scroll shows rather than ending off screen.
+                    show(.timeline) {
+                        focus.request(date)
+                    }
+                }
+                .tag(Pane.details)
+            }
+            .tabViewStyle(.page)
         } else {
             WatchPlaceholder(state: state, date: selectedDate, timeZone: calendar.timeZone, onRetry: onRetry)
         }
@@ -82,13 +104,31 @@ struct WatchDayScreen: View {
         if case .loading(.none) = state { isShowingToday } else { false }
     }
 
+    /// On today, centers the timeline on now, paging back to it from the details.
     private func showToday() {
         if isShowingToday {
-            focusRequest += 1
+            show(.timeline) {
+                focus.request()
+            }
         } else {
             withAnimation {
                 onToday()
             }
+        }
+    }
+
+    /// Shows `pane`, then calls `completion` once it's on screen. The watchOS 27 simulator cuts
+    /// to a paged `TabView`'s page even inside an animation, so a row's scroll plays after the
+    /// cut. The animation, off with Reduce Motion, is in case a real watch slides instead.
+    private func show(_ pane: Pane, completion: @escaping () -> Void) {
+        guard self.pane != pane else {
+            completion()
+            return
+        }
+        withAnimation(reduceMotion ? nil : .default) {
+            self.pane = pane
+        } completion: {
+            completion()
         }
     }
 
@@ -112,6 +152,7 @@ struct WatchDayScreen: View {
         place: MockPlaceProvider.sanFrancisco,
         deviceName: "San Francisco",
         weather: WeatherSpell.mock(),
+        hours: SkyHour.mock(),
         onRetry: {},
         onPage: { _, _ in false },
         onToday: {}

@@ -41,7 +41,7 @@ struct DayPager: View {
     @Binding var skyBehindTitle: Color
     /// The title's center in global coordinates, which places that sky sample.
     var titleMidY: CGFloat = 0
-    var focus = DayTimeline.Focus()
+    var focus = TimelineFocus()
     /// The day panel's footprint on the trailing edge, zero without one.
     var panelInset: CGFloat = 0
     /// Selects the day a number of days from the one given, and answers whether it's on hand to

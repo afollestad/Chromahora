@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// An info button beside the name of a row of the day's details, opening a popover on what the
-/// row reads and how a photographer uses it.
+/// row reads and how a photographer uses it, or a sheet on the watch, which has no popovers.
 struct InfoButton: View {
     let topic: DetailTopic
 
@@ -17,9 +17,11 @@ struct InfoButton: View {
     private static let arrowGap: CGFloat = 6
 
     @State private var isPresented = false
+    #if os(iOS)
     /// Whether the icon sits in the upper half of the list's visible area, so the popover opens
     /// below it rather than above.
     @State private var isInUpperHalf = true
+    #endif
 
     var body: some View {
         Button {
@@ -32,8 +34,9 @@ struct InfoButton: View {
                 .contentShape(.rect.inset(by: -Self.reach))
         }
         .buttonStyle(.plain)
-        .hoverEffect(.highlight)
         .accessibilityLabel("About \(topic.title)")
+        #if os(iOS)
+        .hoverEffect(.highlight)
         .onGeometryChange(for: Bool.self) { proxy in
             // The list's visible area, in the icon's own coordinates.
             guard let visible = proxy.bounds(of: .scrollView), visible.height > 0 else {
@@ -53,15 +56,21 @@ struct InfoButton: View {
                 .popoverContent()
         }
         .padding(.vertical, -Self.arrowGap)
+        #else
+        .sheet(isPresented: $isPresented) {
+            TopicDetails(topic: topic)
+        }
+        #endif
         .padding(.leading, 5)
     }
 }
 
-/// The popover's content: what the reading is, then how to use it.
+/// The popover's content, or the sheet's on the watch: what the reading is, then how to use it.
 private struct TopicDetails: View {
     let topic: DetailTopic
 
     var body: some View {
+        #if os(iOS)
         // Sized by a hidden copy of the text, since a scroll view alone has no height to give the
         // popover, which then never shows. The copy asks for the text's full height and gives way
         // where the room above or below the icon is shorter, as at large sizes, so the text on
@@ -78,6 +87,11 @@ private struct TopicDetails: View {
         // Stops growing at accessibility1, like the rest of the details. Past it, the text would
         // break to a word or two a line in this width.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        #else
+        ScrollView {
+            content
+        }
+        #endif
     }
 
     private var content: some View {
@@ -99,9 +113,14 @@ private struct TopicDetails: View {
         // `Color.primary` rather than `.primary`, which a dark bar's items would pass down as white.
         .foregroundStyle(Color.primary)
         .tint(.accentColor)
+        #if os(iOS)
         // `SourcesButton`'s popover width, so sentences wrap evenly.
         .frame(width: 280, alignment: .leading)
         .padding()
+        #else
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .scenePadding(.horizontal)
+        #endif
     }
 }
 

@@ -13,10 +13,12 @@ These rules cover `ChromahoraWatch/`, the watchOS app the iOS app embeds, which 
 ### Design
 
 - Name each phase where it begins, in one column with the markers, through `WatchTimelineOverlay`, never the phone's `DayTimelineOverlay`. Two columns of labels don't fit the watch's width, and sunrise falls in the middle of golden hour, so a phase label beside it would have no room.
-- Page days with the bottom bar's buttons and leave the Crown to the timeline. Paging waits for the selected day to load, since a page from the day still shown would land on the one loading, or behind it.
-- The watch can't open web pages, so credit services in text: `WatchSourcesButton` at the foot of each day always names sunrise-sunset.org and leads with the Apple Weather mark whenever the day shows weather, and its sheet opens WeatherKit's legal text in place of the phone's link. Weather sheets show the mark alone.
+- Page days with the bottom bar's buttons and leave the Crown to the page on screen. Paging waits for the selected day to load, since a page from the day still shown would land on the one loading, or behind it.
+- Show the day's details through the phone's `DayDetails` on `WatchDetailsPage`, a sideways swipe from the timeline, never a copy of its rows, so both stay true to `DetailTopic` and the model.
+- The watch can't open web pages, so credit services in text: `WatchSourcesButton` at the foot of each day and its details always names sunrise-sunset.org and leads with the Apple Weather mark whenever the day shows weather, and its sheet opens WeatherKit's legal text in place of the phone's link. Weather sheets show the mark alone.
 
 ### Verifying
 
 - Watch screens have no snapshot suite, since swift-snapshot-testing renders images only on iOS and tvOS. Check them with `xcrun simctl io <udid> screenshot` on `Apple Watch SE 3 (40mm)`, the narrowest, and a 46 mm or 49 mm watch.
+- Set a watch's text size with a launch argument after `--`, such as `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityM` for `accessibility1`, since `xcrun simctl ui <udid> content_size` fails on watch simulators.
 - Location permission belongs to the companion app's bundle ID, and an unpaired watch simulator can't show its prompt, so grant it with `xcrun simctl privacy <udid> grant location com.afollestad.Chromahora`, or use `-DebugPlace`.
