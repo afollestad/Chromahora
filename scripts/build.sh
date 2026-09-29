@@ -38,10 +38,19 @@ run_and_format() {
   fi
 }
 
+# The app's scheme builds the watch app it embeds. `--watch` builds the watch app alone, which is quicker.
+scheme=Chromahora
+destination='generic/platform=iOS Simulator'
+if [ "${1:-}" = "--watch" ]; then
+  shift
+  scheme=ChromahoraWatch
+  destination='generic/platform=watchOS Simulator'
+fi
+
 run_and_format xcodebuild \
   -project Chromahora.xcodeproj \
-  -scheme Chromahora \
-  -destination 'generic/platform=iOS Simulator' \
+  -scheme "$scheme" \
+  -destination "$destination" \
   -derivedDataPath .build/xcode \
   build \
   "$@"

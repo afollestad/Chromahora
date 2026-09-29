@@ -3,6 +3,7 @@ included:
   - Chromahora
   - ChromahoraTests
   - ChromahoraWidgets
+  - ChromahoraWatch
 excluded:
   - .build
 line_length:

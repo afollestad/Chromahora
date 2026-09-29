@@ -16,11 +16,11 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 ## Build and test
 
-- Xcode 27 project with an iOS 27 deployment target. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely.
-- Source folders are synchronized groups. New files under `Chromahora/`, `ChromahoraTests/` or `ChromahoraWidgets/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above, the app's and the widget extension's `Info.plist`, which `INFOPLIST_FILE` merges into the generated plist for keys with no `INFOPLIST_KEY_` setting, and the files the widget extension shares from `Chromahora/`, which `ChromahoraWidgets/AGENTS.md` covers.
+- Xcode 27 project with iOS 27 and watchOS 27 deployment targets. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely, except in files the watch app shares, which watchOS must compile.
+- Source folders are synchronized groups. New files under `Chromahora/`, `ChromahoraTests/`, `ChromahoraWidgets/` or `ChromahoraWatch/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above, each target's `Info.plist`, which `INFOPLIST_FILE` merges into the generated plist for keys with no `INFOPLIST_KEY_` setting, and the files the widget extension and the watch app share from `Chromahora/`, which `ChromahoraWidgets/AGENTS.md` and `ChromahoraWatch/AGENTS.md` cover.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint`, `xcsift` and `axe` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.
-- Build: `./scripts/build.sh`. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device).
+- Build: `./scripts/build.sh`, which builds the watch app the app embeds too. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device), and `-w` runs the watch app instead.
 - Tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`. It runs snapshot suites on their own devices, `SnapshotTests` on iPhone 18 Pro and `WideSnapshotTests` on iPad mini (A17 Pro), and everything else on `SIMULATOR`'s.
 - Snapshots: `./scripts/snapshots.sh verify`, or `record` to rewrite baselines and then verify them. It runs each suite on its own device, and `ChromahoraTests/Snapshots/AGENTS.md` covers both.
 - Lint: `./scripts/lint.sh` from the repo root. SwiftLint runs in strict mode and Swift warnings are errors, so both fail on any warning.
@@ -39,7 +39,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 ## Design rules
 
-- `SolarDay` is the single contract for a day's sun and moon data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` builds the real ones once, and `SkyLoader.live` the widgets'; the mocks serve previews, tests, the debug drawer and the widgets' placeholder.
+- `SolarDay` is the single contract for a day's sun and moon data, which `SolarDayStore` loads through a `SolarDayProvider` for a `Place` from a `PlaceProvider`. `ChromahoraApp` and `ChromahoraWatchApp` build the real ones once, and `SkyLoader.live` the widgets'; the mocks serve previews, tests, the debug drawer and the widgets' placeholder.
 - Keep weather out of `SolarDay`, since forecasts change and fail while sun times don't. `WeatherStore` loads a `Forecast` of `WeatherSpell`s and `SkyHour`s through a `WeatherProvider`, and a failure only leaves the timeline without them.
 - Floating chrome is Liquid Glass: labels are glass capsules, and the title, which names the place and opens the location sheet, and the calendar button are glass toolbar items. The top edge, and the bottom under `SourcesButton`, use the soft scroll edge effect, which blurs labels and lines under the bars so they don't run through the clock or the button; the hard style would paint a dark band.
 - A regular-width window with room for a 390pt timeline beside it (iPad, an opened foldable, a Pro Max in landscape) floats the glass `DayPanel` on the trailing side in place of the calendar button. Size class and width alone decide, with no control to hide it.

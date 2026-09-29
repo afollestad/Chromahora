@@ -54,6 +54,11 @@ jobs:
       - name: Lint
         run: ./scripts/lint.sh
 
+      # The app embeds the watch app, so the runner needs the watchOS platform, which Xcode
+      # installs apart from itself.
+      - name: Install watchOS platform
+        run: xcrun simctl list runtimes | grep -q '^watchOS 27' || xcodebuild -downloadPlatform watchOS
+
       - name: Build
         run: ./scripts/build.sh
 
