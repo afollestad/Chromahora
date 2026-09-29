@@ -12,4 +12,10 @@ nonisolated extension Date {
     func dayTitle(in timeZone: TimeZone) -> String {
         formatted(Date.FormatStyle(timeZone: timeZone).weekday(.wide).month(.wide).day())
     }
+
+    /// The day abbreviated, as in "Mon, Sep 21", for the watch's day button, which the full
+    /// title would overflow.
+    func shortDayTitle(in timeZone: TimeZone) -> String {
+        formatted(Date.FormatStyle(timeZone: timeZone).weekday(.abbreviated).month(.abbreviated).day())
+    }
 }

@@ -7,6 +7,9 @@ import SwiftUI
 
 /// The Apple Weather mark and a link to its other data sources, which WeatherKit's terms
 /// require wherever its data shows. Named apart from WeatherKit's `WeatherAttribution`.
+///
+/// The watch can't open web pages, so there the mark stands alone, and the watch's sources
+/// sheet gives WeatherKit's legal attribution as text.
 struct AppleWeatherCredit: View {
     /// The page WeatherKit's `WeatherAttribution.legalPageURL` reports, fixed here so the
     /// credit needs no request and shows offline.
@@ -22,6 +25,7 @@ struct AppleWeatherCredit: View {
     var body: some View {
         HStack(spacing: 6) {
             Self.mark
+            #if !os(watchOS)
             if let legalPage = Self.legalPage {
                 // Primary and underlined, since a bright sky through a popover's glass washes
                 // out tinted text.
@@ -29,6 +33,7 @@ struct AppleWeatherCredit: View {
                     .foregroundStyle(.primary)
                     .underline()
             }
+            #endif
         }
     }
 }

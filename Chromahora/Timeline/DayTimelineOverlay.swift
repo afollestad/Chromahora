@@ -5,31 +5,6 @@
 
 import SwiftUI
 
-/// The darkened gutter behind the hour ruler, which keeps its white labels legible
-/// over the bright daylight band. `DayTimeline` also paints it past the day's ends,
-/// so overscrolling doesn't cut it off.
-struct RulerScrim: View {
-    let leadingInset: CGFloat
-
-    private let width: CGFloat = 112
-
-    var body: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .black.opacity(0.38), location: 0),
-                .init(color: .black.opacity(0.2), location: 0.35),
-                .init(color: .black.opacity(0.06), location: 0.7),
-                .init(color: .clear, location: 1)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .frame(width: width + leadingInset)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityHidden(true)
-    }
-}
-
 /// Annotates the sky gradient: an hour ruler on the leading edge, sunrise, sunset, "now"
 /// and weather markers, and a label for each phase but night on the trailing edge.
 struct DayTimelineOverlay: View {
@@ -389,17 +364,6 @@ struct DayTimelineOverlay: View {
                 labelY: labelY,
                 slack: (min(highest, labelY) - labelY)...(max(lowest, labelY) - labelY)
             )
-        }
-    }
-}
-
-/// A horizontal line through the middle of its frame, for a stroke style to dash.
-/// `Rectangle` would stroke both edges of its one-point frame.
-private struct HorizontalRule: Shape {
-    func path(in rect: CGRect) -> Path {
-        Path { path in
-            path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
         }
     }
 }

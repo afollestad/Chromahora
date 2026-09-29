@@ -6,7 +6,8 @@
 import SwiftUI
 
 /// A weather spell's icon among the timeline's markers, which opens a popover describing
-/// the spell. VoiceOver reads the same description as the button's label.
+/// the spell, or a sheet on the watch, which has no popovers. VoiceOver reads the same
+/// description as the button's label.
 struct WeatherButton: View {
     let spell: WeatherSpell
     /// When the spell runs, as the timeline words it for the day.
@@ -32,6 +33,7 @@ struct WeatherButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(spell.description(range: range))
+        #if os(iOS)
         .popover(isPresented: $isPresented, arrowEdge: .leading) {
             WeatherSpellDetails(spell: spell, range: range, inDaylight: inDaylight)
                 .padding()
@@ -40,6 +42,15 @@ struct WeatherButton: View {
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .popoverContent()
         }
+        #else
+        .sheet(isPresented: $isPresented) {
+            ScrollView {
+                WeatherSpellDetails(spell: spell, range: range, inDaylight: inDaylight)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .scenePadding(.horizontal)
+            }
+        }
+        #endif
     }
 
     /// The icon padded to fill its capsule, which the overlay also cuts out of the lines behind it.

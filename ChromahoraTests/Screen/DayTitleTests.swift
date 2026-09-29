@@ -16,5 +16,7 @@ struct DayTitleTests {
 
         #expect(mondayEvening.dayTitle(in: .gmt) == "Monday, September 21")
         #expect(mondayEvening.dayTitle(in: tokyo) == "Tuesday, September 22")
+        #expect(mondayEvening.shortDayTitle(in: .gmt) == "Mon, Sep 21")
+        #expect(mondayEvening.shortDayTitle(in: tokyo) == "Tue, Sep 22")
     }
 }

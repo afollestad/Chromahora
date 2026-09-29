@@ -18,6 +18,12 @@ struct WeatherKitProvider: WeatherProvider {
         let hours = try await WeatherService.shared.weather(for: location, including: .hourly(startDate: start, endDate: end))
         return Forecast(spells: WeatherSpell.spells(from: hours.map(WeatherHour.init)), hours: hours.map(SkyHour.init))
     }
+
+    /// WeatherKit's legal attribution as text, which it offers for screens that can't open its
+    /// legal page, as the watch can't. Nil when WeatherKit can't be reached.
+    static func legalAttributionText() async -> String? {
+        try? await WeatherService.shared.attribution.legalAttributionText
+    }
 }
 
 private extension SkyHour {

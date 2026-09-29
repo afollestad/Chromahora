@@ -6,9 +6,6 @@
 import SwiftUI
 
 struct WatchContentView: View {
-    /// Two thirds of the phone's, for the smaller screen.
-    private static let pointsPerHour: CGFloat = 48
-
     @State private var store: SolarDayStore
     @State private var weather: WeatherStore
     private let placeNames: PlaceNames
@@ -29,20 +26,33 @@ struct WatchContentView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let day = store.state.day {
-                    ScrollView {
-                        SkyGradient(day: day)
-                            .frame(height: day.duration / 3600 * Self.pointsPerHour)
-                    }
-                } else {
-                    ProgressView()
-                }
+        TimelineView(.everyMinute) { context in
+            let now = now(from: context.date)
+            WatchDayScreen(
+                state: store.state,
+                now: now,
+                selectedDate: store.selectedDate,
+                calendar: store.calendar,
+                place: store.place,
+                deviceName: placeNames.name(for: store.place),
+                // For the day on screen, which keeps the last place's until the new one's loads.
+                weather: weather.spells(at: store.shownPlace),
+                onRetry: store.reload,
+                onPage: store.selectDay(offsetBy:from:),
+                onToday: { [store] in store.selectedDate = now }
+            )
+            // The watch keeps the app in memory overnight, and a wrist raised the next morning
+            // should find today rather than yesterday.
+            .onChange(of: now) { previous, current in
+                store.advanceToToday(from: previous, to: current)
             }
-            .navigationTitle(store.place?.title(deviceName: placeNames.name(for: store.place)) ?? "")
         }
         .dayLoading(store: store, weather: weather, placeNames: placeNames, nowOverride: nowOverride)
+    }
+
+    /// The time the app shows as now, which the debug settings can override.
+    private func now(from date: Date) -> Date {
+        nowOverride ?? date
     }
 
     /// The debug settings' clock, if it overrides the real one.

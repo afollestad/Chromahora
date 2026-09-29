@@ -49,7 +49,7 @@
 		D98A873230685004007D5F92 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 				D98A873130685004007D5F92 /* ChromahoraWatch.app in Embed Watch Content */,
 			);
@@ -159,6 +159,15 @@
 			);
 			target = D98A872030685003007D5F92 /* ChromahoraWidgets */;
 		};
+		D98A873630685004007D5F92 /* Exceptions for "ChromahoraWatch" folder in "ChromahoraWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AGENTS.md,
+				App/Info.plist,
+				CLAUDE.md,
+			);
+			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
+		};
 		D98A873730685004007D5F92 /* Exceptions for "Chromahora" folder in "ChromahoraWatch" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -182,20 +191,22 @@
 				Location/zone.tab,
 				Screen/DayTitle.swift,
 				Screen/LoadingSky.swift,
-				SolarDay/DayRun.swift,
 				SolarDay/MockScenario.swift,
+				SolarDay/SolarDay.swift,
 				"SolarDay/SolarDay+Focus.swift",
 				"SolarDay/SolarDay+Moon.swift",
 				"SolarDay/SolarDay+Text.swift",
-				SolarDay/SolarDay.swift,
 				SolarDay/SolarDayProvider.swift,
 				SolarDay/SolarDayStore.swift,
 				SunriseSunset/SolarDayCache.swift,
 				SunriseSunset/SolarDayRecord.swift,
 				SunriseSunset/SunriseSunsetClient.swift,
 				SunriseSunset/SunriseSunsetProvider.swift,
+				Timeline/HorizontalRule.swift,
 				Timeline/LabelSpacing.swift,
+				Timeline/RulerScrim.swift,
 				Timeline/SkyGradient.swift,
+				Timeline/WeatherButton.swift,
 				Weather/AppleWeatherCredit.swift,
 				Weather/ForecastCache.swift,
 				Weather/SkyHour.swift,
@@ -205,15 +216,6 @@
 				Weather/WeatherSpell.swift,
 				Weather/WeatherSpellDetails.swift,
 				Weather/WeatherStore.swift,
-			);
-			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
-		};
-		D98A873630685004007D5F92 /* Exceptions for "ChromahoraWatch" folder in "ChromahoraWatch" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AGENTS.md,
-				App/Info.plist,
-				CLAUDE.md,
 			);
 			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
 		};
