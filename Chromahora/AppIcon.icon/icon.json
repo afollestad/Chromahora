@@ -1,9 +1,7 @@
 {
   "fill-specializations": [
     {
-      "value": {
-        "solid": "extended-srgb:0.05000,0.07000,0.20000,1.00000"
-      }
+      "value": "system-light"
     },
     {
       "appearance": "dark",
@@ -12,54 +10,140 @@
   ],
   "groups": [
     {
-      "name": "Celestial mark",
+      "name": "Moon",
       "layers": [
         {
           "image-name": "Moon.svg",
           "name": "Moon",
-          "glass": true
-        },
-        {
-          "image-name": "Sun.svg",
-          "name": "Sun",
-          "glass": true
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.35
-      },
-      "translucency": {
-        "enabled": true,
-        "value": 0.8
-      }
-    },
-    {
-      "name": "Sky",
-      "layers": [
-        {
-          "glass": false,
-          "image-name": "Sky.svg",
-          "name": "Night to daylight",
-          "hidden-specializations": [
+          "glass": true,
+          "fill-specializations": [
             {
-              "value": false
+              "value": {
+                "solid": "extended-srgb:0.23922,0.38431,0.72157,1.00000"
+              }
             },
             {
               "appearance": "dark",
-              "value": true
+              "value": {
+                "solid": "extended-srgb:0.25098,0.36471,0.61961,1.00000"
+              }
             }
           ]
         }
       ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0
-      },
       "translucency": {
         "enabled": false,
         "value": 0
-      }
+      },
+      "refractivity-specializations": [
+        {
+          "value": {
+            "enabled": true,
+            "strength": 0.65,
+            "depth": 0.6
+          }
+        },
+        {
+          "appearance": "dark",
+          "value": {
+            "enabled": false,
+            "strength": 0.5,
+            "depth": 0
+          }
+        }
+      ],
+      "shadow-specializations": [
+        {
+          "value": {
+            "kind": "neutral",
+            "opacity": 0.65
+          }
+        },
+        {
+          "appearance": "dark",
+          "value": {
+            "kind": "neutral",
+            "opacity": 0.35
+          }
+        }
+      ],
+      "specular-specializations": [
+        {
+          "value": "inside"
+        },
+        {
+          "appearance": "dark",
+          "value": "automatic"
+        }
+      ]
+    },
+    {
+      "name": "Sun",
+      "layers": [
+        {
+          "image-name": "Sun.svg",
+          "name": "Sun",
+          "glass": true,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "extended-srgb:0.89804,0.55294,0.17255,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-srgb:0.80000,0.43529,0.19608,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "translucency": {
+        "enabled": true,
+        "value": 0.49
+      },
+      "refractivity-specializations": [
+        {
+          "value": {
+            "enabled": true,
+            "strength": 0.65,
+            "depth": 0.6
+          }
+        },
+        {
+          "appearance": "dark",
+          "value": {
+            "enabled": false,
+            "strength": 0.5,
+            "depth": 0
+          }
+        }
+      ],
+      "shadow-specializations": [
+        {
+          "value": {
+            "kind": "neutral",
+            "opacity": 0.65
+          }
+        },
+        {
+          "appearance": "dark",
+          "value": {
+            "kind": "neutral",
+            "opacity": 0.35
+          }
+        }
+      ],
+      "specular-specializations": [
+        {
+          "value": "inside"
+        },
+        {
+          "appearance": "dark",
+          "value": "automatic"
+        }
+      ]
     }
   ],
   "supported-platforms": {
@@ -67,5 +151,9 @@
       "watchOS"
     ],
     "squares": "shared"
-  }
+  },
+  "features": [
+    "refractivity",
+    "specular-location"
+  ]
 }
