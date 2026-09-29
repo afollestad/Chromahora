@@ -66,19 +66,78 @@ struct DevicePlaceProviderTests {
         #expect(makeProvider().lastKnownPlace(in: tokyo) == timeZoneCity)
     }
 
-    @Test func deniedFallsBackToTheLastFixInTheZone() async throws {
+    /// A place the person has since withheld mustn't go on standing in for the device.
+    @Test func deniedForgetsTheLastFix() async throws {
         source.script = [.fix(latitude: 37.77, longitude: -122.42)]
         _ = try await makeProvider().currentPlace(in: chicago)
 
         source.script = [.denied]
+        #expect(try await makeProvider().currentPlace(in: chicago) == timeZoneCity)
+        #expect(makeProvider().lastKnownPlace(in: chicago) == timeZoneCity)
+    }
+
+    /// No fix in time says nothing about permission, so the last fix in the zone stands.
+    @Test func noFixFallsBackToTheLastFixInTheZone() async throws {
+        source.script = [.fix(latitude: 37.77, longitude: -122.42)]
+        _ = try await makeProvider().currentPlace(in: chicago)
+
+        source.script = [.noFix]
         #expect(try await makeProvider().currentPlace(in: chicago) == sanFrancisco)
         #expect(try await makeProvider().currentPlace(in: tokyo) == timeZoneCity)
+    }
+
+    /// A widget's fix can come from CoreLocation's cache, older than the app's stored one.
+    @Test func anOlderFixNeverReplacesANewerOne() async throws {
+        let now = Date.now
+        source.script = [.fix(latitude: 37.77, longitude: -122.42, takenAt: now)]
+        _ = try await makeProvider().currentPlace(in: chicago)
+
+        source.script = [.fix(latitude: 37.34, longitude: -121.89, takenAt: now.addingTimeInterval(-600))]
+        #expect(try await makeProvider().currentPlace(in: chicago) == sanFrancisco)
+
+        source.script = [.fix(latitude: 37.34, longitude: -121.89, takenAt: now.addingTimeInterval(60))]
+        #expect(try await makeProvider().currentPlace(in: chicago) == Place(latitude: 37.34, longitude: -121.89, source: .device))
+    }
+
+    /// A fix nearby keeps the stored place but its newer time, so a stale fix from elsewhere
+    /// can't replace it after.
+    @Test func aNearbyFixRefreshesTheStoredTime() async throws {
+        let now = Date.now
+        source.script = [.fix(latitude: 37.77, longitude: -122.42, takenAt: now.addingTimeInterval(-3600))]
+        _ = try await makeProvider().currentPlace(in: chicago)
+        source.script = [.fix(latitude: 37.74, longitude: -122.42, takenAt: now)]
+        _ = try await makeProvider().currentPlace(in: chicago)
+
+        source.script = [.fix(latitude: 37.34, longitude: -121.89, takenAt: now.addingTimeInterval(-600))]
+        #expect(try await makeProvider().currentPlace(in: chicago) == sanFrancisco)
+    }
+
+    /// A fix stored before fixes carried their time still loads, and any new fix may replace it.
+    @Test func aFixStoredWithoutATimeStillLoads() async throws {
+        let stored = #"{"place":{"latitudeTenths":378,"longitudeTenths":-1224,"source":{"device":{}}},"timeZone":"America/Chicago"}"#
+        defaults.set(Data(stored.utf8), forKey: "lastDevicePlace")
+        #expect(makeProvider().lastKnownPlace(in: chicago) == sanFrancisco)
+
+        source.script = [.fix(latitude: 37.34, longitude: -121.89, takenAt: .distantPast)]
+        #expect(try await makeProvider().currentPlace(in: chicago) == Place(latitude: 37.34, longitude: -121.89, source: .device))
     }
 
     @Test func noFixInTimeFallsBackToTheTimeZone() async throws {
         source.script = [.noFix]
 
         #expect(try await makeProvider().currentPlace(in: chicago) == timeZoneCity)
+    }
+
+    /// A widget passes a shorter wait, since its reload runs on a budget.
+    @Test func noFixWaitsOutTheGivenTimeout() async throws {
+        source.script = [.noFix]
+        let (waits, recordWait) = AsyncStream<Duration>.makeStream()
+        var provider = makeProvider { recordWait.yield($0) }
+        provider.timeout = .seconds(5)
+
+        #expect(try await provider.currentPlace(in: chicago) == timeZoneCity)
+        recordWait.finish()
+        #expect(await waits.reduce(into: []) { $0.append($1) } == [.seconds(5)])
     }
 
     /// The prompt can stay up as long as the person likes, so it never times out, and

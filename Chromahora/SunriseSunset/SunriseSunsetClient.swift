@@ -20,6 +20,9 @@ protocol SunriseSunsetFetching {
 }
 
 struct SunriseSunsetClient: SunriseSunsetFetching {
+    /// The site sunrise-sunset.org's terms ask every credit to link back to.
+    nonisolated static let siteURL = URL(string: "https://sunrise-sunset.org")
+
     private struct Response: Decodable {
         let days: [SolarDayRecord]
     }

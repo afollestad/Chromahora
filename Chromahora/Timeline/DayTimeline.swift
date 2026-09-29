@@ -61,12 +61,9 @@ struct DayTimeline: View {
     /// cap, plus the gap held labels keep from the bars.
     private static let edgeClearance: CGFloat = 24
 
-    /// The sky's relative luminance where white and black text contrast with it equally.
-    private static let crossoverLuminance = 0.18
-
     /// The bar turns dark below this range and light above it, so scrolling slowly
     /// across the crossover doesn't flicker the title.
-    private static let darkBarLuminance = (crossoverLuminance - 0.01)...(crossoverLuminance + 0.01)
+    private static let darkBarLuminance = (SkyGradient.crossoverLuminance - 0.01)...(SkyGradient.crossoverLuminance + 0.01)
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// How far the timeline is pulled past the end it can page through, if it is. Only
@@ -245,7 +242,7 @@ struct DayTimeline: View {
 
     /// Whether the bar should be dark over `color`. Inside `darkBarLuminance` it keeps `wasDark`.
     static func prefersDarkBar(over color: Color, wasDark: Bool) -> Bool {
-        let luminance = luminance(of: color)
+        let luminance = SkyGradient.luminance(of: color)
         if luminance < darkBarLuminance.lowerBound {
             return true
         }
@@ -253,19 +250,6 @@ struct DayTimeline: View {
             return false
         }
         return wasDark
-    }
-
-    /// The scheme a timeline label takes over `color`, so its text and glass contrast with the sky
-    /// rather than follow the system's appearance. Labels scroll with the sky beneath them, so
-    /// unlike the bar they need no margin against flicker.
-    static func labelScheme(over color: Color) -> ColorScheme {
-        luminance(of: color) < crossoverLuminance ? .dark : .light
-    }
-
-    /// Relative luminance as WCAG defines it, which weights green most because the eye is most sensitive to it.
-    static func luminance(of color: Color) -> Double {
-        let resolved = color.resolve(in: EnvironmentValues())
-        return 0.2126 * Double(resolved.linearRed) + 0.7152 * Double(resolved.linearGreen) + 0.0722 * Double(resolved.linearBlue)
     }
 
     /// The time the view centers on: now when it falls on this day, otherwise the middle

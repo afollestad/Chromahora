@@ -16,6 +16,14 @@ struct SkyGradientTests {
         calendar: Calendar(identifier: .gregorian)
     )
 
+    @Test func labelsTurnDarkOverNightBlueHourAndDuskAndLightOverGoldenHourAndDaylight() {
+        #expect(SkyGradient.labelScheme(over: DayPhase.night.color) == .dark)
+        #expect(SkyGradient.labelScheme(over: DayPhase.blueHour.color) == .dark)
+        #expect(SkyGradient.labelScheme(over: SkyGradient.duskBridge) == .dark)
+        #expect(SkyGradient.labelScheme(over: DayPhase.goldenHour.color) == .light)
+        #expect(SkyGradient.labelScheme(over: DayPhase.daylight.color) == .light)
+    }
+
     @Test func heldPhasesKeepTheirColor() {
         expect(SkyGradient.color(at: 0, in: day), matches: DayPhase.night.color)
         expect(SkyGradient.color(at: 1, in: day), matches: DayPhase.night.color)

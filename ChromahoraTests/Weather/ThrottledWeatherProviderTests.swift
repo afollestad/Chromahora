@@ -39,8 +39,8 @@ struct ThrottledWeatherProviderTests {
         Forecast(spells: WeatherSpell.mock(for: start), hours: SkyHour.mock(for: start))
     }
 
-    private func makeProvider() -> ThrottledWeatherProvider {
-        ThrottledWeatherProvider(base: base, cache: cache) { [clock] in clock.now }
+    private func makeProvider(interval: TimeInterval = ThrottledWeatherProvider.minimumInterval) -> ThrottledWeatherProvider {
+        ThrottledWeatherProvider(base: base, cache: cache, interval: interval) { [clock] in clock.now }
     }
 
     private func ask(_ provider: ThrottledWeatherProvider, at place: Place? = nil, from start: Date? = nil) async throws -> Forecast {
@@ -67,6 +67,21 @@ struct ThrottledWeatherProviderTests {
         clock.now = start.addingTimeInterval(ThrottledWeatherProvider.minimumInterval)
         _ = try await ask(provider)
 
+        #expect(base.requestedPlaces == [place, place])
+    }
+
+    /// The widgets wait longer between requests than the app.
+    @Test func aLongerIntervalHoldsLonger() async throws {
+        let interval = 3 * ThrottledWeatherProvider.minimumInterval
+        let provider = makeProvider(interval: interval)
+        _ = try await ask(provider)
+
+        clock.now = start.addingTimeInterval(interval - 1)
+        _ = try await ask(provider)
+        #expect(base.requestedPlaces == [place])
+
+        clock.now = start.addingTimeInterval(interval)
+        _ = try await ask(provider)
         #expect(base.requestedPlaces == [place, place])
     }
 

@@ -175,7 +175,7 @@ struct DayTimelineOverlay: View {
     private func labels(_ markers: [PlacedMarker], size: CGSize, style: LabelStyle) -> some View {
         ForEach(markers) { placed in
             row(at: placed.labelY, alignment: .leading, size: size) {
-                markerLabel(for: placed.marker, scheme: DayTimeline.labelScheme(over: skyColor(at: placed.labelY, in: size)), style: style)
+                markerLabel(for: placed.marker, scheme: SkyGradient.labelScheme(over: skyColor(at: placed.labelY, in: size)), style: style)
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.size.width
                     } action: { width in
@@ -200,7 +200,7 @@ struct DayTimelineOverlay: View {
         ForEach(placedPhases(size: size)) { placed in
             let phaseColor = placed.segment.phase.color
             let glass = Glass.regular.tint(phaseColor.opacity(0.5))
-            let scheme = DayTimeline.labelScheme(over: phaseColor)
+            let scheme = SkyGradient.labelScheme(over: phaseColor)
             row(at: placed.labelY, alignment: .trailing, size: size) {
                 ViewThatFits(in: .horizontal) {
                     label(text(for: placed.segment), glass: glass, scheme: scheme, style: style)

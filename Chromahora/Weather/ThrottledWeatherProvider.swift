@@ -6,10 +6,10 @@
 import Foundation
 
 /// Thrown instead of asking again while the last request for a forecast failed within
-/// `ThrottledWeatherProvider.minimumInterval`.
+/// `ThrottledWeatherProvider`'s interval.
 nonisolated struct ForecastThrottled: Error, Equatable {}
 
-/// Asks `base` for a forecast at most once per `minimumInterval` for each place and window,
+/// Asks `base` for a forecast at most once per `interval` for each place and window,
 /// answering from the last request in between. Requests for a forecast already on its way
 /// join it, so two windows showing the same place make one request, and switching away from a
 /// place and back while its request is out waits for that answer rather than asking again.
@@ -24,13 +24,22 @@ final class ThrottledWeatherProvider: WeatherProvider {
 
     private let base: any WeatherProvider
     private let cache: ForecastCache
+    /// `minimumInterval` in the app. The widgets wait longer, since they refresh on their own
+    /// while nobody looks at them.
+    private let interval: TimeInterval
     private let now: () -> Date
     private var inFlight: [ForecastKey: Task<Forecast, any Error>] = [:]
 
     /// `now` times the interval, and tests replace it so they never wait for real.
-    init(base: any WeatherProvider, cache: ForecastCache, now: @escaping () -> Date = { .now }) {
+    init(
+        base: any WeatherProvider,
+        cache: ForecastCache,
+        interval: TimeInterval = minimumInterval,
+        now: @escaping () -> Date = { .now }
+    ) {
         self.base = base
         self.cache = cache
+        self.interval = interval
         self.now = now
     }
 
@@ -39,12 +48,12 @@ final class ThrottledWeatherProvider: WeatherProvider {
         if let task = inFlight[key] {
             return try await task.value
         }
-        let task = Task { [base, cache, now] in
+        let task = Task { [base, cache, interval, now] in
             let attemptedAt = now()
             // An attempt counts within the interval on either side of now, so a small clock
             // correction costs no request, and a clock set back far can't hold one for hours.
             if let record = await cache.record(for: key),
-               abs(attemptedAt.timeIntervalSince(record.attemptedAt)) < Self.minimumInterval {
+               abs(attemptedAt.timeIntervalSince(record.attemptedAt)) < interval {
                 guard let forecast = record.forecast else {
                     throw ForecastThrottled()
                 }

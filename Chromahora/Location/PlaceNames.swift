@@ -11,23 +11,6 @@ import Observation
 /// every window, which then share their lookups too.
 @Observable
 final class PlaceNames {
-    /// Identifies a place by its rounded coordinates alone, like the caches.
-    private struct Cell: Hashable, Codable {
-        let latitudeTenths: Int
-        let longitudeTenths: Int
-
-        init(_ place: Place) {
-            latitudeTenths = place.latitudeTenths
-            longitudeTenths = place.longitudeTenths
-        }
-    }
-
-    /// A town and the cell it was found for.
-    private struct StoredName: Codable {
-        let cell: Cell
-        let name: String
-    }
-
     /// What a lookup found: a town, none at all, or nothing yet, as when offline.
     private enum Lookup {
         case named(String)
@@ -39,34 +22,33 @@ final class PlaceNames {
     /// in twenty won't, while waiting on would keep later lookups for the place joined to it.
     static let lookupTimeout: Duration = .seconds(20)
 
-    private static let storageKey = "lastDevicePlaceName"
-
-    private var names: [Cell: String] = [:]
+    private var names: [PlaceCell: String] = [:]
     /// Places a finished lookup found in no town, such as out at sea, which this session doesn't
     /// ask about again.
-    @ObservationIgnored private var townless: Set<Cell> = []
+    @ObservationIgnored private var townless: Set<PlaceCell> = []
     /// Lookups still out, which later calls join, so two windows showing one place ask once. Each
     /// runs in a task no caller owns, so a caller cancelled as the place's lookup restarts
     /// doesn't throw away the answer the next caller waits for.
-    @ObservationIgnored private var lookups: [Cell: Task<Lookup, Never>] = [:]
+    @ObservationIgnored private var lookups: [PlaceCell: Task<Lookup, Never>] = [:]
     /// The device's newest place, whose name alone is kept for the next launch, so a slower
     /// lookup for a place the device has left can't replace it.
-    @ObservationIgnored private var latestCell: Cell?
+    @ObservationIgnored private var latestCell: PlaceCell?
     private let search: any PlaceSearch
     private let defaults: UserDefaults?
     /// Waits out `lookupTimeout`, and tests replace it so they never wait for real.
     private let sleep: @Sendable (Duration) async throws -> Void
 
-    /// Nil `defaults` keeps names only in memory, for previews and snapshots.
+    /// Nil `defaults` keeps names only in memory, for previews and snapshots. The shared
+    /// defaults otherwise, where the widgets read the name too.
     init(
         search: any PlaceSearch,
-        defaults: UserDefaults? = .standard,
+        defaults: UserDefaults? = AppGroup.defaults,
         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
     ) {
         self.search = search
         self.defaults = defaults
         self.sleep = sleep
-        if let stored = defaults?.data(forKey: Self.storageKey).flatMap({ try? JSONDecoder().decode(StoredName.self, from: $0) }) {
+        if let stored = defaults.flatMap(StoredPlaceName.read(from:)) {
             names[stored.cell] = stored.name
         }
     }
@@ -77,7 +59,7 @@ final class PlaceNames {
         guard let place, case .device = place.source else {
             return nil
         }
-        return names[Cell(place)]
+        return names[PlaceCell(place)]
     }
 
     /// Looks up the town a device place lies in, unless it's known, joining a lookup already out.
@@ -86,7 +68,7 @@ final class PlaceNames {
         guard case .device = place.source else {
             return
         }
-        let cell = Cell(place)
+        let cell = PlaceCell(place)
         latestCell = cell
         guard names[cell] == nil, !townless.contains(cell) else {
             return
@@ -102,8 +84,8 @@ final class PlaceNames {
         switch found {
         case .named(let name):
             names[cell] = name
-            if cell == latestCell, let data = try? JSONEncoder().encode(StoredName(cell: cell, name: name)) {
-                defaults?.set(data, forKey: Self.storageKey)
+            if cell == latestCell, let defaults {
+                StoredPlaceName(cell: cell, name: name).write(to: defaults)
             }
         case .townless:
             townless.insert(cell)

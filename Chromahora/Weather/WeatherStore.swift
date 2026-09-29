@@ -19,9 +19,6 @@ final class WeatherStore {
         let reloadCount: Int
     }
 
-    /// WeatherKit forecasts hourly about ten days out, so one request covers every day it can.
-    static let forecastDays = 10
-
     /// Every spell and hour in the forecast, which the timeline and the day's details filter to
     /// their day. Read through `spells(at:)` and `hours(at:)`, which check they're for the place on screen.
     private var forecast = Forecast()
@@ -45,9 +42,9 @@ final class WeatherStore {
         place == self.place ? forecast.hours : []
     }
 
-    /// Loads the forecast from the start of `now`'s day in `calendar`, which is the day store's,
-    /// so the window follows the zone days are windowed to: the device's, or a chosen place's. A
-    /// new place clears the forecast at once, and an answer for a place that has since changed is dropped.
+    /// Loads the forecast for `Forecast.window` in `calendar`, which is the day store's, so the
+    /// window follows the zone days are windowed to: the device's, or a chosen place's. A new
+    /// place clears the forecast at once, and an answer for a place that has since changed is dropped.
     func load(at place: Place?, now: Date, calendar: Calendar) async {
         if place != self.place {
             self.place = place
@@ -56,12 +53,11 @@ final class WeatherStore {
         guard let place else {
             return
         }
-        let start = calendar.startOfDay(for: now)
-        guard let end = calendar.date(byAdding: .day, value: Self.forecastDays, to: start) else {
+        guard let window = Forecast.window(at: now, calendar: calendar) else {
             return
         }
         do {
-            let forecast = try await provider.forecast(from: start, to: end, at: place)
+            let forecast = try await provider.forecast(from: window.start, to: window.end, at: place)
             if place == self.place {
                 self.forecast = forecast
             }

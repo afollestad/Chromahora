@@ -62,9 +62,6 @@ struct SourcesButton: View {
 private struct SourcesDetails: View {
     let showsWeather: Bool
 
-    /// sunrise-sunset.org's terms ask for a link back.
-    private static let sunSource = URL(string: "https://sunrise-sunset.org")
-
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
@@ -72,7 +69,7 @@ private struct SourcesDetails: View {
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
                 Text("Sunrise, sunset, golden and blue hours, the moon and the dark sky come from sunrise-sunset.org.")
-                if let sunSource = Self.sunSource {
+                if let sunSource = SunriseSunsetClient.siteURL {
                     // Primary and underlined, since a bright sky through a popover's glass washes
                     // out tinted text.
                     Link("sunrise-sunset.org", destination: sunSource)

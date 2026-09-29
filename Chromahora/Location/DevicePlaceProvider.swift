@@ -14,7 +14,8 @@ nonisolated enum LocationUpdate: Equatable, Sendable {
     case denied
     /// Permission is settled, but there's no fix yet.
     case noFix
-    case fix(latitude: Double, longitude: Double)
+    /// A fix, and when it was taken, which a cached one reports as earlier than now.
+    case fix(latitude: Double, longitude: Double, takenAt: Date = .now)
 }
 
 /// A stream of location updates, which ends when the caller stops listening.
@@ -27,9 +28,11 @@ protocol LocationSource {
 ///
 /// Without a fix, it falls back to the last fix taken in the same time zone, then to the
 /// time zone's city. Fixes from another zone are skipped, since `tz` windowing would
-/// then describe a day that isn't the one on the device's clock.
+/// then describe a day that isn't the one on the device's clock. Denied location forgets the
+/// last fix, since a place the person has since withheld mustn't go on standing in for the
+/// device, nor on to the services asked about it.
 struct DevicePlaceProvider: PlaceProvider {
-    /// Once permission is settled, how long to wait for a fix before falling back.
+    /// Once permission is settled, how long the app waits for a fix before falling back.
     static let fixTimeout: Duration = .seconds(10)
     /// A fix nearer than this to the stored place keeps it. Every fix lies within 7.9 km of its
     /// cell's center, so a couple of km more stops a fix wavering over an edge or corner from
@@ -39,132 +42,130 @@ struct DevicePlaceProvider: PlaceProvider {
 
     private static let storageKey = "lastDevicePlace"
 
-    /// A device fix and the zone the device was in when it was taken.
+    /// A device fix, the zone the device was in when it was taken, and when that was. Nil for
+    /// a fix stored before times were, which any new fix may replace.
     private struct StoredFix: Codable {
         let place: Place
         let timeZone: String
+        var takenAt: Date?
     }
 
-    var source: any LocationSource = CoreLocationSource()
+    /// What asking the source came to.
+    private enum Outcome {
+        case fix(CLLocation)
+        case denied
+        /// No fix in time, or the source ended without one.
+        case none
+    }
+
+    var source: any LocationSource
     var fallback: any PlaceProvider = TimeZonePlaceProvider()
-    var defaults: UserDefaults = .standard
-    /// Waits out `fixTimeout`, and tests replace it so they never wait for real.
+    /// Shared with the widgets, so the app and they start from the last fix either took.
+    var defaults: UserDefaults = AppGroup.defaults
+    /// Once permission is settled, how long to wait for a fix. A widget waits less than the app,
+    /// since its reload runs on a time budget and the stored fix answers just as well.
+    var timeout: Duration = Self.fixTimeout
+    /// Waits out `timeout`, and tests replace it so they never wait for real.
     var sleep: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 
     func lastKnownPlace(in timeZone: TimeZone) -> Place? {
-        storedFix(in: timeZone) ?? fallback.lastKnownPlace(in: timeZone)
+        storedFix(in: timeZone)?.place ?? fallback.lastKnownPlace(in: timeZone)
     }
 
     func currentPlace(in timeZone: TimeZone) async throws -> Place {
-        if let fix = await fix() {
+        switch await fix() {
+        case .fix(let fix):
+            let stored = storedFix(in: timeZone)
+            // A widget's fix can come from CoreLocation's cache, older than one the app has since
+            // stored, and an older fix never replaces a newer one.
+            if let stored, let takenAt = stored.takenAt, fix.timestamp < takenAt {
+                return stored.place
+            }
             // Measured from the stored place's center, not the last fix, so small moves can't add up.
-            if let stored = storedFix(in: timeZone),
-               CLLocation(latitude: stored.latitude, longitude: stored.longitude).distance(from: fix) < Self.moveThreshold {
-                return stored
+            if let stored, CLLocation(latitude: stored.place.latitude, longitude: stored.place.longitude).distance(from: fix) < Self.moveThreshold {
+                // Noted as newer, so an older fix from elsewhere can't replace it after.
+                store(stored.place, takenAt: fix.timestamp, in: timeZone)
+                return stored.place
             }
             let place = Place(latitude: fix.coordinate.latitude, longitude: fix.coordinate.longitude, source: .device)
-            store(place, in: timeZone)
+            store(place, takenAt: fix.timestamp, in: timeZone)
             return place
+        case .denied:
+            forget()
+            try Task.checkCancellation()
+            return try await fallback.currentPlace(in: timeZone)
+        case .none:
+            // A cancelled wait isn't an answer, so it mustn't replace a device place with the fallback.
+            try Task.checkCancellation()
+            if let stored = storedFix(in: timeZone) {
+                return stored.place
+            }
+            return try await fallback.currentPlace(in: timeZone)
         }
-        // A cancelled wait isn't an answer, so it mustn't replace a device place with the fallback.
-        try Task.checkCancellation()
-        if let place = storedFix(in: timeZone) {
-            return place
-        }
-        return try await fallback.currentPlace(in: timeZone)
     }
 
     #if DEBUG
     /// Drops the stored fix, for the debug drawer.
     func forgetLastFix() {
-        defaults.removeObject(forKey: Self.storageKey)
+        forget()
     }
     #endif
 
-    /// The first fix, unrounded, or nil if permission is denied or no fix arrives within
-    /// `fixTimeout` of permission settling.
-    private func fix() async -> CLLocation? {
+    /// The first fix, unrounded, with the time it was taken, or whether permission is denied.
+    /// None if no fix arrives within `timeout` of permission settling.
+    private func fix() async -> Outcome {
         let (settled, settle) = AsyncStream<Void>.makeStream()
         let updates = source.updates()
-        return await withTaskGroup(of: CLLocation?.self) { group in
+        return await withTaskGroup(of: Outcome.self) { group in
             group.addTask {
                 for await update in updates {
                     switch update {
                     case .awaitingPermission:
                         continue
                     case .denied:
-                        return nil
+                        return .denied
                     case .noFix:
                         settle.yield()
-                    case let .fix(latitude, longitude):
-                        return CLLocation(latitude: latitude, longitude: longitude)
+                    case let .fix(latitude, longitude, takenAt):
+                        return .fix(CLLocation(
+                            coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+                            altitude: 0,
+                            horizontalAccuracy: 0,
+                            verticalAccuracy: -1,
+                            timestamp: takenAt
+                        ))
                     }
                 }
-                return nil
+                return .none
             }
-            group.addTask { [sleep] in
+            group.addTask { [sleep, timeout] in
                 // Only a settled permission starts the clock, so a slow answer to the prompt isn't a timeout.
                 for await _ in settled {
-                    try? await sleep(Self.fixTimeout)
-                    return nil
+                    try? await sleep(timeout)
+                    return .none
                 }
-                return nil
+                return .none
             }
-            let first = await group.next() ?? nil
+            let first = await group.next() ?? .none
             group.cancelAll()
             settle.finish()
             return first
         }
     }
 
-    private func storedFix(in timeZone: TimeZone) -> Place? {
+    private func storedFix(in timeZone: TimeZone) -> StoredFix? {
         defaults.data(forKey: Self.storageKey)
             .flatMap { try? JSONDecoder().decode(StoredFix.self, from: $0) }
-            .flatMap { $0.timeZone == timeZone.identifier ? $0.place : nil }
+            .flatMap { $0.timeZone == timeZone.identifier ? $0 : nil }
     }
 
-    private func store(_ place: Place, in timeZone: TimeZone) {
-        if let data = try? JSONEncoder().encode(StoredFix(place: place, timeZone: timeZone.identifier)) {
+    private func store(_ place: Place, takenAt: Date, in timeZone: TimeZone) {
+        if let data = try? JSONEncoder().encode(StoredFix(place: place, timeZone: timeZone.identifier, takenAt: takenAt)) {
             defaults.set(data, forKey: Self.storageKey)
         }
     }
-}
 
-/// CoreLocation's live updates, under a When In Use service session, which shows the
-/// permission prompt the first time.
-struct CoreLocationSource: LocationSource {
-    func updates() -> AsyncStream<LocationUpdate> {
-        AsyncStream { continuation in
-            let task = Task {
-                // Held for as long as updates are wanted.
-                let session = CLServiceSession(authorization: .whenInUse)
-                do {
-                    for try await update in CLLocationUpdate.liveUpdates() {
-                        continuation.yield(LocationUpdate(update))
-                    }
-                } catch {
-                    // The stream ends either way.
-                }
-                session.invalidate()
-                continuation.finish()
-            }
-            continuation.onTermination = { _ in
-                task.cancel()
-            }
-        }
-    }
-}
-
-private extension LocationUpdate {
-    init(_ update: CLLocationUpdate) {
-        if update.authorizationDenied || update.authorizationDeniedGlobally || update.authorizationRestricted {
-            self = .denied
-        } else if update.authorizationRequestInProgress {
-            self = .awaitingPermission
-        } else if let coordinate = update.location?.coordinate {
-            self = .fix(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        } else {
-            self = .noFix
-        }
+    private func forget() {
+        defaults.removeObject(forKey: Self.storageKey)
     }
 }

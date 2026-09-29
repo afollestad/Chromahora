@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 @main
 struct ChromahoraApp: App {
@@ -28,11 +29,12 @@ struct ChromahoraApp: App {
     #if DEBUG
     @State private var debug: DebugSettings
     #endif
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         placeNames = PlaceNames(search: placeSearch)
         let provider = SunriseSunsetProvider(cache: cache)
-        let placeProvider = DevicePlaceProvider()
+        let placeProvider = DevicePlaceProvider(source: CoreLocationSource())
         let forecastCache = ForecastCache()
         let weatherProvider = ThrottledWeatherProvider(base: WeatherKitProvider(), cache: forecastCache)
         #if DEBUG
@@ -60,6 +62,16 @@ struct ChromahoraApp: App {
                     .task {
                         await cache.prune(now: .now)
                     }
+            }
+        }
+        // A visit may bring a new fix, forecast or permission, which the widgets should show
+        // without waiting for their next reload. The app tells them whenever it stops being
+        // active, which leaving starts with, while it's still in the foreground and a reload
+        // doesn't count against their budget; the permission prompt and Control Center only cost
+        // a reload more.
+        .onChange(of: scenePhase) { oldPhase, _ in
+            if oldPhase == .active, !Self.isHostingTests {
+                WidgetCenter.shared.reloadAllTimelines()
             }
         }
     }

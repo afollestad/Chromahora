@@ -54,11 +54,20 @@ actor ForecastCache {
     static let capacity = 6
 
     private let directory: URL
+    /// `Forecast.json` for the app. The widgets throttle in a file of their own, so a request of
+    /// theirs that failed or is still out never holds back the app's, nor the app's theirs.
+    private let fileName: String
     /// How long a record can still answer. Older ones would be asked again anyway, so they're dropped.
     private let retention: TimeInterval
 
-    init(directory: URL = .cachesDirectory, retention: TimeInterval = ThrottledWeatherProvider.minimumInterval) {
+    /// In the app group's container by default, so the widgets see the app's forecasts.
+    init(
+        directory: URL = AppGroup.cachesDirectory,
+        fileName: String = "Forecast.json",
+        retention: TimeInterval = ThrottledWeatherProvider.minimumInterval
+    ) {
         self.directory = directory
+        self.fileName = fileName
         self.retention = retention
     }
 
@@ -103,6 +112,6 @@ actor ForecastCache {
     }
 
     private var file: URL {
-        directory.appending(path: "Forecast.json")
+        directory.appending(path: fileName)
     }
 }

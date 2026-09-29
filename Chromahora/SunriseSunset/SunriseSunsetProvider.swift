@@ -24,7 +24,9 @@ final class SunriseSunsetProvider: SolarDayProvider {
 
     func solarDay(for date: Date, at place: Place, calendar: Calendar) async throws -> SolarDay {
         let dayStart = calendar.startOfDay(for: date)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)
+        // Where the next day starts, which a day added to this one's start misses by an hour
+        // where clocks spring forward at midnight, as Santiago's do, and the day starts at 1 AM.
+        let dayEnd = calendar.dateInterval(of: .day, for: dayStart)?.end
             ?? dayStart.addingTimeInterval(24 * 60 * 60)
         let key = SolarMonthKey(place: place, month: CalendarMonth(containing: dayStart, in: calendar.timeZone))
 

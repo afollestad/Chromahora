@@ -23,17 +23,9 @@ struct DayTimelineTests {
         // Finds a sky color between the dusk bridge and golden hour whose luminance is inside the band.
         let crossover = try #require(stride(from: 0.0, through: 1, by: 0.01).lazy.map {
             Color(red: 0.55, green: 0.33, blue: 0.48).mix(with: DayPhase.goldenHour.color, by: $0, in: .perceptual)
-        }.first { abs(DayTimeline.luminance(of: $0) - 0.18) < 0.005 })
+        }.first { abs(SkyGradient.luminance(of: $0) - SkyGradient.crossoverLuminance) < 0.005 })
 
         #expect(DayTimeline.prefersDarkBar(over: crossover, wasDark: true))
         #expect(!DayTimeline.prefersDarkBar(over: crossover, wasDark: false))
-    }
-
-    @Test func labelsTurnDarkOverNightBlueHourAndDuskAndLightOverGoldenHourAndDaylight() {
-        #expect(DayTimeline.labelScheme(over: DayPhase.night.color) == .dark)
-        #expect(DayTimeline.labelScheme(over: DayPhase.blueHour.color) == .dark)
-        #expect(DayTimeline.labelScheme(over: SkyGradient.duskBridge) == .dark)
-        #expect(DayTimeline.labelScheme(over: DayPhase.goldenHour.color) == .light)
-        #expect(DayTimeline.labelScheme(over: DayPhase.daylight.color) == .light)
     }
 }

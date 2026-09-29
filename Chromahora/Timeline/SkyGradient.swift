@@ -80,6 +80,23 @@ struct SkyGradient: View {
         return stops
     }
 
+    /// The sky's relative luminance where white and black text contrast with it equally.
+    static let crossoverLuminance = 0.18
+
+    /// The scheme text takes over `color`, so it contrasts with the sky rather than follow the
+    /// system's appearance, as a timeline label or a widget does. Labels scroll with the sky
+    /// beneath them, so unlike the bar's `DayTimeline.prefersDarkBar(over:wasDark:)` they need
+    /// no margin against flicker.
+    static func labelScheme(over color: Color) -> ColorScheme {
+        luminance(of: color) < crossoverLuminance ? .dark : .light
+    }
+
+    /// Relative luminance as WCAG defines it, which weights green most because the eye is most sensitive to it.
+    static func luminance(of color: Color) -> Double {
+        let resolved = color.resolve(in: EnvironmentValues())
+        return 0.2126 * Double(resolved.linearRed) + 0.7152 * Double(resolved.linearGreen) + 0.0722 * Double(resolved.linearBlue)
+    }
+
     private static func needsBridge(_ lhs: DayPhase, _ rhs: DayPhase) -> Bool {
         Set([lhs, rhs]) == [.blueHour, .goldenHour]
     }

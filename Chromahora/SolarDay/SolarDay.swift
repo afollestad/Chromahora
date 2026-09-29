@@ -40,6 +40,14 @@ nonisolated enum DayPhase: Sendable {
         }
     }
 
+    /// Golden and blue hours, the light photographers plan around.
+    var isMagicHour: Bool {
+        switch self {
+        case .blueHour, .goldenHour: true
+        case .night, .daylight: false
+        }
+    }
+
     /// The phase with the sun at `degrees` above the horizon. Blue hour runs from -6° to
     /// -4° and golden hour from -4° to +6°, so sunrise and sunset fall inside golden hour.
     static func band(forAltitude degrees: Double) -> DayPhase {

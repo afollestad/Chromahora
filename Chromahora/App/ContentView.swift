@@ -29,6 +29,7 @@ struct ContentView: View {
     private let placeNames: PlaceNames
     private let recentPlaces: RecentPlaces
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     #if DEBUG
     @Environment(DebugSettings.self) private var debug: DebugSettings?
     #endif
@@ -75,6 +76,15 @@ struct ContentView: View {
         .task(id: LocateTrigger(isOnScreen: scenePhase != .background, count: store.locateCount)) {
             if scenePhase != .background {
                 await store.locate()
+            }
+        }
+        // WidgetKit hands the app every link a widget holds, so the credits' links, which the
+        // services' terms ask for, pass through here on their way to Safari. Matched by host,
+        // in case the system normalizes a path on the way.
+        .onOpenURL { url in
+            let creditHosts = [SunriseSunsetClient.siteURL, AppleWeatherCredit.legalPage].compactMap { $0?.host() }
+            if url.scheme == "https", let host = url.host(), creditHosts.contains(host) {
+                openURL(url)
             }
         }
         .task(id: store.loadKey) {

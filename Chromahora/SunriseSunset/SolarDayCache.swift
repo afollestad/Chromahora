@@ -45,7 +45,8 @@ actor SolarDayCache {
 
     private let directory: URL
 
-    init(directory: URL = URL.cachesDirectory.appending(path: "SolarDays", directoryHint: .isDirectory)) {
+    /// In the app group's container by default, so the widgets read what the app fetched.
+    init(directory: URL = AppGroup.cachesDirectory.appending(path: "SolarDays", directoryHint: .isDirectory)) {
         self.directory = directory
     }
 

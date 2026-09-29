@@ -10,7 +10,7 @@ import SwiftUI
 struct AppleWeatherCredit: View {
     /// The page WeatherKit's `WeatherAttribution.legalPageURL` reports, fixed here so the
     /// credit needs no request and shows offline.
-    private static let legalPage = URL(string: "https://weatherkit.apple.com/legal-attribution.html")
+    nonisolated static let legalPage = URL(string: "https://weatherkit.apple.com/legal-attribution.html")
 
     /// The mark itself, shared with `SourcesButton` so both read the same. A `Text`, so the
     /// button can swap it for another label inside one capsule.

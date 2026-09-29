@@ -174,7 +174,9 @@ nonisolated extension SolarDay {
     /// init, since the scenarios are fixed data that tests run through `make`.
     static func mock(_ scenario: MockScenario = .typical, for date: Date = .now, calendar: Calendar = .current) -> SolarDay {
         let dayStart = calendar.startOfDay(for: date)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)
+        // Where the next day starts, which a day added to this one's start misses by an hour
+        // where clocks spring forward at midnight, as Santiago's do, and the day starts at 1 AM.
+        let dayEnd = calendar.dateInterval(of: .day, for: dayStart)?.end
             ?? dayStart.addingTimeInterval(24 * 60 * 60)
         let readings = scenario.readings(from: dayStart, calendar: calendar)
 

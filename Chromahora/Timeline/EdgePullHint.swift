@@ -48,7 +48,7 @@ struct EdgePullHint: View {
         .padding(.vertical, 5)
         .glassEffect(.regular, in: Capsule())
         // The sky past the day's end continues its color there.
-        .environment(\.colorScheme, DayTimeline.labelScheme(over: SkyGradient.color(at: pull.edge == .top ? 0 : 1, in: day)))
+        .environment(\.colorScheme, SkyGradient.labelScheme(over: SkyGradient.color(at: pull.edge == .top ? 0 : 1, in: day)))
         // The labels' cap, so the capsule never outgrows them.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .scaleEffect(reduceMotion ? 1 : pull.isArmed ? 1.08 : 0.85 + 0.15 * pull.progress)

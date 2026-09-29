@@ -40,6 +40,17 @@ struct ForecastCacheTests {
         #expect(await ForecastCache(directory: directory).record(for: record.key) == record)
     }
 
+    /// The widgets keep their own file, so neither side's attempts hold back the other's.
+    @Test func cachesWithOtherFilesKeepTheirOwnRecords() async {
+        let app = ForecastCache(directory: directory)
+        let widgets = ForecastCache(directory: directory, fileName: "WidgetForecast.json")
+
+        await widgets.store(record)
+
+        #expect(await widgets.record(for: record.key) == record)
+        #expect(await app.record(for: record.key) == nil)
+    }
+
     /// Switching between places keeps each one's answer, so returning to one asks nothing.
     @Test func recordsForTwoPlacesReadBack() async {
         let cache = ForecastCache(directory: directory)

@@ -8,8 +8,19 @@ import Foundation
 /// What one forecast request brings back: the spells the timeline marks, and the hours the
 /// day's light and sky readings come from.
 nonisolated struct Forecast: Codable, Equatable, Sendable {
+    /// WeatherKit forecasts hourly about ten days out, so one request covers every day it can.
+    static let days = 10
+
     var spells: [WeatherSpell] = []
     var hours: [SkyHour] = []
+
+    /// The window to ask for at `now`: `days` days from the start of its day in `calendar`,
+    /// the zone days are windowed to. The app and its widgets ask for the same window, so
+    /// each can answer from the other's request.
+    static func window(at now: Date, calendar: Calendar) -> DateInterval? {
+        let start = calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .day, value: days, to: start).map { DateInterval(start: start, end: $0) }
+    }
 }
 
 /// A source of forecasts. Weather only adds to the timeline, so callers treat a failure as
@@ -44,7 +55,9 @@ nonisolated extension WeatherSpell {
     /// cloudy until 3 PM, rain until 5, then clear, in local clock time on the day containing `date`.
     static func mock(for date: Date = .now, calendar: Calendar = .current) -> [WeatherSpell] {
         let dayStart = calendar.startOfDay(for: date)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)
+        // Where the next day starts, which a day added to this one's start misses by an hour
+        // where clocks spring forward at midnight, as Santiago's do, and the day starts at 1 AM.
+        let dayEnd = calendar.dateInterval(of: .day, for: dayStart)?.end
             ?? dayStart.addingTimeInterval(24 * 60 * 60)
 
         func at(_ hour: Int) -> Date {

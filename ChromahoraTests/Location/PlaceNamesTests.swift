@@ -30,6 +30,15 @@ struct PlaceNamesTests {
         #expect(search.townNameRequests == [sanFrancisco])
     }
 
+    /// The widgets read the stored town without a lookup of their own, for its cell alone.
+    @Test func theStoredTownNamesOnlyItsOwnCell() async {
+        await makeNames().load(sanFrancisco)
+
+        #expect(StoredPlaceName.name(for: Place(latitude: 37.79, longitude: -122.41, source: .device), in: defaults) == "San Francisco")
+        #expect(StoredPlaceName.name(for: Place(latitude: 37.3, longitude: -121.9, source: .device), in: defaults) == nil)
+        #expect(StoredPlaceName.name(for: Place(latitude: 37.8, longitude: -122.4, source: .timeZone("America/Los_Angeles")), in: defaults) == nil)
+    }
+
     /// A chosen place has its own name, and the time zone names its city.
     @Test func onlyDevicePlacesAreLookedUp() async {
         let names = makeNames()
