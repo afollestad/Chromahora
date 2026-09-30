@@ -360,7 +360,9 @@ private struct PlaceRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .foregroundStyle(Color.primary)
-                    if let subtitle {
+                    // Apple Maps suggests some places, like Mount Everest, with no subtitle, and an
+                    // empty line would hold the title above the row's middle.
+                    if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
                             .font(.footnote)
                             .foregroundStyle(isFailure ? Color.red : Color.secondary)
