@@ -14,7 +14,6 @@ import MapKit
 struct MapKitPlaceSearch: PlaceSearch {
     /// Towns, landmarks and features such as parks and peaks: the places a photographer heads for.
     private static let completerTypes: MKLocalSearchCompleter.ResultType = [.address, .pointOfInterest, .physicalFeature]
-    private static let searchTypes: MKLocalSearch.ResultType = [.address, .pointOfInterest, .physicalFeature]
     /// Towns and regions, but not street addresses or postal codes, which would name a place by a
     /// house, nor whole countries, whose middle says little about any spot's sun.
     private static let addressFilter = MKAddressFilter(including: [.locality, .subLocality, .subAdministrativeArea, .administrativeArea])
@@ -59,10 +58,9 @@ struct MapKitPlaceSearch: PlaceSearch {
         guard let completion = suggestion.handle as? MKLocalSearchCompletion else {
             throw PlaceSearchError.notFound
         }
+        // Unfiltered, since the completion already names one place. Under the completer's point of
+        // interest filter, the search for a town finds nothing, or answers with a park instead.
         let request = MKLocalSearch.Request(completion: completion)
-        request.resultTypes = Self.searchTypes
-        request.addressFilter = Self.addressFilter
-        request.pointOfInterestFilter = Self.pointOfInterestFilter
         let search = MKLocalSearch(request: request)
         let response: MKLocalSearch.Response
         do {
