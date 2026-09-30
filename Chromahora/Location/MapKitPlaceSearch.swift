@@ -6,14 +6,15 @@
 import MapKit
 
 /// Apple Maps' search, the only code that reaches MapKit. It keeps nothing between calls, so
-/// every window can share one: each search runs a completer of its own, which a newer search
+/// every window can share one: each search runs completers of its own, which a newer search
 /// in another window can't cancel or hold up.
 ///
 /// Nothing here sets a search region, so the app sends no coordinates with a query. The town
 /// lookup sends only a place's rounded coordinates.
 struct MapKitPlaceSearch: PlaceSearch {
-    /// Towns, landmarks and features such as parks and peaks: the places a photographer heads for.
-    private static let completerTypes: MKLocalSearchCompleter.ResultType = [.address, .pointOfInterest, .physicalFeature]
+    /// Towns and landmarks such as parks: the places a photographer heads for. Peaks and lakes are
+    /// asked for apart from them, since Apple Maps suggests none under a point of interest filter.
+    private static let placeTypes: MKLocalSearchCompleter.ResultType = [.address, .pointOfInterest]
     /// Towns and regions, but not street addresses or postal codes, which would name a place by a
     /// house, nor whole countries, whose middle says little about any spot's sun.
     private static let addressFilter = MKAddressFilter(including: [.locality, .subLocality, .subAdministrativeArea, .administrativeArea])
@@ -29,15 +30,31 @@ struct MapKitPlaceSearch: PlaceSearch {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return []
         }
+        async let places = Self.suggestions(for: query, features: false)
+        async let features = Self.suggestions(for: query, features: true)
+        let found = try await places
+        // A failed feature search only leaves them out, since the places answer without them,
+        // but a cancelled one still throws.
+        let extra = await (try? features) ?? []
+        try Task.checkCancellation()
+        return PlaceSuggestion.merging(extra, into: found, for: query)
+    }
+
+    /// What a completer of its own suggests for `query`: peaks, lakes and other `features` of the
+    /// land, or towns and landmarks.
+    private static func suggestions(for query: String, features: Bool) async throws -> [PlaceSuggestion] {
         let completer = MKLocalSearchCompleter()
-        completer.resultTypes = Self.completerTypes
-        completer.addressFilter = Self.addressFilter
-        completer.pointOfInterestFilter = Self.pointOfInterestFilter
+        if features {
+            completer.resultTypes = .physicalFeature
+        } else {
+            completer.resultTypes = placeTypes
+            completer.addressFilter = addressFilter
+            completer.pointOfInterestFilter = pointOfInterestFilter
+        }
         let waiter = CompleterWaiter()
         completer.delegate = waiter
-        let completions: [MKLocalSearchCompletion]
         do {
-            completions = try await withTaskCancellationHandler {
+            let completions = try await withTaskCancellationHandler {
                 try await waiter.answer.wait { completer.queryFragment = query }
             } onCancel: {
                 Task { @MainActor in
@@ -45,13 +62,10 @@ struct MapKitPlaceSearch: PlaceSearch {
                     waiter.answer.cancel()
                 }
             }
+            return completions.map { PlaceSuggestion(title: $0.title, subtitle: $0.subtitle, handle: $0) }
         } catch let error as MKError where error.code == .placemarkNotFound {
             return []
         }
-        var seen = Set<String>()
-        return completions
-            .map { PlaceSuggestion(title: $0.title, subtitle: $0.subtitle, handle: $0) }
-            .filter { seen.insert($0.id).inserted }
     }
 
     func place(for suggestion: PlaceSuggestion) async throws -> Place {

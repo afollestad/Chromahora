@@ -23,6 +23,32 @@ nonisolated struct PlaceSuggestion: Identifiable, Equatable {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
+
+    /// The places a query found and then its physical features, each as Apple Maps ranked them,
+    /// with no suggestion twice. Nothing ranks a peak against a town, and the features trail off
+    /// into near misses, so only the first moves up, when its name holds `query`: to the second
+    /// row, or to the first, which Search chooses, when it alone is named as typed.
+    static func merging(_ features: [PlaceSuggestion], into places: [PlaceSuggestion], for query: String) -> [PlaceSuggestion] {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        var merged = places
+        var rest = features[...]
+        if let first = features.first, first.title.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil {
+            let leads = first.isNamed(query) && places.first?.isNamed(query) != true
+            merged.insert(first, at: leads ? 0 : min(1, places.count))
+            rest = rest.dropFirst()
+        }
+        merged += rest
+        var seen = Set<String>()
+        return merged.filter { seen.insert($0.id).inserted }
+    }
+
+    /// Whether the title is `query`, alone or before a comma and a region, as in "Woodbury, MN".
+    private func isNamed(_ query: String) -> Bool {
+        guard let name = title.range(of: query, options: [.anchored, .caseInsensitive, .diacriticInsensitive]) else {
+            return false
+        }
+        return name.upperBound == title.endIndex || title[name.upperBound...].hasPrefix(",")
+    }
 }
 
 /// Finds places by name as the person types, and names the town the device is in.
