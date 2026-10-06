@@ -214,6 +214,7 @@
 				Location/zone.tab,
 				Screen/DayTitle.swift,
 				Screen/LoadingSky.swift,
+				SolarDay/DayRun.swift,
 				SolarDay/MockScenario.swift,
 				SolarDay/SolarDay.swift,
 				"SolarDay/SolarDay+Focus.swift",
@@ -227,9 +228,7 @@
 				SunriseSunset/SunriseSunsetProvider.swift,
 				Timeline/HorizontalRule.swift,
 				Timeline/LabelSpacing.swift,
-				Timeline/RulerScrim.swift,
 				Timeline/SkyGradient.swift,
-				Timeline/TimelineFocus.swift,
 				Timeline/WeatherButton.swift,
 				Weather/AppleWeatherCredit.swift,
 				Weather/ForecastCache.swift,
@@ -240,6 +239,8 @@
 				Weather/WeatherSpell.swift,
 				Weather/WeatherSpellDetails.swift,
 				Weather/WeatherStore.swift,
+				Widgets/PhaseDot.swift,
+				Widgets/SkyStrip.swift,
 			);
 			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
 		};

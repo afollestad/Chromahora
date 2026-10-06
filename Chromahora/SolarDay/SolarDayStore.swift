@@ -75,7 +75,9 @@ final class SolarDayStore {
     private(set) var deviceTimeZone: TimeZone
     private let provider: any SolarDayProvider
     private let placeProvider: any PlaceProvider
-    @ObservationIgnored private var loadedDays: [DayKey: SolarDay] = [:]
+    /// Observed, so a view showing a neighbor through `loadedDay(offsetBy:from:)` updates once
+    /// `loadAdjacentDays()` brings it in.
+    private var loadedDays: [DayKey: SolarDay] = [:]
 
     init(
         provider: any SolarDayProvider,
@@ -284,8 +286,7 @@ final class SolarDayStore {
     /// device's or to a chosen place's, a day from the old zone stays on screen until the new
     /// zone's loads, and in a zone to the west the midnight that ends it still falls on that same date.
     func selectDay(offsetBy offset: Int, from day: SolarDay) -> Bool {
-        guard let date = day.calendar.date(byAdding: .day, value: offset, to: day.dayStart),
-              let target = noon(onDateOf: date, in: day.calendar) else {
+        guard let target = date(offsetBy: offset, from: day) else {
             return false
         }
         selectedDate = target
@@ -295,6 +296,15 @@ final class SolarDayStore {
         state = .loaded(loaded)
         shownPlace = key.place
         return true
+    }
+
+    /// The day `offset` days from `day` for the current place, if it's loaded, without selecting
+    /// it, so a pager can show a neighbor `loadAdjacentDays()` holds before it's paged to.
+    func loadedDay(offsetBy offset: Int, from day: SolarDay) -> SolarDay? {
+        guard let place, let target = date(offsetBy: offset, from: day) else {
+            return nil
+        }
+        return loadedDays[DayKey(place: place, dayStart: calendar.startOfDay(for: target), timeZone: calendar.timeZone)]
     }
 
     /// Selects today again once the clock passes midnight, if the selection was on the day
@@ -324,6 +334,11 @@ final class SolarDayStore {
         } else if let date = noon(onDateOf: selectedDate, in: previous) {
             selectedDate = date
         }
+    }
+
+    /// Noon in this store's calendar on the date `offset` days from `day`, as `day` reads it.
+    private func date(offsetBy offset: Int, from day: SolarDay) -> Date? {
+        day.calendar.date(byAdding: .day, value: offset, to: day.dayStart).flatMap { noon(onDateOf: $0, in: day.calendar) }
     }
 
     /// Noon in this store's calendar on the date `date` reads in `calendar`. Noon, since some

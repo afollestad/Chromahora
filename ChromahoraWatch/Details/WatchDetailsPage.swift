@@ -5,9 +5,9 @@
 
 import SwiftUI
 
-/// The day's details, a swipe from the timeline as on the phone: its phases, the sun, the moon,
-/// and the weather, then the sources at the foot like the timeline's. Tapping a row with a time
-/// pages back to the timeline and scrolls it there.
+/// The day's details, its last card, as the page beside the phone's timeline: its phases, the
+/// sun, the moon, and the weather, then the sources at the foot of the day. The Crown scrolls
+/// it past the screen. With no timeline to scroll, its rows don't answer taps.
 struct WatchDetailsPage: View {
     let day: SolarDay
     let now: Date
@@ -15,14 +15,12 @@ struct WatchDetailsPage: View {
     let weather: [WeatherSpell]
     /// The forecast's hours, of any day, which the UV and sky rows read.
     let hours: [SkyHour]
-    /// Pages back to the timeline and scrolls it to a time on the day.
-    let onFocus: (Date) -> Void
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 // The sources button below carries Apple Weather's mark, as on the phone's page.
-                DayDetails(day: day, now: now, weather: weather, hours: hours, showsWeatherCredit: false, onFocus: onFocus)
+                DayDetails(day: day, now: now, weather: weather, hours: hours, showsWeatherCredit: false)
                 WatchSourcesButton(showsWeather: showsWeather)
                     .padding(.horizontal, 8)
             }
@@ -31,6 +29,8 @@ struct WatchDetailsPage: View {
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Day details")
+        .containerBackground(DayPhase.night.color.gradient, for: .tabView)
+        .environment(\.colorScheme, .dark)
     }
 
     /// Whether any spell or hour reaches the day, which is when its details show weather.
@@ -41,5 +41,5 @@ struct WatchDetailsPage: View {
 
 #Preview {
     let now = Date.now
-    WatchDetailsPage(day: .mock(for: now), now: now, weather: WeatherSpell.mock(), hours: SkyHour.mock()) { _ in }
+    WatchDetailsPage(day: .mock(for: now), now: now, weather: WeatherSpell.mock(), hours: SkyHour.mock())
 }

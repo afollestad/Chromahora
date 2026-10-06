@@ -11,20 +11,13 @@ import SwiftUI
 struct MorningEveningView: View {
     let entry: SkyEntry
 
-    /// What one end of the day lists: its golden and blue hours, and its sunrise or sunset.
-    struct End {
-        let title: String
-        let magicHours: [DaySegment]
-        let event: SolarEvent?
-    }
-
     var body: some View {
         WidgetContent(entry: entry, loaded: loaded)
     }
 
     private func loaded(_ content: SkyContent) -> some View {
         let day = content.run.featuredDay(at: entry.date)
-        let ends = Self.ends(of: day, in: content.run)
+        let ends = content.run.ends(of: day)
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 WidgetPlaceHeader(place: content.place, deviceName: content.deviceName)
@@ -34,17 +27,17 @@ struct MorningEveningView: View {
                     .lineLimit(1)
             }
             HStack(alignment: .top, spacing: 12) {
-                column(ends.morning, in: content.run)
-                column(ends.evening, in: content.run)
+                column("Morning", ends.morning, in: content.run)
+                column("Evening", ends.evening, in: content.run)
             }
             Spacer(minLength: 0)
             WidgetCredit(showsWeather: false, linksSources: true)
         }
     }
 
-    private func column(_ end: End, in run: DayRun) -> some View {
+    private func column(_ title: String, _ end: DayRun.End, in run: DayRun) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(end.title)
+            Text(title)
                 .font(.caption.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
             Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 3) {
@@ -81,28 +74,7 @@ struct MorningEveningView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The day's golden and blue hours that begin on it, parted where its sun is highest: the
-    /// middle of its longest daylight, or where it has none, of its longest brightest phase, since
-    /// near the poles a brief dip around midnight can part daylight in two. Near the poles an end
-    /// can have several golden and blue hours, or none.
-    static func ends(of day: SolarDay, in run: DayRun) -> (morning: End, evening: End) {
-        let brightness: [DayPhase] = [.night, .blueHour, .goldenHour, .daylight]
-        let brightest = day.segments.max { lhs, rhs in
-            let lhsRank = brightness.firstIndex(of: lhs.phase) ?? 0
-            let rhsRank = brightness.firstIndex(of: rhs.phase) ?? 0
-            return lhsRank == rhsRank ? lhs.interval.duration < rhs.interval.duration : lhsRank < rhsRank
-        }
-        let noon = brightest?.midpoint ?? day.dayStart.addingTimeInterval(day.duration / 2)
-        // Merged across midnight, so an evening blue hour that runs into tomorrow reads whole.
-        // One cut off at the day's start began the evening before.
-        let magicHours = run.segments.filter { $0.phase.isMagicHour && $0.interval.start > day.dayStart && $0.interval.start < day.dayEnd }
-        return (
-            End(title: "Morning", magicHours: magicHours.filter { $0.interval.start < noon }, event: day.events.first { $0.kind == .sunrise }),
-            End(title: "Evening", magicHours: magicHours.filter { $0.interval.start >= noon }, event: day.events.first { $0.kind == .sunset })
-        )
-    }
-
-    private static func spoken(_ end: End, in run: DayRun) -> String {
+    private static func spoken(_ end: DayRun.End, in run: DayRun) -> String {
         let magicHours = end.magicHours.map { "\($0.phase.title), \(run.rangeText($0.interval, span: $0.span))" }
         let event = end.event.map { "\($0.title) at \(run.timeText($0.date))" }
         return (magicHours + [event].compactMap(\.self)).joined(separator: "; ")

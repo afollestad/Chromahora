@@ -36,4 +36,17 @@ nonisolated enum LabelSpacing {
         }
         return result
     }
+
+    /// As `spaced(_:pinned:spacing:)`, then lifts a label pushed past `limit` back to it, and the
+    /// ones above as far as they must to keep `spacing`, for a column that has to end inside a
+    /// frame, like the watch's panels, rather than run on down the day.
+    static func spaced(_ positions: [CGFloat], pinned: [Bool] = [], spacing: CGFloat, limit: CGFloat) -> [CGFloat] {
+        var result = spaced(positions, pinned: pinned, spacing: spacing)
+        var ceiling = limit
+        for index in result.indices.reversed() {
+            result[index] = min(result[index], ceiling)
+            ceiling = result[index] - spacing
+        }
+        return result
+    }
 }

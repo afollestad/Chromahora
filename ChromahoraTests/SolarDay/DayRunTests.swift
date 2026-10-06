@@ -27,6 +27,10 @@ struct DayRunTests {
         return DayRun(first, then: later)
     }
 
+    private func starts(_ segments: [DaySegment]) -> [Date] {
+        segments.map(\.interval.start)
+    }
+
     @Test(arguments: MockScenario.allCases)
     func segmentsTileTheRunWithoutRepeatingAPhase(scenario: MockScenario) throws {
         let run = try run(scenario)
@@ -222,5 +226,70 @@ struct DayRunTests {
         let run = try run(.midnightSun)
 
         #expect(run.featuredDay(at: try time(20)) == run.days[0])
+    }
+
+    @Test func aTypicalDayPartsAtNoon() throws {
+        let run = try run(.typical)
+
+        let ends = run.ends(of: run.days[0])
+
+        #expect(starts(ends.morning.magicHours) == [try time(6, 12), try time(6, 38)])
+        #expect(starts(ends.evening.magicHours) == [try time(18, 5), try time(19, 10)])
+        #expect(ends.morning.event?.kind == .sunrise)
+        #expect(ends.evening.event?.kind == .sunset)
+    }
+
+    /// The blue hour that ends at 12:10 AM began the evening before, and the evening's own runs
+    /// on into the next day whole.
+    @Test func aBlueHourAcrossMidnightBelongsToTheEveningItStarts() throws {
+        let run = try run(.blueHourPastMidnight)
+
+        let ends = run.ends(of: run.days[0])
+
+        #expect(starts(ends.morning.magicHours) == [try time(1, 50), try time(2, 43)])
+        #expect(starts(ends.evening.magicHours) == [try time(21, 6), try time(23, 17)])
+        #expect(ends.evening.magicHours.last?.interval.end == (try time(day: 17, 0, 10)))
+    }
+
+    /// Reykjavík's December has no daylight, so its day parts in the middle of its golden hour.
+    @Test func aDayWithoutDaylightPartsInItsBrightestPhase() throws {
+        let run = try run(.allDayGolden)
+
+        let ends = run.ends(of: run.days[0])
+
+        #expect(starts(ends.morning.magicHours) == [try time(10, 3), try time(10, 30)])
+        #expect(starts(ends.evening.magicHours) == [try time(16, 21)])
+    }
+
+    /// Near the poles in early May, the sun dips into golden hour just after midnight, parting
+    /// daylight in two, so noon is the middle of the longer part.
+    @Test func aDipAroundMidnightDoesNotMoveNoon() throws {
+        let dayStart = try time(0)
+        let day = SolarDay(
+            calendar: calendar,
+            dayStart: dayStart,
+            dayEnd: try time(day: 17, 0),
+            initialPhase: .daylight,
+            transitions: [
+                PhaseTransition(date: try time(0, 4), from: .daylight, into: .goldenHour),
+                PhaseTransition(date: try time(1, 24), from: .goldenHour, into: .daylight)
+            ],
+            sunrise: nil,
+            sunset: nil
+        )
+
+        let ends = DayRun(day).ends(of: day)
+
+        #expect(starts(ends.morning.magicHours) == [try time(0, 4)])
+        #expect(ends.evening.magicHours.isEmpty)
+    }
+
+    @Test func aMidnightSunHasNeitherEnd() throws {
+        let run = try run(.midnightSun)
+
+        let ends = run.ends(of: run.days[0])
+
+        #expect(ends.morning.magicHours.isEmpty && ends.morning.event == nil)
+        #expect(ends.evening.magicHours.isEmpty && ends.evening.event == nil)
     }
 }

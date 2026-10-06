@@ -19,6 +19,10 @@ struct SkyStrip: View {
     /// The hours labeled beneath, a quarter of the day apart.
     private static let labeledHours: Set<Int> = [6, 12, 18]
 
+    /// Narrower than this, as on a 40 mm watch, noon's label would touch the 6 AM and 6 PM beside
+    /// it, so the middle goes unlabeled.
+    private static let noonLabelMinimumWidth: CGFloat = 170
+
     var body: some View {
         VStack(spacing: 2) {
             RoundedRectangle(cornerRadius: 5)
@@ -38,7 +42,8 @@ struct SkyStrip: View {
                 }
                 .frame(height: 16)
             GeometryReader { proxy in
-                ForEach(day.hourMarks.filter { Self.labeledHours.contains($0.hour) }) { mark in
+                let hours = proxy.size.width < Self.noonLabelMinimumWidth ? Self.labeledHours.subtracting([12]) : Self.labeledHours
+                ForEach(day.hourMarks.filter { hours.contains($0.hour) }) { mark in
                     Text(day.hourText(mark.date))
                         .fixedSize()
                         .position(x: proxy.size.width * day.fraction(of: mark.date), y: proxy.size.height / 2)

@@ -17,17 +17,17 @@ struct DetailReading {
 
 /// A row of the day's details: the reading's name with its info button, then its details on
 /// the trailing side, or under the name at accessibility sizes and on the watch, where a column
-/// beside it would break a time range in two. With a `date`, a tap anywhere but the info button
-/// scrolls the timeline there, since a button nested in another's label never gets the tap. The
-/// phase under way now is tinted with its color.
+/// beside it would break a time range in two. With a `date` and a timeline to scroll, a tap
+/// anywhere but the info button scrolls it there, since a button nested in another's label never
+/// gets the tap. The phase under way now is tinted with its color.
 struct DetailRow<Leading: View>: View {
     let reading: DetailReading
     let date: Date?
     var hint = "Scrolls the timeline to it"
     var isCurrent = false
     var tint = Color.clear
-    /// Scrolls the timeline to a time on the day.
-    let onFocus: (Date) -> Void
+    /// Scrolls the timeline to a time on the day. Nil without a timeline, as on the watch.
+    let onFocus: ((Date) -> Void)?
     let leading: Leading
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -63,14 +63,19 @@ struct DetailRow<Leading: View>: View {
         }
         .contentShape(.rect(cornerRadius: 14))
         .onTapGesture {
-            if let date {
-                onFocus(date)
+            if let focusDate {
+                onFocus?(focusDate)
             }
         }
         #if os(iOS)
-        .hoverEffect(.highlight, isEnabled: date != nil)
+        .hoverEffect(.highlight, isEnabled: focusDate != nil)
         #endif
         .padding(.horizontal, DetailMetrics.margin)
+    }
+
+    /// The time a tap scrolls the timeline to, when there's one to scroll.
+    private var focusDate: Date? {
+        onFocus == nil ? nil : date
     }
 
     private var isStacked: Bool {
@@ -93,7 +98,7 @@ struct DetailRow<Leading: View>: View {
                     .accessibilityLabel(reading.label)
                     .accessibilityAddTraits(isCurrent ? .isSelected : [])
                     .accessibilityValue(isCurrent ? Text("Now") : Text(verbatim: ""))
-                    .modifier(FocusAction(date: date, hint: hint, onFocus: onFocus))
+                    .modifier(FocusAction(date: focusDate, hint: hint) { onFocus?($0) })
                 InfoButton(topic: reading.topic)
             }
         }

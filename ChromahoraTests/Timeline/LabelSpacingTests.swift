@@ -40,4 +40,12 @@ struct LabelSpacingTests {
     @Test func liftLeavesPositionsAlreadyClear() {
         #expect(LabelSpacing.spaced([10, 100, 110], pinned: [false, false, true], spacing: 28) == [10, 82, 110])
     }
+
+    @Test func aLimitLiftsTheLabelsPushedPastIt() {
+        #expect(LabelSpacing.spaced([0, 50, 90, 100], spacing: 28, limit: 110) == [0, 50, 82, 110])
+    }
+
+    @Test func aLimitLeavesAColumnThatEndsInsideIt() {
+        #expect(LabelSpacing.spaced([0, 50, 90], spacing: 28, limit: 110) == [0, 50, 90])
+    }
 }

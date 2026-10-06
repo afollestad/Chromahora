@@ -12,13 +12,16 @@ These rules cover `ChromahoraWatch/`, the watchOS app the iOS app embeds, which 
 
 ### Design
 
-- Name each phase where it begins, in one column with the markers, through `WatchTimelineOverlay`, never the phone's `DayTimelineOverlay`. Two columns of labels don't fit the watch's width, and sunrise falls in the middle of golden hour, so a phase label beside it would have no room.
-- Page days with the bottom bar's buttons and leave the Crown to the page on screen. Paging waits for the selected day to load, since a page from the day still shown would land on the one loading, or behind it.
-- Show the day's details through the phone's `DayDetails` on `WatchDetailsPage`, a sideways swipe from the timeline, never a copy of its rows, so both stay true to `DetailTopic` and the model.
-- The watch can't open web pages, so credit services in text: `WatchSourcesButton` at the foot of each day and its details always names sunrise-sunset.org and leads with the Apple Weather mark whenever the day shows weather, and its sheet opens WeatherKit's legal text in place of the phone's link. Weather sheets show the mark alone.
+- The Crown moves through each day's cards, a vertical page `TabView` of `WatchSummaryCard`, the morning and evening `WatchEndCard`s and `WatchDetailsPage`, and a sideways swipe pages days. `WatchDayPager` holds three pages, recentering without animation on the day a swipe lands on and keeping the card on screen, and pages only from the selected day once loaded, since a page from the day still shown would land on the one loading, or behind it.
+- Show Previous Day and Next Day in the bottom bar only while VoiceOver runs. Without them VoiceOver has no sure way between days, and for everyone else they'd cover the bottom of every card.
+- Keep the top of every card dark, since the system draws the clock in white whatever's behind it. The summary's sky climbs from night at the top, and the end cards hold their sky in a `WatchSkyPanel` under the header.
+- Name each phase where it begins, in one column with the markers, through `WatchSkyPanel`, never the phone's `DayTimelineOverlay`. Two columns of labels don't fit the watch's width, and sunrise falls in the middle of golden hour, so a phase label beside it would have no room.
+- Show the day's details through the phone's `DayDetails` on `WatchDetailsPage`, the last card, never a copy of its rows, so both stay true to `DetailTopic` and the model.
+- The watch can't open web pages, so credit services in text: `WatchSourcesButton` at the foot of `WatchDetailsPage`, the foot of the day, always names sunrise-sunset.org and leads with the Apple Weather mark whenever the day shows weather, and its sheet opens WeatherKit's legal text in place of the phone's link. An end card whose panel shows weather carries the mark in its header, and weather sheets show the mark alone.
 
 ### Verifying
 
 - Watch screens have no snapshot suite, since swift-snapshot-testing renders images only on iOS and tvOS. Check them with `xcrun simctl io <udid> screenshot` on `Apple Watch SE 3 (40mm)`, the narrowest, and a 46 mm or 49 mm watch.
+- Move through a day's cards with a vertical `axe drag` and between days with a sideways one, since `axe` can't turn the Crown.
 - Set a watch's text size with a launch argument after `--`, such as `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityM` for `accessibility1`, since `xcrun simctl ui <udid> content_size` fails on watch simulators.
 - Location permission belongs to the companion app's bundle ID, and an unpaired watch simulator can't show its prompt, so grant it with `xcrun simctl privacy <udid> grant location com.afollestad.Chromahora`, or use `-DebugPlace`.

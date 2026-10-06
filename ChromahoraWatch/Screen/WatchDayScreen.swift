@@ -5,17 +5,11 @@
 
 import SwiftUI
 
-/// The watch's one screen: the day's timeline under the place's name, with its details a swipe
-/// away as on the phone, or what stands in for them, with buttons along the bottom that move a
-/// day at a time and return to today. The Crown scrolls the page on screen, so it's left to that
-/// alone.
+/// The watch's one screen: a day's cards under its name, which the Crown moves through, with
+/// the days either side a sideways swipe away, or what stands in for them while none is on
+/// screen. Away from today, a button in the corner returns to it, and while VoiceOver runs,
+/// buttons along the bottom page a day at a time.
 struct WatchDayScreen: View {
-    /// The page a sideways swipe moves between.
-    enum Pane: Hashable {
-        case timeline
-        case details
-    }
-
     let state: SolarDayStore.LoadState
     let now: Date
     /// The day to show, which the day on screen trails while it loads.
@@ -29,31 +23,34 @@ struct WatchDayScreen: View {
     /// The forecast's hours, of any day, which the details read the day's light and sky from.
     let hours: [SkyHour]
     let onRetry: () -> Void
+    /// The day `offset` days from the one given, if the store holds it, as `SolarDayStore.loadedDay(offsetBy:from:)` gives it.
+    let neighbor: (Int, SolarDay) -> SolarDay?
     /// Selects the day `offset` days from `day`, as `SolarDayStore.selectDay(offsetBy:from:)` does.
     let onPage: (Int, SolarDay) -> Bool
     let onToday: () -> Void
 
-    /// Where the timeline scrolls: to now for the day button on today, or to a row's time.
-    @State private var focus = TimelineFocus()
-    @State private var pane = Pane.timeline
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var card = WatchCard.summary
+    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverRunning
 
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(place?.title(deviceName: deviceName) ?? "")
+                .navigationTitle(title(for: selectedDate))
                 .toolbar {
-                    if !hidesBar {
+                    if !isShowingToday {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Today", systemImage: "arrow.uturn.backward", action: showToday)
+                                .accessibilityHint("Shows today")
+                        }
+                    }
+                    // VoiceOver can't count on the swipe between days, so it gets buttons, which
+                    // everyone else goes without, since they'd cover the bottom of every card.
+                    if isVoiceOverRunning {
                         ToolbarItemGroup(placement: .bottomBar) {
                             Button("Previous Day", systemImage: "chevron.backward") {
                                 page(by: -1)
                             }
                             .disabled(pageableDay == nil)
-                            Button(action: showToday) {
-                                Text(isShowingToday ? "Today" : selectedDate.shortDayTitle(in: calendar.timeZone))
-                            }
-                            .accessibilityLabel(isShowingToday ? "Today" : selectedDate.dayTitle(in: calendar.timeZone))
-                            .accessibilityHint(isShowingToday ? "Scrolls to now" : "Shows today")
                             Button("Next Day", systemImage: "chevron.forward") {
                                 page(by: 1)
                             }
@@ -66,28 +63,43 @@ struct WatchDayScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if let day = state.day {
-            TabView(selection: $pane) {
-                WatchTimeline(day: day, now: now, weather: weather, focus: focus)
-                    // A new scroll view for each day, so every day opens on its own focus.
-                    .id(day.dayStart)
-                    .tag(Pane.timeline)
-                WatchDetailsPage(day: day, now: now, weather: weather, hours: hours) { date in
-                    // Once back, so the timeline's scroll shows rather than ending off screen.
-                    show(.timeline) {
-                        focus.request(date)
-                    }
-                }
-                .tag(Pane.details)
-            }
-            .tabViewStyle(.page)
+        if let day = shownDay {
+            WatchDayPager(
+                day: day,
+                now: now,
+                placeName: place?.title(deviceName: deviceName),
+                weather: weather,
+                hours: hours,
+                isPageable: pageableDay != nil,
+                neighbor: neighbor,
+                onPage: onPage,
+                card: $card
+            )
         } else {
             WatchPlaceholder(state: state, date: selectedDate, timeZone: calendar.timeZone, onRetry: onRetry)
         }
     }
 
+    /// The day `date` falls on, as near as names go: today, the days either side, or its date.
+    private func title(for date: Date) -> String {
+        let offset = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day
+        return switch offset {
+        case 0: "Today"
+        case 1: "Tomorrow"
+        case -1: "Yesterday"
+        default: date.shortDayTitle(in: calendar.timeZone)
+        }
+    }
+
     private var isShowingToday: Bool {
         calendar.isDate(selectedDate, inSameDayAs: now)
+    }
+
+    /// The day on screen while it's the one selected, loaded or still shown as it reloads. Nil
+    /// while another day loads, which the placeholder stands in for rather than show the day
+    /// it left under the new one's name.
+    private var shownDay: SolarDay? {
+        state.day.flatMap { $0.contains(selectedDate) ? $0 : nil }
     }
 
     /// The day paging moves from: the one on screen, once it's the one selected. Nil while another
@@ -97,47 +109,28 @@ struct WatchDayScreen: View {
         if case .loaded(let day) = state, day.contains(selectedDate) { day } else { nil }
     }
 
-    /// While today loads with nothing on screen, there's no day to page from or return to, so the
-    /// glow has the screen. Any other day keeps the way back to today, even one that couldn't
-    /// load, or loads again from nothing after that.
-    private var hidesBar: Bool {
-        if case .loading(.none) = state { isShowingToday } else { false }
-    }
-
-    /// On today, centers the timeline on now, paging back to it from the details.
-    private func showToday() {
-        if isShowingToday {
-            show(.timeline) {
-                focus.request()
-            }
-        } else {
-            withAnimation {
-                onToday()
-            }
-        }
-    }
-
-    /// Shows `pane`, then calls `completion` once it's on screen. The watchOS 27 simulator cuts
-    /// to a paged `TabView`'s page even inside an animation, so a row's scroll plays after the
-    /// cut. The animation, off with Reduce Motion, is in case a real watch slides instead.
-    private func show(_ pane: Pane, completion: @escaping () -> Void) {
-        guard self.pane != pane else {
-            completion()
-            return
-        }
-        withAnimation(reduceMotion ? nil : .default) {
-            self.pane = pane
-        } completion: {
-            completion()
-        }
-    }
-
+    /// Pages a day as a swipe does, then names the day it lands on, since VoiceOver stays on the
+    /// button rather than read the new title.
     private func page(by offset: Int) {
-        guard let day = pageableDay else {
+        guard let day = pageableDay, let date = day.calendar.date(byAdding: .day, value: offset, to: day.dayStart) else {
             return
         }
         withAnimation {
             _ = onPage(offset, day)
+        }
+        AccessibilityNotification.Announcement(title(for: date)).post()
+    }
+
+    /// Returns to today's summary, where the countdown is. Pages there as a swipe does when
+    /// today is held, so it shows at once rather than after the placeholder.
+    private func showToday() {
+        withAnimation {
+            card = .summary
+            if let day = shownDay, let offset = day.calendar.dateComponents([.day], from: day.dayStart, to: day.calendar.startOfDay(for: now)).day {
+                _ = onPage(offset, day)
+            } else {
+                onToday()
+            }
         }
     }
 }
@@ -154,6 +147,7 @@ struct WatchDayScreen: View {
         weather: WeatherSpell.mock(),
         hours: SkyHour.mock(),
         onRetry: {},
+        neighbor: { _, _ in nil },
         onPage: { _, _ in false },
         onToday: {}
     )

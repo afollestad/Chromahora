@@ -20,8 +20,9 @@ struct DayDetails: View {
     /// shows them apart from the sources button under the timeline, while the page beside the
     /// timeline sits right above the button, which carries both, as it does for the timeline.
     var showsWeatherCredit = true
-    /// Scrolls the timeline to a time on the day.
-    let onFocus: (Date) -> Void
+    /// Scrolls the timeline to a time on the day. Nil without a timeline, as on the watch, where
+    /// rows don't answer taps.
+    var onFocus: ((Date) -> Void)?
 
     /// A crossing of the horizon other than the sun's, which isn't marked on the timeline.
     private struct Crossing: Identifiable {

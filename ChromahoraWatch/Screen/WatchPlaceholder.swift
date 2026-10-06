@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-/// Stands in for the timeline while no day is on screen: the dawn glow while loading, or the
-/// reason a day couldn't load, on the night sky that starts the timeline.
+/// Stands in for the day's cards while no day is on screen: the dawn glow while loading, or the
+/// reason a day couldn't load, on the night sky.
 struct WatchPlaceholder: View {
     let state: SolarDayStore.LoadState
     let date: Date

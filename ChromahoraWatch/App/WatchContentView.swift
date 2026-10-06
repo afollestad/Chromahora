@@ -39,6 +39,7 @@ struct WatchContentView: View {
                 weather: weather.spells(at: store.shownPlace),
                 hours: weather.hours(at: store.shownPlace),
                 onRetry: store.reload,
+                neighbor: store.loadedDay(offsetBy:from:),
                 onPage: store.selectDay(offsetBy:from:),
                 onToday: { [store] in store.selectedDate = now }
             )
