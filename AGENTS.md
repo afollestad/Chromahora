@@ -16,7 +16,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 ## Build and test
 
-- Xcode 27 project with iOS 27 and watchOS 27 deployment targets. Use iOS 26+ APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely, except in files the watch app shares, which watchOS must compile.
+- Xcode 27 project with iOS 26 and watchOS 26 deployment targets, so gate iOS and watchOS 27 APIs with `#available`. Use iOS 26 APIs such as Liquid Glass, scroll edge effects, and `navigationSubtitle` freely, except in files the watch app shares, which watchOS must compile.
 - Source folders are synchronized groups. New files under `Chromahora/`, `ChromahoraTests/`, `ChromahoraWidgets/`, `ChromahoraWatch/` or `ChromahoraWatchWidgets/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above, each target's `Info.plist`, which `INFOPLIST_FILE` merges into the generated plist for keys with no `INFOPLIST_KEY_` setting, and the files the extensions and the watch app share from other folders, which their folders' `AGENTS.md` cover.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint`, `xcsift` and `axe` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.

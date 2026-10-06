@@ -19,11 +19,18 @@ struct MapKitPlaceSearch: PlaceSearch {
     /// house, nor whole countries, whose middle says little about any spot's sun.
     private static let addressFilter = MKAddressFilter(including: [.locality, .subLocality, .subAdministrativeArea, .administrativeArea])
     /// Places a photographer shoots, leaving out the shops and restaurants that share their names
-    /// and crowd them out.
-    private static let pointOfInterestFilter = MKPointOfInterestFilter(including: [
-        .beach, .campground, .castle, .fortress, .hiking, .landmark, .marina, .nationalMonument,
-        .nationalPark, .park, .picnicArea, .scenicView, .skiing, .surfing, .visitorCenter
-    ])
+    /// and crowd them out. Picnic areas, scenic views and visitor centers join from iOS and
+    /// watchOS 27, the first systems with those categories.
+    private static let pointOfInterestFilter: MKPointOfInterestFilter = {
+        var categories: [MKPointOfInterestCategory] = [
+            .beach, .campground, .castle, .fortress, .hiking, .landmark, .marina, .nationalMonument,
+            .nationalPark, .park, .skiing, .surfing
+        ]
+        if #available(iOS 27, watchOS 27, *) {
+            categories += [.picnicArea, .scenicView, .visitorCenter]
+        }
+        return MKPointOfInterestFilter(including: categories)
+    }()
 
     func suggestions(for query: String) async throws -> [PlaceSuggestion] {
         // An empty fragment never calls back, so it would wait forever.

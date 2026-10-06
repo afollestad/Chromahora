@@ -15,8 +15,16 @@ nonisolated extension SolarDay {
 
     /// A time of day without its half of the day, as in "6:58", for where "6:58 AM" won't fit, like
     /// the ring of a complication counting down a golden or blue hour, whose end is never far off.
+    ///
+    /// The short time with its AM or PM taken out, since iOS and watchOS 26 pad a 12-hour clock's
+    /// hour to "06:58" when asked for an hour with `amPM: .omitted`.
     func clockText(_ date: Date) -> String {
-        date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).hour(.defaultDigits(amPM: .omitted)).minute())
+        let text = date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: calendar.timeZone).attributedStyle)
+        return text.runs
+            .filter { $0.dateField != .amPM }
+            .map { String(text[$0.range].characters) }
+            .joined()
+            .trimmingCharacters(in: .whitespaces)
     }
 
     /// An hour on the ruler, as in "6 AM".

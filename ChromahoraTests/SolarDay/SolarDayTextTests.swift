@@ -42,6 +42,11 @@ struct SolarDayTextTests {
         #expect(plain(allDay.rangeText(of: allDay.segments[0], startsLine: true)) == "All day")
     }
 
+    /// iOS 26 pads the hour to "07:36" when asked for one without its AM or PM.
+    @Test func clockTextLeavesOutTheHalfOfTheDay() {
+        #expect(day.clockText(day.segments[6].interval.start) == "7:36")
+    }
+
     /// Two zones 14 hours apart can't both match the process's, so a time read in the
     /// process's zone fails one of them.
     @Test func timesReadInTheDaysOwnZone() throws {
