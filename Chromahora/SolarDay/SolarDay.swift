@@ -41,6 +41,16 @@ nonisolated enum DayPhase: Sendable {
         }
     }
 
+    /// The phase's color as text or a ring on a watch face's black. Night's and blue hour's own
+    /// colors are lifted, since on a complication's gray disc they'd contrast at 2:1 or less.
+    var faceColor: Color {
+        switch self {
+        case .night: Color(red: 0.62, green: 0.66, blue: 1.0)
+        case .blueHour: Color(red: 0.45, green: 0.62, blue: 1.0)
+        case .goldenHour, .daylight: color
+        }
+    }
+
     /// Long phases hold their color across their whole span. Short transitional
     /// phases peak in their middle and fade into their neighbors.
     var holdsColor: Bool {

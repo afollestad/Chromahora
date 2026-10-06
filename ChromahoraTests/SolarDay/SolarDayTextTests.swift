@@ -45,6 +45,7 @@ struct SolarDayTextTests {
     /// iOS 26 pads the hour to "07:36" when asked for one without its AM or PM.
     @Test func clockTextLeavesOutTheHalfOfTheDay() {
         #expect(day.clockText(day.segments[6].interval.start) == "7:36")
+        #expect(day.dayHalfText(day.segments[6].interval.start) == "PM")
     }
 
     /// Two zones 14 hours apart can't both match the process's, so a time read in the
@@ -55,6 +56,7 @@ struct SolarDayTextTests {
 
             #expect(plain(day.timeText(try #require(day.sunrise))) == "6:58 AM")
             #expect(day.clockText(try #require(day.sunrise)) == "6:58")
+            #expect(day.dayHalfText(try #require(day.sunrise)) == "AM")
             #expect(plain(day.rangeText(of: day.segments[1])) == "6:12 – 6:38 AM")
             #expect(plain(day.hourText(try #require(day.sunrise))) == "6 AM")
         }

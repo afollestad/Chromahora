@@ -118,6 +118,12 @@ nonisolated struct DayRun: Sendable {
         days[0].clockText(date)
     }
 
+    /// The half of the day `clockText(_:)` leaves out, in the run's zone, as in "AM", or nil where
+    /// the locale's clock runs through 24 hours.
+    func dayHalfText(_ date: Date) -> String? {
+        days[0].dayHalfText(date)
+    }
+
     /// When `interval` runs, in the run's zone, as a day words its phases. One that crosses
     /// midnight gives only its times, as in "10:07 PM – 5:23 AM", since the interval style would
     /// add both dates, which a day's own ranges never need.

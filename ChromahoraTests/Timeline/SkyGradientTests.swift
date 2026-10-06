@@ -24,6 +24,14 @@ struct SkyGradientTests {
         #expect(SkyGradient.labelScheme(over: DayPhase.daylight.color) == .light)
     }
 
+    /// A complication's disc is darker than this gray, so a name in its phase's face color reads on it.
+    @Test func faceColorsContrastWithAWatchFace() {
+        let disc = SkyGradient.luminance(of: Color(white: 0.2))
+        for phase in [DayPhase.night, .blueHour, .goldenHour, .daylight] {
+            #expect((SkyGradient.luminance(of: phase.faceColor) + 0.05) / (disc + 0.05) >= 4.5)
+        }
+    }
+
     @Test func heldPhasesKeepTheirColor() {
         expect(SkyGradient.color(at: 0, in: day), matches: DayPhase.night.color)
         expect(SkyGradient.color(at: 1, in: day), matches: DayPhase.night.color)

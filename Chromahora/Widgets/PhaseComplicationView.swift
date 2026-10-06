@@ -25,6 +25,15 @@ struct PhaseComplicationView: View {
     let entry: SkyEntry
     let layout: Layout
 
+    /// A circular complication's reading as a share of its disc's width, as large as a face's own,
+    /// like Heart Rate's "82". The disc measures 46 pt on a 49 mm Ultra's face and 51 pt in Modular
+    /// on a 46 mm watch, so fixed sizes that fill one crowd the other's curve.
+    private static let circularReadingShare = 0.37
+
+    /// The name over a circular complication's reading and the AM or PM under it, under half its
+    /// size as a face's own labels are, so the narrow top and bottom of the disc hold them.
+    private static let circularLabelShare = 0.16
+
     var body: some View {
         Group {
             switch entry.state {
@@ -90,13 +99,16 @@ struct PhaseComplicationView: View {
         let range = run.rangeText(segment.interval, span: segment.span)
         switch layout {
         case .circular:
-            ZStack {
-                AccessoryWidgetBackground()
-                Text(segment.phase.shortTitle)
-                    .font(.caption.weight(.semibold))
-                    .minimumScaleFactor(0.6)
-                    .widgetAccentable()
-                    .padding(4)
+            circularDisc { width in
+                VStack(spacing: width * 0.04) {
+                    Image(systemName: symbolName(for: segment.phase))
+                        .font(.system(size: width * Self.circularReadingShare))
+                        .foregroundStyle(segment.phase.faceColor)
+                        .widgetAccentable()
+                        .accessibilityHidden(true)
+                    Text(segment.phase.shortTitle)
+                        .font(.system(size: width * Self.circularLabelShare, weight: .semibold))
+                }
             }
         case .corner:
             Text(segment.phase.shortTitle)
@@ -135,14 +147,16 @@ struct PhaseComplicationView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// The short name over its time. While a golden or blue hour is under way, where the run holds
-    /// both its ends, a ring shows how much of it is left, moving on with the timeline's entries,
-    /// which come every quarter hour while the sky's color shifts.
+    /// The short name in the phase's color over its time, large, as a face's own complications
+    /// show a reading. While a golden or blue hour is under way, where the run holds both its
+    /// ends, a ring in the phase's color shows how much of it is left, moving on with the
+    /// timeline's entries, which come every quarter hour while the sky's color shifts.
     @ViewBuilder
     private func circular(_ magicHour: DaySegment, isUnderWay: Bool, in run: DayRun) -> some View {
         if isUnderWay, magicHour.span == .range {
             Gauge(value: share(of: magicHour, leftAt: now)) {
                 Text(magicHour.phase.shortTitle)
+                    .foregroundStyle(magicHour.phase.faceColor)
                     .widgetAccentable()
             } currentValueLabel: {
                 // The ring's middle holds no more than "7:10", and the end of a golden or blue
@@ -151,20 +165,52 @@ struct PhaseComplicationView: View {
                     .minimumScaleFactor(0.6)
             }
             .gaugeStyle(.accessoryCircular)
+            .tint(magicHour.phase.faceColor)
         } else {
-            ZStack {
-                AccessoryWidgetBackground()
-                VStack(spacing: 0) {
+            let time = isUnderWay ? (magicHour.span.endsInRun ? magicHour.interval.end : nil) : magicHour.interval.start
+            circularDisc { width in
+                // Overlaps the rows' leading, which would push the name and AM or PM into the curve.
+                VStack(spacing: width * -0.03) {
                     Text(magicHour.phase.shortTitle)
-                        .font(.caption2.weight(.semibold))
+                        .font(.system(size: width * Self.circularLabelShare, weight: .semibold))
+                        .foregroundStyle(magicHour.phase.faceColor)
                         .widgetAccentable()
-                    Text(isUnderWay ? endText(magicHour, in: run) : run.timeText(magicHour.interval.start))
-                        .font(.caption2)
+                    Text(time.map(run.clockText) ?? "Now")
+                        .font(.system(size: width * Self.circularReadingShare, weight: .semibold, design: .rounded))
+                    if let dayHalf = time.flatMap(run.dayHalfText) {
+                        Text(dayHalf)
+                            .font(.system(size: width * Self.circularLabelShare, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .padding(4)
+                .accessibilityElement(children: .combine)
             }
+        }
+    }
+
+    /// The disc behind a circular complication, with `content` sized from its width, inset from
+    /// its curve. A long line, like a two-digit hour, shrinks rather than truncate.
+    private func circularDisc(@ViewBuilder _ content: @escaping (CGFloat) -> some View) -> some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            GeometryReader { proxy in
+                let width = min(proxy.size.width, proxy.size.height)
+                content(width)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(width * 0.12)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+            }
+        }
+    }
+
+    /// A symbol for the phase that holds through a polar night or a midnight sun, beside its name,
+    /// since a tinted face draws the symbol in one color.
+    private func symbolName(for phase: DayPhase) -> String {
+        switch phase {
+        case .night: "moon.stars.fill"
+        case .daylight: "sun.max.fill"
+        case .blueHour, .goldenHour: "sun.horizon.fill"
         }
     }
 
