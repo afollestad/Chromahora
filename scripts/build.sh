@@ -39,18 +39,30 @@ run_and_format() {
 }
 
 # The app's scheme builds the watch app it embeds. `--watch` builds the watch app alone, which is quicker.
+# `--device <udid>` builds for that iPhone or iPad, and lets automatic signing register it and renew
+# its profiles.
 scheme=Chromahora
 destination='generic/platform=iOS Simulator'
-if [ "${1:-}" = "--watch" ]; then
-  shift
-  scheme=ChromahoraWatch
-  destination='generic/platform=watchOS Simulator'
-fi
+signing_args=()
+case "${1:-}" in
+  --watch)
+    shift
+    scheme=ChromahoraWatch
+    destination='generic/platform=watchOS Simulator'
+    ;;
+  --device)
+    destination="id=${2:?--device needs a device UDID}"
+    signing_args=(-allowProvisioningUpdates)
+    shift 2
+    ;;
+esac
 
+# macOS ships bash 3.2, where `set -u` treats an empty array as unbound, so expand it only when set.
 run_and_format xcodebuild \
   -project Chromahora.xcodeproj \
   -scheme "$scheme" \
   -destination "$destination" \
   -derivedDataPath .build/xcode \
+  ${signing_args[@]+"${signing_args[@]}"} \
   build \
   "$@"

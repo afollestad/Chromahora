@@ -20,7 +20,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 - Source folders are synchronized groups. New files under `Chromahora/`, `ChromahoraTests/`, `ChromahoraWidgets/`, `ChromahoraWatch/` or `ChromahoraWatchWidgets/` join their targets automatically, so never edit `project.pbxproj` to add files; its only membership edits are the `AGENTS.md` exclusions above, each target's `Info.plist`, which `INFOPLIST_FILE` merges into the generated plist for keys with no `INFOPLIST_KEY_` setting, and the files the extensions and the watch app share from other folders, which their folders' `AGENTS.md` cover.
 - First-time setup: `./scripts/setup.sh` installs `swiftlint`, `xcsift` and `axe` and a pre-commit hook that lints.
 - Build, run, test, lint and snapshot through `scripts/`, not raw `xcodebuild`, `simctl launch` or `swiftlint`. They pin the simulator, test locale and DerivedData path that results and baselines depend on, and sign builds so WeatherKit accepts the app.
-- Build: `./scripts/build.sh`, which builds the watch app the app embeds too. Run in the simulator: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build (set `SIMULATOR` to pick another device), and `-w` runs the watch app instead.
+- Build: `./scripts/build.sh`, which builds the watch app the app embeds too. Run: `./scripts/run.sh -b` builds first, while bare `run.sh` relaunches the last build; it prefers a reachable iPhone or iPad, so pass `-s` (or set `SIMULATOR` to pick another device) for the simulator, `-d <name or UDID>` for any device, or `-w` for the watch app in its simulator.
 - Tests use Swift Testing: `./scripts/test.sh`, or pass identifiers such as `ChromahoraTests/SolarDayTests`. It runs snapshot suites on their own devices, `SnapshotTests` on iPhone 18 Pro and `WideSnapshotTests` on iPad mini (A17 Pro), and everything else on `SIMULATOR`'s.
 - Snapshots: `./scripts/snapshots.sh verify`, or `record` to rewrite baselines and then verify them. It runs each suite on its own device, and `ChromahoraTests/Snapshots/AGENTS.md` covers both.
 - Lint: `./scripts/lint.sh` from the repo root. SwiftLint runs in strict mode and Swift warnings are errors, so both fail on any warning.
@@ -29,11 +29,11 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 ## Verifying UI
 
-- Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh -b` and capture with `xcrun simctl io <udid> screenshot`.
+- Every visible change is checked in the simulator, not just compiled: launch it with `./scripts/run.sh -b -s` and capture with `xcrun simctl io <udid> screenshot`.
 - Every visible change also runs `./scripts/snapshots.sh verify`. When the change is intended, `record` the affected baselines and look at the new images.
-- Reach other states with debug launch arguments after `--`, e.g. `./scripts/run.sh -b -- -DebugNow 2026-09-16T03:00:00 -DebugProviderMode hang`. `DebugSettings` documents each one; give `-DebugPlace` hemisphere letters (`33.9S,151.2E`), since the argument domain drops a value starting with `-`.
+- Reach other states with debug launch arguments after `--`, e.g. `./scripts/run.sh -b -s -- -DebugNow 2026-09-16T03:00:00 -DebugProviderMode hang`. `DebugSettings` documents each one; give `-DebugPlace` hemisphere letters (`33.9S,151.2E`), since the argument domain drops a value starting with `-`.
 - `simctl` cannot tap or drag, so use `axe touch --down --up --delay 0.1`, `axe drag` and `axe describe-ui` with `--udid`, which reach the simulator without the host's cursor; never post host mouse events, which take over the user's. `axe tap` doesn't activate this app's controls and `axe swipe` often leaves its scroll views in place, so tap and scroll with those instead.
-- If `axe touch` stops activating controls while `axe drag` still scrolls, the simulator's input is stuck: shut it down with `xcrun simctl shutdown <udid>`, and `run.sh` boots it again.
+- If `axe touch` stops activating controls while `axe drag` still scrolls, the simulator's input is stuck: shut it down with `xcrun simctl shutdown <udid>`, and `run.sh -s` boots it again.
 - When driving the location sheet's search, send the last character in an `axe type` of its own half a second after the rest. A burst can leave the search behind the field, so the list doesn't answer the text it shows.
 - To open a popover without a tap, flip its state from a `.task` after a short delay, because presentations on the first frame don't render; to reach the page beside the timeline, launch with `-DebugPane details`.
 - Restore every temporary patch before finishing. Keep a backup copy and confirm with `git diff`.

@@ -29,7 +29,7 @@ install_brew_formula cameroncooke/axe/axe
 
 echo "Setup complete. Next steps:"
 echo "  1. Build with ./scripts/build.sh"
-echo "  2. Build and run in the simulator with ./scripts/run.sh -b"
+echo "  2. Build and run on a connected device or the simulator with ./scripts/run.sh -b"
 echo "  3. Test with ./scripts/test.sh"
 echo "  4. Verify snapshots with ./scripts/snapshots.sh verify"
 echo "  5. Lint with ./scripts/lint.sh"
