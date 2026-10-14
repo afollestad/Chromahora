@@ -38,8 +38,9 @@ final class DebugSolarDayProvider: SolarDayProvider {
         case .slow:
             try await sleep(Self.slowDelay)
         case .hang:
-            // A century, which cancellation always cuts short.
-            try await Task.sleep(for: .seconds(100 * 365 * 24 * 60 * 60))
+            // A century, which cancellation always cuts short. `Int64`, since it overflows the
+            // 32-bit `Int` of a physical watch.
+            try await Task.sleep(for: .seconds(100 * 365 * 24 * 60 * 60 as Int64))
         case .fail:
             throw SimulatedFailure()
         }
