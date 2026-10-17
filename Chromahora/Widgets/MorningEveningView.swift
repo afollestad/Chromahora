@@ -6,8 +6,8 @@
 import SwiftUI
 
 /// The medium widget for a day's two ends: the blue and golden hours and sunrise of its morning
-/// beside those of its evening. Once the day's last golden or blue hour is over it shows
-/// tomorrow, whose come sooner.
+/// beside those of its evening, each with its outlook and cloud cover while the forecast covers
+/// it. Once the day's last golden or blue hour is over it shows tomorrow, whose come sooner.
 struct MorningEveningView: View {
     let entry: SkyEntry
 
@@ -18,6 +18,9 @@ struct MorningEveningView: View {
     private func loaded(_ content: SkyContent) -> some View {
         let day = content.run.featuredDay(at: entry.date)
         let ends = content.run.ends(of: day)
+        let sessions = content.sessions(on: day)
+        let morning = sessions.first { $0.kind == .morning }
+        let evening = sessions.first { $0.kind == .evening }
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 WidgetPlaceHeader(place: content.place, deviceName: content.deviceName)
@@ -27,19 +30,32 @@ struct MorningEveningView: View {
                     .lineLimit(1)
             }
             HStack(alignment: .top, spacing: 12) {
-                column("Morning", ends.morning, in: content.run)
-                column("Evening", ends.evening, in: content.run)
+                column("Morning", ends.morning, outlook: morning, in: content.run)
+                column("Evening", ends.evening, outlook: evening, in: content.run)
             }
             Spacer(minLength: 0)
-            WidgetCredit(showsWeather: false, linksSources: true)
+            WidgetCredit(showsWeather: morning != nil || evening != nil, linksSources: true)
         }
     }
 
-    private func column(_ title: String, _ end: DayRun.End, in run: DayRun) -> some View {
+    /// The end's name, with its outlook beside it rather than on a line of its own, which the
+    /// widget has no height for at its largest text.
+    private func column(_ title: String, _ end: DayRun.End, outlook: OutlookSession?, in run: DayRun) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(title)
+                    .fontWeight(.semibold)
+                    // Keeps its width, so a long outlook shrinks rather than the end's name.
+                    .layoutPriority(1)
+                if let outlook {
+                    OutlookLabel(rating: outlook.rating, cloudCover: outlook.cloudCover)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            .font(.caption)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
             Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 3) {
                 ForEach(end.magicHours) { segment in
                     GridRow {

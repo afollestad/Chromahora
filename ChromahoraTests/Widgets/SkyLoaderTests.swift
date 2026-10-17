@@ -36,13 +36,14 @@ struct SkyLoaderTests {
 
     @Test func aDeviceFixLoadsTodayTomorrowTheirWeatherAndTheStoredTown() async throws {
         let now = try time(16, 30)
-        weather.forecast = Forecast(spells: WeatherSpell.mock(for: now, calendar: calendar))
+        weather.forecast = Forecast(spells: WeatherSpell.mock(for: now, calendar: calendar), hours: SkyHour.mock(for: now, calendar: calendar))
         StoredPlaceName(cell: PlaceCell(MockPlaceProvider.sanFrancisco), name: "San Francisco").write(to: defaults)
 
         let content = try #require(await makeLoader().content(now: now, withWeather: true))
 
         #expect(content.run.days.map(\.dayStart) == [try time(0), try time(day: 17, 0)])
         #expect(content.spells == weather.forecast.spells)
+        #expect(content.hours == weather.forecast.hours)
         #expect(weather.requestedWindows == [Forecast.window(at: now, calendar: calendar)])
         #expect(content.deviceName == "San Francisco")
     }
@@ -54,6 +55,7 @@ struct SkyLoaderTests {
         let content = try #require(await makeLoader().content(now: try time(16, 30), withWeather: true))
 
         #expect(content.spells.isEmpty)
+        #expect(content.hours.isEmpty)
         #expect(weather.requestedPlaces.isEmpty)
     }
 
@@ -128,11 +130,12 @@ struct SkyLoaderTests {
         #expect(places.requestedTimeZones.count == 2)
     }
 
-    /// Sun Times, Moon & Dark Sky and Morning & Evening show no weather, so they spend no quota.
+    /// Sun Times and Moon & Dark Sky show no weather, so they spend no quota.
     @Test func aWidgetWithoutWeatherAsksForNone() async throws {
         let content = try #require(await makeLoader().content(now: try time(16, 30), withWeather: false))
 
         #expect(content.spells.isEmpty)
+        #expect(content.hours.isEmpty)
         #expect(weather.requestedPlaces.isEmpty)
     }
 
@@ -144,6 +147,7 @@ struct SkyLoaderTests {
         let content = try #require(await loader.content(now: try time(16, 30), withWeather: true))
 
         #expect(content.spells.isEmpty)
+        #expect(content.hours.isEmpty)
         #expect(content.run.days.count == 2)
     }
 
@@ -163,6 +167,7 @@ struct SkyLoaderTests {
         let content = try #require(await makeLoader { _ in }.content(now: try time(16, 30), withWeather: true))
 
         #expect(content.spells.isEmpty)
+        #expect(content.hours.isEmpty)
         var requests = weather.heldRequests.makeAsyncIterator()
         await requests.next()?.answer(Forecast())
     }
@@ -203,7 +208,7 @@ struct SkyLoaderTests {
             spell(.cloudy, try time(18, 40), try time(20, 50)),
             spell(.rain, try time(20, 50), try time(23))
         ]
-        let content = SkyContent(place: MockPlaceProvider.sanFrancisco, deviceName: nil, run: run, spells: spells)
+        let content = SkyContent(place: MockPlaceProvider.sanFrancisco, deviceName: nil, run: run, spells: spells, hours: [])
 
         let dates = SkyLoader.entryDates(for: content, from: now)
 
@@ -227,5 +232,36 @@ struct SkyLoaderTests {
         #expect(dates.contains(try time(day: 17, 6, 12)))
         #expect(!dates.contains(try time(day: 17, 6, 15)))
         #expect(!dates.contains(try time(day: 17, 1)))
+    }
+
+    /// The forecast reaches days past the widgets', which keep only what overlaps today and tomorrow.
+    @Test func theForecastIsKeptToTheRun() async throws {
+        let now = try time(16, 30)
+        let forecastDays = [try time(day: 15, 12), now, try time(day: 17, 12), try time(day: 18, 12)]
+        weather.forecast = Forecast(
+            spells: forecastDays.flatMap { WeatherSpell.mock(for: $0, calendar: calendar) },
+            hours: forecastDays.flatMap { SkyHour.mock(for: $0, calendar: calendar) }
+        )
+
+        let content = try #require(await makeLoader().content(now: now, withWeather: true))
+
+        #expect(content.hours.count == 48)
+        #expect(content.hours.first?.date == content.run.start)
+        #expect(content.hours.last?.interval.end == content.run.end)
+        #expect(content.spells.allSatisfy { $0.interval.end > content.run.start && $0.interval.start < content.run.end })
+    }
+
+    /// An outlook changes only with the golden or blue hour a widget shows, whose start already has an entry.
+    @Test func theForecastsHoursAddNoEntries() throws {
+        let today = SolarDay.mock(for: try time(12), calendar: calendar)
+        let tomorrow = SolarDay.mock(for: try time(day: 17, 12), calendar: calendar)
+        let run = DayRun(today, then: [tomorrow])
+        let hours = SkyHour.mock(for: today.dayStart, calendar: calendar) + SkyHour.mock(for: tomorrow.dayStart, calendar: calendar)
+        let now = try time(16, 30)
+
+        let withoutHours = SkyContent(place: MockPlaceProvider.sanFrancisco, deviceName: nil, run: run, spells: [], hours: [])
+        let withHours = SkyContent(place: MockPlaceProvider.sanFrancisco, deviceName: nil, run: run, spells: [], hours: hours)
+
+        #expect(SkyLoader.entryDates(for: withHours, from: now) == SkyLoader.entryDates(for: withoutHours, from: now))
     }
 }

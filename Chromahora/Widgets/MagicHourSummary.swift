@@ -6,8 +6,9 @@
 import SwiftUI
 
 /// The next golden or blue hour at `now`: the place, when it starts in large type, the phase
-/// under the sky's glyph, and how long until it starts. While one is under way it says so,
-/// and when it ends, and through a polar night or a midnight sun, the phase that holds instead.
+/// and its outlook under the sky's glyph, and how long until it starts. While one is under way
+/// it says so, and when it ends, and through a polar night or a midnight sun, the phase that
+/// holds instead.
 struct MagicHourSummary: View {
     let content: SkyContent
     let now: Date
@@ -30,6 +31,17 @@ struct MagicHourSummary: View {
         content.run.magicHour(at: now).flatMap { content.spell(at: max($0.interval.start, now)) }
     }
 
+    /// The outlook for the session the next golden or blue hour belongs to, or the one under way.
+    /// Nil without a forecast that covers it.
+    static func session(in content: SkyContent, at now: Date) -> OutlookSession? {
+        content.run.magicHour(at: now).flatMap(content.session(for:))
+    }
+
+    /// Whether the summary shows weather, the sky's glyph or an outlook, which Apple Weather's mark credits.
+    static func showsWeather(in content: SkyContent, at now: Date) -> Bool {
+        spell(in: content, at: now) != nil || session(in: content, at: now) != nil
+    }
+
     @ViewBuilder
     private func upcoming(_ magicHour: DaySegment) -> some View {
         let isUnderWay = magicHour.interval.start <= now
@@ -37,8 +49,7 @@ struct MagicHourSummary: View {
         Spacer(minLength: 4)
         HStack(spacing: 6) {
             SkyGlyph(phase: magicHour.phase, spell: Self.spell(in: content, at: now))
-            Text(magicHour.phase.title)
-                .lineLimit(1)
+            PhaseOutlookTitle(phase: magicHour.phase, rating: content.session(for: magicHour)?.rating)
         }
         .font(.subheadline.weight(.semibold))
         Group {

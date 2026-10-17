@@ -17,7 +17,7 @@ struct NextMagicHourWidget: Widget {
                 .skyWidgetBackground(for: entry)
         }
         .configurationDisplayName("Next Magic Hour")
-        .description("When the next golden or blue hour starts, and the sky it starts under.")
+        .description("When the next golden or blue hour starts, the sky it starts under, and its outlook.")
         .supportedFamilies([.systemSmall])
     }
 }

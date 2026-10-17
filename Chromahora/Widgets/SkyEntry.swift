@@ -17,10 +17,29 @@ nonisolated struct SkyContent: Sendable {
     /// The forecast's spells over the run. Empty without weather, which the widgets then leave
     /// out, Apple Weather's mark with it.
     let spells: [WeatherSpell]
+    /// The forecast's hours over the run, which the outlooks and cloud cover read. Empty without
+    /// weather, like the spells.
+    let hours: [SkyHour]
 
     /// The spell the sky is under at `date`.
     func spell(at date: Date) -> WeatherSpell? {
         spells.first { $0.interval.start <= date && date < $0.interval.end }
+    }
+
+    /// The morning or evening session `magicHour`, one of the run's golden or blue hours,
+    /// belongs to, while the forecast covers it.
+    func session(for magicHour: DaySegment) -> OutlookSession? {
+        PhotoOutlook.session(for: magicHour, in: run, hours: hours)
+    }
+
+    /// `day`'s sessions the forecast covers, with the run's golden and blue hours whole across midnight.
+    func sessions(on day: SolarDay) -> [OutlookSession] {
+        PhotoOutlook.sessions(on: day, in: run, hours: hours)
+    }
+
+    /// The share of the sky covered over `interval`, while the forecast covers all of it.
+    func cloudCover(over interval: DateInterval) -> Double? {
+        PhotoOutlook.Readings(over: [interval], hours: hours)?.cloudCover
     }
 }
 
@@ -45,7 +64,8 @@ nonisolated extension SkyContent {
             place: MockPlaceProvider.sanFrancisco,
             deviceName: "San Francisco",
             run: DayRun(today, then: [tomorrow]),
-            spells: WeatherSpell.mock(for: today.dayStart, calendar: calendar) + WeatherSpell.mock(for: tomorrow.dayStart, calendar: calendar)
+            spells: WeatherSpell.mock(for: today.dayStart, calendar: calendar) + WeatherSpell.mock(for: tomorrow.dayStart, calendar: calendar),
+            hours: SkyHour.mock(for: today.dayStart, calendar: calendar) + SkyHour.mock(for: tomorrow.dayStart, calendar: calendar)
         )
     }
 }

@@ -89,6 +89,25 @@ extension SnapshotTests {
         try await assertScreenSnapshot(of: widgets(.medium, at: time(16, 30)).environment(\.dynamicTypeSize, .accessibility5))
     }
 
+    /// Without a forecast the widgets show no outlook or cloud cover, the day strip counts down
+    /// again, and the credits leave Apple Weather's mark out.
+    @Test func smallWidgetsWithoutWeather() async throws {
+        let now = try time(16, 30)
+        await assertScreenSnapshot(of: widgets(.small, at: now, forecastEnd: try time(0)))
+    }
+
+    @Test func mediumWidgetsWithoutWeather() async throws {
+        let now = try time(16, 30)
+        await assertScreenSnapshot(of: widgets(.medium, at: now, forecastEnd: try time(0)))
+    }
+
+    /// A forecast that ends at noon rates the morning but none of the hours after it, so the
+    /// day strip counts down to the evening's golden hour without an outlook.
+    @Test func mediumWidgetsBeyondTheForecast() async throws {
+        let now = try time(16, 30)
+        await assertScreenSnapshot(of: widgets(.medium, at: now, forecastEnd: try time(12)))
+    }
+
     /// A tinted or clear Home Screen takes the sky away and draws the text in one color, so the
     /// strip's sky turns to an opacity ramp and the text keeps the system's scheme.
     @Test func smallWidgetsAccented() async throws {
@@ -115,29 +134,37 @@ extension SnapshotTests {
         Place(latitude: 34.1, longitude: -118.2, source: .timeZone("America/Los_Angeles"))
     }
 
-    /// `place`'s `scenario` day containing `now` and the next, with `WeatherSpell.mock`'s sky over
-    /// both, as `SkyLoader` would load them. San Francisco is the device's, with its town named.
-    /// The complications' snapshots load theirs the same way.
-    func content(_ scenario: MockScenario, at now: Date, place: Place = MockPlaceProvider.sanFrancisco) -> SkyContent {
+    /// `place`'s `scenario` day containing `now` and the next, with `WeatherSpell.mock`'s and
+    /// `SkyHour.mock`'s sky over both up to `forecastEnd`, as `SkyLoader` would load them. San
+    /// Francisco is the device's, with its town named. The complications' snapshots load theirs
+    /// the same way.
+    func content(
+        _ scenario: MockScenario,
+        at now: Date,
+        place: Place = MockPlaceProvider.sanFrancisco,
+        forecastEnd: Date = .distantFuture
+    ) -> SkyContent {
         let today = SolarDay.mock(scenario, for: now)
         let tomorrow = SolarDay.mock(scenario, for: today.dayEnd)
         return SkyContent(
             place: place,
             deviceName: place == MockPlaceProvider.sanFrancisco ? "San Francisco" : nil,
             run: DayRun(today, then: [tomorrow]),
-            spells: WeatherSpell.mock(for: today.dayStart) + WeatherSpell.mock(for: tomorrow.dayStart)
+            spells: (WeatherSpell.mock(for: today.dayStart) + WeatherSpell.mock(for: tomorrow.dayStart)).filter { $0.interval.end <= forecastEnd },
+            hours: (SkyHour.mock(for: today.dayStart) + SkyHour.mock(for: tomorrow.dayStart)).filter { $0.interval.end <= forecastEnd }
         )
     }
 
-    /// `size`'s three widgets at `now`.
+    /// `size`'s three widgets at `now`, with the forecast up to `forecastEnd`.
     private func widgets(
         _ size: WidgetSize,
         at now: Date,
         scenario: MockScenario = .typical,
         place: Place = MockPlaceProvider.sanFrancisco,
+        forecastEnd: Date = .distantFuture,
         accented: Bool = false
     ) -> some View {
-        let entry = SkyEntry(date: now, state: .loaded(content(scenario, at: now, place: place)))
+        let entry = SkyEntry(date: now, state: .loaded(content(scenario, at: now, place: place, forecastEnd: forecastEnd)))
         return backdrop {
             switch size {
             case .small:

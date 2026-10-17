@@ -96,7 +96,8 @@ final class SkyLoader {
     /// end of the run, including a golden or blue hour's sky changing while it's under way, and
     /// within `colorHorizon`, every `tickStep` and every `colorStep` while the sky's color shifts.
     /// It shifts only around golden and blue hours, so night and day, which hold their color,
-    /// need no more than the tick's entries.
+    /// need no more than the tick's entries. The forecast's hours add none: an outlook changes
+    /// only with the golden or blue hour a widget shows, whose start already has an entry.
     static func entryDates(for content: SkyContent, from now: Date) -> [Date] {
         let run = content.run
         let magicHours = run.segments.filter(\.phase.isMagicHour)
@@ -132,44 +133,46 @@ final class SkyLoader {
         guard let place = try? await placeProvider.currentPlace(in: calendar.timeZone) else {
             return nil
         }
-        async let spells = withWeather ? weatherSpells(at: place, now: now, calendar: calendar) : []
+        async let answer = withWeather ? forecast(at: place, now: now, calendar: calendar) : Forecast()
         guard let today = try? await solarDays.solarDay(for: now, at: place, calendar: calendar) else {
             return nil
         }
         let tomorrow = try? await solarDays.solarDay(for: today.dayEnd, at: place, calendar: calendar)
         let run = DayRun(today, then: tomorrow.map { [$0] } ?? [])
+        let sky = await answer
         return SkyContent(
             place: place,
             deviceName: StoredPlaceName.name(for: place, in: defaults),
             run: run,
-            spells: await spells.filter { $0.interval.end > run.start && $0.interval.start < run.end }
+            spells: sky.spells.filter { $0.interval.end > run.start && $0.interval.start < run.end },
+            hours: sky.hours.filter { $0.interval.end > run.start && $0.date < run.end }
         )
     }
 
-    /// The forecast's spells, or none if it doesn't answer within `weatherTimeout`. Only for the
-    /// device's own fix, as the app does once a lookup settles: a time zone's city is a guess
-    /// the device may be far from, and a request for it would spend the quota for nothing.
-    private func weatherSpells(at place: Place, now: Date, calendar: Calendar) async -> [WeatherSpell] {
+    /// The forecast, or none if it doesn't answer within `weatherTimeout`. Only for the device's
+    /// own fix, as the app does once a lookup settles: a time zone's city is a guess the device
+    /// may be far from, and a request for it would spend the quota for nothing.
+    private func forecast(at place: Place, now: Date, calendar: Calendar) async -> Forecast {
         guard let weather, case .device = place.source, let window = Forecast.window(at: now, calendar: calendar) else {
-            return []
+            return Forecast()
         }
-        let (answers, answer) = AsyncStream<[WeatherSpell]>.makeStream()
+        let (answers, answer) = AsyncStream<Forecast>.makeStream()
         // The request isn't awaited past the deadline, so it runs in a task of its own, which
         // goes on to store its answer for the next reload after this one gives up on it.
         Task {
-            answer.yield((try? await weather.forecast(from: window.start, to: window.end, at: place))?.spells ?? [])
+            answer.yield((try? await weather.forecast(from: window.start, to: window.end, at: place)) ?? Forecast())
         }
         let deadline = Task { [sleep] in
             try? await sleep(Self.weatherTimeout)
-            answer.yield([])
+            answer.yield(Forecast())
         }
         defer {
             deadline.cancel()
             answer.finish()
         }
-        for await spells in answers {
-            return spells
+        for await forecast in answers {
+            return forecast
         }
-        return []
+        return Forecast()
     }
 }

@@ -17,7 +17,7 @@ struct NextPhasesWidget: Widget {
                 .skyWidgetBackground(for: entry)
         }
         .configurationDisplayName("Next Phases")
-        .description("The next golden or blue hour, and each change of light after it.")
+        .description("The next golden or blue hour, and each change of light after it, with the golden and blue hours' outlooks.")
         .supportedFamilies([.systemMedium])
     }
 }

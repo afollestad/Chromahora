@@ -17,7 +17,7 @@ struct DayStripWidget: Widget {
                 .skyWidgetBackground(for: entry)
         }
         .configurationDisplayName("Day Strip")
-        .description("The day's sky from midnight to midnight, and the next golden and blue hours.")
+        .description("The day's sky from midnight to midnight, and the next golden and blue hours with their outlook and cloud cover.")
         .supportedFamilies([.systemMedium])
     }
 }

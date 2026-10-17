@@ -12,12 +12,12 @@ struct MorningEveningWidget: Widget {
     static let kind = "MorningEvening"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: Self.kind, provider: SkyTimelineProvider(showsWeather: false)) { entry in
+        StaticConfiguration(kind: Self.kind, provider: SkyTimelineProvider(showsWeather: true)) { entry in
             MorningEveningView(entry: entry)
                 .skyWidgetBackground(for: entry)
         }
         .configurationDisplayName("Morning & Evening")
-        .description("The golden and blue hours, sunrise and sunset at both ends of the day.")
+        .description("The golden and blue hours, sunrise and sunset at both ends of the day, with each end's outlook and cloud cover.")
         .supportedFamilies([.systemMedium])
     }
 }

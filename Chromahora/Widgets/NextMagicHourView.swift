@@ -6,8 +6,8 @@
 import SwiftUI
 
 /// The small widget for the next golden or blue hour, laid out like Apple Weather's: the place,
-/// the time it starts in large type, and below, the phase under the sky's glyph and how long
-/// until it starts.
+/// the time it starts in large type, and below, the phase and its outlook under the sky's glyph,
+/// and how long until it starts.
 struct NextMagicHourView: View {
     let entry: SkyEntry
 
@@ -16,7 +16,7 @@ struct NextMagicHourView: View {
             VStack(alignment: .leading, spacing: 0) {
                 MagicHourSummary(content: content, now: entry.date)
                 Spacer(minLength: 4)
-                WidgetCredit(showsWeather: MagicHourSummary.spell(in: content, at: entry.date) != nil)
+                WidgetCredit(showsWeather: MagicHourSummary.showsWeather(in: content, at: entry.date))
             }
         }
     }
