@@ -10,5 +10,6 @@ import WidgetKit
 struct ChromahoraWatchWidgets: WidgetBundle {
     var body: some Widget {
         PhaseComplication()
+        OutlookComplication()
     }
 }

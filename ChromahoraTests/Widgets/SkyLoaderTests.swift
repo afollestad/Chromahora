@@ -139,8 +139,7 @@ struct SkyLoaderTests {
         #expect(weather.requestedPlaces.isEmpty)
     }
 
-    /// The watch's complications have no weather to show, so their loader has none to ask,
-    /// whatever a widget asks for.
+    /// A loader without a weather provider has none to ask, whatever a widget asks for.
     @Test func aLoaderWithoutWeatherGivesNone() async throws {
         let loader = SkyLoader(placeProvider: places, solarDays: days, weather: nil, defaults: defaults, calendar: { [calendar] in calendar })
 

@@ -61,11 +61,68 @@ extension SnapshotTests {
         try await assertScreenSnapshot(of: complications(SkyEntry(date: time(16, 30), state: .unavailable)))
     }
 
+    // MARK: Outlook
+
+    /// The evening's golden hour is next, rated great, so the ring fills four of its five arcs
+    /// around the setting sun, and the rectangle credits Apple Weather.
+    @Test func outlookComplicationsThisAfternoon() async throws {
+        try await assertScreenSnapshot(of: outlookComplications(at: time(16, 30)))
+    }
+
+    /// The day's golden and blue hours are over, so they rate tomorrow's poor morning, one arc
+    /// around the rising sun.
+    @Test func outlookComplicationsAfterDark() async throws {
+        try await assertScreenSnapshot(of: outlookComplications(at: time(22)))
+    }
+
+    /// Before the watch app has a forecast, an empty ring, and no mark, since no weather shows.
+    @Test func outlookComplicationsWithoutForecast() async throws {
+        let now = try time(16, 30)
+        let content = content(.typical, at: now, forecastEnd: try time(0))
+        await assertScreenSnapshot(of: outlookComplications(SkyEntry(date: now, state: .loaded(content))))
+    }
+
+    /// Golden hour is under way without a forecast, so the rectangle says it's on now, not its start.
+    @Test func outlookComplicationsWithoutForecastDuringGoldenHour() async throws {
+        let now = try time(18, 30)
+        let content = content(.typical, at: now, forecastEnd: try time(0))
+        await assertScreenSnapshot(of: outlookComplications(SkyEntry(date: now, state: .loaded(content))))
+    }
+
+    @Test func outlookComplicationsAtLargestTextSize() async throws {
+        try await assertScreenSnapshot(of: outlookComplications(at: time(16, 30)).environment(\.dynamicTypeSize, .accessibility5))
+    }
+
+    /// A tinted face draws the filled arcs in its one color and the empty ones faint, so the
+    /// rating still counts out.
+    @Test func outlookComplicationsAccented() async throws {
+        try await assertScreenSnapshot(of: outlookComplications(at: time(16, 30)).environment(\.widgetRenderingMode, .accented))
+    }
+
     // MARK: Building
 
     /// Every layout for `scenario`'s day containing `now` and the next, as `SkyLoader` loads them.
     private func complications(at now: Date, scenario: MockScenario = .typical) -> some View {
         complications(SkyEntry(date: now, state: .loaded(content(scenario, at: now))))
+    }
+
+    /// The outlook complication's layouts for the typical day containing `now` and the next.
+    private func outlookComplications(at now: Date) -> some View {
+        outlookComplications(SkyEntry(date: now, state: .loaded(content(.typical, at: now))))
+    }
+
+    /// Each of the outlook complication's layouts of `entry` in the phase complication's slots.
+    private func outlookComplications(_ entry: SkyEntry) -> some View {
+        VStack(spacing: 24) {
+            ForEach(OutlookComplicationView.Layout.allCases, id: \.self) { layout in
+                let size = Self.complicationSize(layout == .circular ? .circular : .rectangular)
+                OutlookComplicationView(entry: entry, layout: layout)
+                    .frame(width: size.width, height: size.height)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black)
+        .environment(\.colorScheme, .dark)
     }
 
     /// Every layout of `entry`, each in its slot, with countdowns read from the entry's moment

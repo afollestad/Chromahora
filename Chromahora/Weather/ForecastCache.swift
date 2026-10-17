@@ -82,6 +82,13 @@ actor ForecastCache {
         records().max { $0.attemptedAt < $1.attemptedAt }
     }
 
+    /// The most recent request for `place`, whatever window it covered, as `CachedForecastProvider` reads it.
+    func latestRecord(at place: Place) -> ForecastRecord? {
+        records()
+            .filter { $0.key.latitudeTenths == place.latitudeTenths && $0.key.longitudeTenths == place.longitudeTenths }
+            .max { $0.attemptedAt < $1.attemptedAt }
+    }
+
     /// Replaces the record for `record`'s place, whatever window it covered, since only a place's
     /// newest window is asked for again, so `capacity` counts places. Drops records too far from it
     /// to answer, and the oldest past `capacity`. The distance counts either side, like the

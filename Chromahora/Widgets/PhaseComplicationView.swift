@@ -10,8 +10,8 @@ import WidgetKit
 /// starts and how long until then, or while one is under way, when it ends. Through a polar night
 /// or a midnight sun, the phase that holds instead.
 ///
-/// Complications carry no credit and no weather, since none has room for a credit line; the
-/// watch app, a tap away, shows both.
+/// It carries no credit and no weather, since none of its layouts has room for a credit line;
+/// the watch app, a tap away, shows both, and `OutlookComplicationView` the outlook.
 struct PhaseComplicationView: View {
     /// The shapes a watch face gives a complication. Named apart from `WidgetFamily`, whose
     /// corner exists only on the watch, so the phone's snapshots reach every one.

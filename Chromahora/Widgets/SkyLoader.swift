@@ -36,8 +36,8 @@ final class SkyLoader {
 
     private let placeProvider: any PlaceProvider
     private let solarDays: any SolarDayProvider
-    /// Nil where no widget shows weather, like the watch's complications, which have no room for
-    /// Apple Weather's credit, so none of them can spend the quota.
+    /// Nil where no widget shows weather, so none can spend the quota. The watch's complications
+    /// read the forecast the watch app last stored, which asks for nothing.
     private let weather: (any WeatherProvider)?
     private let defaults: UserDefaults
     /// The device's calendar, read at each load, since its zone can change between them.
