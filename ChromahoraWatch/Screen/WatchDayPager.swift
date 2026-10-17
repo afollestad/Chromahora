@@ -95,7 +95,7 @@ private struct WatchDayCards: View {
     var body: some View {
         let ends = DayRun(day, then: nextDay.map { [$0] } ?? []).ends(of: day)
         TabView(selection: $card) {
-            WatchSummaryCard(day: day, nextDay: nextDay, now: now, placeName: placeName)
+            WatchSummaryCard(day: day, nextDay: nextDay, now: now, placeName: placeName, hours: hours)
                 .tag(WatchCard.summary)
             WatchEndCard(kind: .morning, day: day, end: ends.morning, now: now, weather: weather)
                 .tag(WatchCard.morning)

@@ -243,7 +243,9 @@
 				Weather/WeatherSpell.swift,
 				Weather/WeatherSpellDetails.swift,
 				Weather/WeatherStore.swift,
+				Widgets/OutlookLabel.swift,
 				Widgets/PhaseDot.swift,
+				Widgets/PhaseOutlookTitle.swift,
 				Widgets/SkyStrip.swift,
 			);
 			target = D98A873830685004007D5F92 /* ChromahoraWatch */;
