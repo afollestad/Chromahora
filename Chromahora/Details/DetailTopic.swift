@@ -25,6 +25,9 @@ nonisolated enum DetailTopic: Sendable {
     case moonrise
     case moonset
     case darkSky
+    case magicHourOutlook
+    case daylightOutlook
+    case nightOutlook
 
     init(_ phase: DayPhase) {
         self = switch phase {
@@ -39,6 +42,14 @@ nonisolated enum DetailTopic: Sendable {
         self = switch event {
         case .sunrise: .sunrise
         case .sunset: .sunset
+        }
+    }
+
+    init(_ kind: OutlookSession.Kind) {
+        self = switch kind {
+        case .morning, .evening: .magicHourOutlook
+        case .daylight: .daylightOutlook
+        case .night: .nightOutlook
         }
     }
 
@@ -71,11 +82,15 @@ nonisolated enum DetailTopic: Sendable {
         case .moonrise: "Moonrise"
         case .moonset: "Moonset"
         case .darkSky: "Dark sky"
+        case .magicHourOutlook: "Golden and blue hour outlook"
+        case .daylightOutlook: "Daylight outlook"
+        case .nightOutlook: "Night sky outlook"
         }
     }
 
-    /// What the reading is. The phases' angles are `DayPhase.band(forAltitude:)`'s, and the
-    /// cloud shares `WeatherHour`'s, which a spell only roughly keeps once it folds short runs in.
+    /// What the reading is. The phases' angles are `DayPhase.band(forAltitude:)`'s, the cloud
+    /// shares `WeatherHour`'s, which a spell only roughly keeps once it folds short runs in, and
+    /// the outlooks follow `PhotoOutlook`'s thresholds.
     var meaning: String {
         switch self {
         case .night:
@@ -115,6 +130,24 @@ nonisolated enum DetailTopic: Sendable {
             "When the moon sinks below the horizon. Like moonrise, it comes about 50 minutes later each day."
         case .darkSky:
             "Astronomical night, with the sun more than 18° below the horizon, while the moon is down. The sky gets no darker."
+        case .magicHourOutlook:
+            """
+            A rating from Poor to Excellent, from the forecast. Mid or high cloud over 30% to 70% of the sky, with little \
+            low cloud, rates best, and a clear sky Good. Thick cloud, rain or snow from a 30% chance, haze, fog and wind \
+            rate lower, and rain clearing just before rates higher.
+            """
+        case .daylightOutlook:
+            """
+            A rating from Poor to Great for the light between the golden hours. Cloud over three quarters of the sky \
+            softens it, while a UV index from 6, High on the WHO's scale, marks hard light. Rain or snow from a 30% \
+            chance, haze and fog rate lower.
+            """
+        case .nightOutlook:
+            """
+            A rating from Poor to Excellent for the dark sky, or for astronomical night where the moon is up all night \
+            or can't be placed. Cloud over a quarter of the sky, rain or snow from a 30% chance, haze, fog and wind rate \
+            lower, and a moon up all night holds it at Fair.
+            """
         }
     }
 
@@ -190,6 +223,21 @@ nonisolated enum DetailTopic: Sendable {
             """
             The window for the Milky Way, star fields and the night sky. Get away from city lights, and give your eyes 20 \
             minutes to adjust.
+            """
+        case .magicHourOutlook:
+            """
+            Color comes from the low sun lighting cloud from below, so a broken high sky over a clear horizon promises \
+            the most. Calm air turns still water into a mirror.
+            """
+        case .daylightOutlook:
+            """
+            Soft overcast suits portraits, forests and waterfalls at any hour. Under hard sun, work in open shade or with \
+            a polarizer, or scout for the golden hours.
+            """
+        case .nightOutlook:
+            """
+            Clear, moonless nights show the Milky Way and the faintest stars. On a breezy night, weigh down your tripod or \
+            shoot from shelter.
             """
         }
     }

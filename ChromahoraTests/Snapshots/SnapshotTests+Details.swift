@@ -22,8 +22,9 @@ extension SnapshotTests {
         )
     }
 
-    /// Daylight is now, and the rows' details sit on the trailing side, with the sky of the
-    /// timeline's afternoon behind the card and the second dot marked under the sources button.
+    /// The outlook rates each stretch of the day above its phases, daylight is now, and the rows'
+    /// details sit on the trailing side, with the sky of the timeline's afternoon behind the card
+    /// and the second dot marked under the sources button.
     @Test func detailsThisAfternoon() async throws {
         try await assertScreenSnapshot(of: details(now: time(16, 30)))
     }
@@ -46,8 +47,8 @@ extension SnapshotTests {
     }
 
     /// Longyearbyen's December: with neither a moonrise nor a moonset, where the moon is is
-    /// unknown, so there's no dark sky row. Without a sunrise or sunset there are no sky rows,
-    /// and with the UV index at 0 all day, no UV row.
+    /// unknown, so there's no dark sky row, and the outlook rates astronomical night without it.
+    /// Without a sunrise or sunset there are no sky rows, and with the UV index at 0 all day, no UV row.
     @Test func detailsInPolarNight() async throws {
         let now = try time(month: 12, day: 21, 12)
         let sunless = SkyHour.mock(for: now).map { hour in

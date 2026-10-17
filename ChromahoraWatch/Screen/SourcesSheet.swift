@@ -23,7 +23,10 @@ struct SourcesSheet: View {
                     if showsWeather {
                         VStack(alignment: .leading, spacing: 8) {
                             section("Weather") {
-                                Text("Clouds, fog and the chance of rain or snow come from Apple Weather.")
+                                Text("""
+                                    Clouds, fog, the chance of rain or snow, wind, the UV index and visibility come from Apple Weather, \
+                                    and the outlook is rated from them.
+                                    """)
                                 AppleWeatherCredit.mark
                                     .foregroundStyle(.primary)
                             }

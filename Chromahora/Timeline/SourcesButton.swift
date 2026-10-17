@@ -82,7 +82,10 @@ private struct SourcesDetails: View {
                     Text("Weather")
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)
-                    Text("Clouds, fog, the chance of rain or snow, the UV index and visibility come from Apple Weather.")
+                    Text("""
+                        Clouds, fog, the chance of rain or snow, wind, the UV index and visibility come from Apple Weather, \
+                        and the outlook is rated from them.
+                        """)
                     AppleWeatherCredit()
                 }
             }

@@ -5,16 +5,17 @@
 
 import SwiftUI
 
-/// The day as a list: its phases, the sun, the moon, and the weather with the day's light and
-/// sky readings. The day panel shows it under its calendar, and without room for the panel it's
-/// the page beside the timeline. Tapping a row with a time scrolls the timeline to it, and each
-/// row's info button says what it reads and how a photographer uses it.
+/// The day as a list: the outlook for each stretch of its light, its phases, the sun, the moon,
+/// and the weather with the day's light and sky readings. The day panel shows it under its
+/// calendar, and without room for the panel it's the page beside the timeline. Tapping a row
+/// with a time scrolls the timeline to it, and each row's info button says what it reads and how
+/// a photographer uses it.
 struct DayDetails: View {
     let day: SolarDay
     let now: Date
     /// The forecast's spells, of any day. Those reaching this one are listed.
     var weather: [WeatherSpell] = []
-    /// The forecast's hours, of any day, which the UV and sky rows read.
+    /// The forecast's hours, of any day, which the outlook, UV and sky rows read.
     var hours: [SkyHour] = []
     /// Whether the weather ends with the Apple Weather mark and its legal link. The day panel
     /// shows them apart from the sources button under the timeline, while the page beside the
@@ -43,10 +44,26 @@ struct DayDetails: View {
         var id: String { title }
     }
 
+    /// What the weather section lists for the day, which leaves it out when there's nothing.
+    private struct WeatherRows {
+        let spells: [WeatherSpell]
+        let peak: SkyHour?
+        let skies: [HorizonSky]
+
+        var isEmpty: Bool {
+            spells.isEmpty && peak == nil && skies.isEmpty
+        }
+    }
+
     private static let percent = FloatingPointFormatStyle<Double>.Percent().precision(.fractionLength(0))
+
+    /// The reasons a rating's row shows, the most telling first: two keep it a few lines tall
+    /// in the day panel's narrow column and on the watch. VoiceOver reads them all.
+    private static let shownReasons = 2
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            outlook
             phases
             sun
             moon
@@ -55,6 +72,24 @@ struct DayDetails: View {
     }
 
     // MARK: Sections
+
+    /// Each stretch of the day's light the forecast covers, rated. The ratings come from Apple
+    /// Weather's forecast, so where `showsWeatherCredit` asks and no weather section follows to
+    /// carry the mark, this one does.
+    @ViewBuilder
+    private var outlook: some View {
+        let sessions = PhotoOutlook.sessions(on: day, hours: hours)
+        if !sessions.isEmpty {
+            section("Outlook") {
+                ForEach(sessions) { session in
+                    outlook(of: session)
+                }
+                if showsWeatherCredit, weatherRows.isEmpty {
+                    weatherCredit
+                }
+            }
+        }
+    }
 
     private var phases: some View {
         let current = day.segment(at: now)?.id
@@ -135,14 +170,10 @@ struct DayDetails: View {
     /// for it wherever weather shows.
     @ViewBuilder
     private var weatherAndSky: some View {
-        let spells = weather.filter { $0.span(within: day) != nil }
-        let peak = SkyHour.peakUV(on: day, in: hours)
-        let skies = day.events.sorted { $0.date < $1.date }.compactMap { event in
-            SkyHour.hour(containing: event.date, in: hours).map { HorizonSky(title: "\(event.title) sky", event: event.date, hour: $0) }
-        }
-        if !spells.isEmpty || peak != nil || !skies.isEmpty {
+        let rows = weatherRows
+        if !rows.isEmpty {
             section("Weather") {
-                ForEach(spells) { spell in
+                ForEach(rows.spells) { spell in
                     let range = day.rangeText(spell.interval, span: spell.span(within: day) ?? .range, startsLine: true)
                     let reading = DetailReading(
                         topic: DetailTopic(spell.condition),
@@ -154,23 +185,44 @@ struct DayDetails: View {
                         icon(spell.condition.symbolName(inDaylight: spell.startsInDaylight(on: day)))
                     }
                 }
-                if let peak {
+                if let peak = rows.peak {
                     uvIndex(peaking: peak)
                 }
-                ForEach(skies) { sky in
+                ForEach(rows.skies) { sky in
                     horizon(sky)
                 }
                 if showsWeatherCredit {
-                    AppleWeatherCredit()
-                        .font(.footnote)
-                        .padding(.horizontal, DetailMetrics.contentInset)
-                        .padding(.top, 4)
+                    weatherCredit
                 }
             }
         }
     }
 
+    private var weatherRows: WeatherRows {
+        WeatherRows(
+            spells: weather.filter { $0.span(within: day) != nil },
+            peak: SkyHour.peakUV(on: day, in: hours),
+            skies: day.events.sorted { $0.date < $1.date }.compactMap { event in
+                SkyHour.hour(containing: event.date, in: hours).map { HorizonSky(title: "\(event.title) sky", event: event.date, hour: $0) }
+            }
+        )
+    }
+
     // MARK: Rows
+
+    /// The rating and what most led to it, which a tap centers the timeline on.
+    private func outlook(of session: OutlookSession) -> some View {
+        let title = session.kind.title
+        let reading = DetailReading(
+            topic: DetailTopic(session.kind),
+            title: title,
+            details: [session.rating.title] + session.reasons.prefix(Self.shownReasons).map(Optional.some),
+            label: ([title, session.rating.title] + session.reasons).joined(separator: ", ")
+        )
+        return row(reading, to: session.focusDate) {
+            icon(session.kind.symbolName)
+        }
+    }
 
     private func phase(of moon: SolarDay.Moon) -> some View {
         let name = moon.phase?.title ?? "Moon"
@@ -240,6 +292,13 @@ struct DayDetails: View {
     }
 
     // MARK: Pieces
+
+    private var weatherCredit: some View {
+        AppleWeatherCredit()
+            .font(.footnote)
+            .padding(.horizontal, DetailMetrics.contentInset)
+            .padding(.top, 4)
+    }
 
     private func section<Rows: View>(_ title: String, @ViewBuilder rows: () -> Rows) -> some View {
         VStack(alignment: .leading, spacing: 2) {
