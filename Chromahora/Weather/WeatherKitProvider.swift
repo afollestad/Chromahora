@@ -35,7 +35,11 @@ private extension SkyHour {
             lowCloud: clouds.low,
             midCloud: clouds.medium,
             highCloud: clouds.high,
-            visibility: hour.visibility.converted(to: .meters).value
+            cloudCover: hour.cloudCover,
+            visibility: hour.visibility.converted(to: .meters).value,
+            precipitation: SkyCondition(hour.precipitation),
+            precipitationChance: hour.precipitationChance,
+            windSpeed: hour.wind.speed.converted(to: .metersPerSecond).value
         )
     }
 }

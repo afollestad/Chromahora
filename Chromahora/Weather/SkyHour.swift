@@ -19,8 +19,17 @@ nonisolated struct SkyHour: Codable, Equatable, Sendable {
     let midCloud: Double
     /// Above 6,300 m.
     let highCloud: Double
+    /// The share of the whole sky covered, from 0 to 1. Read as its own figure rather than
+    /// summed from the layers, which overlap.
+    let cloudCover: Double
     /// How far away terrain can be seen, in meters.
     let visibility: Double
+    /// The type of precipitation forecast, if any: one of the precipitation conditions.
+    let precipitation: SkyCondition?
+    /// How likely that precipitation is, from 0 to 1.
+    let precipitationChance: Double
+    /// The sustained wind, in meters per second.
+    let windSpeed: Double
 
     var interval: DateInterval {
         DateInterval(start: date, duration: Self.duration)
@@ -34,13 +43,7 @@ nonisolated struct SkyHour: Codable, Equatable, Sendable {
 
     /// The WHO's exposure category, which WeatherKit's `UVIndex.ExposureCategory` also follows.
     var uvCategory: UVCategory {
-        switch uvIndex {
-        case ..<3: .low
-        case 3..<6: .moderate
-        case 6..<8: .high
-        case 8..<11: .veryHigh
-        default: .extreme
-        }
+        UVCategory(uvIndex: uvIndex)
     }
 
     enum UVCategory: Sendable {
@@ -49,6 +52,16 @@ nonisolated struct SkyHour: Codable, Equatable, Sendable {
         case high
         case veryHigh
         case extreme
+
+        init(uvIndex: Int) {
+            self = switch uvIndex {
+            case ..<3: .low
+            case 3..<6: .moderate
+            case 6..<8: .high
+            case 8..<11: .veryHigh
+            default: .extreme
+            }
+        }
 
         var title: String {
             switch self {
@@ -81,22 +94,37 @@ nonisolated struct SkyHour: Codable, Equatable, Sendable {
 nonisolated extension SkyHour {
     /// Every hour of the day containing `date`, shaped like `WeatherSpell.mock`'s day: clear
     /// until 4 AM, cloudy until 9, partly cloudy until 3 PM, rain until 5, then clear, with
-    /// the UV index peaking at 6 at noon.
+    /// the UV index peaking at 6 at noon, and the air calm but for a breezy midday and a windy
+    /// shower.
     static func mock(for date: Date = .now, calendar: Calendar = .current) -> [SkyHour] {
         let dayStart = calendar.startOfDay(for: date)
         let uvIndex = [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 5, 6, 6, 5, 3, 2, 1, 0, 0, 0, 0, 0, 0]
         return (0..<24).map { hour in
             let date = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: dayStart)
                 ?? dayStart.addingTimeInterval(TimeInterval(hour) * duration)
-            func sky(low: Double, mid: Double, high: Double, visibility: Double) -> SkyHour {
-                SkyHour(date: date, uvIndex: uvIndex[hour], lowCloud: low, midCloud: mid, highCloud: high, visibility: visibility)
+            func sky(
+                low: Double, mid: Double, high: Double, cover: Double, visibility: Double,
+                rain: Double? = nil, wind: Double = 1
+            ) -> SkyHour {
+                SkyHour(
+                    date: date,
+                    uvIndex: uvIndex[hour],
+                    lowCloud: low,
+                    midCloud: mid,
+                    highCloud: high,
+                    cloudCover: cover,
+                    visibility: visibility,
+                    precipitation: rain.map { _ in .rain },
+                    precipitationChance: rain ?? 0.1,
+                    windSpeed: wind
+                )
             }
             return switch hour {
-            case ..<4: sky(low: 0.05, mid: 0.05, high: 0.1, visibility: 24_000)
-            case ..<9: sky(low: 0.85, mid: 0.4, high: 0.2, visibility: 8_000)
-            case ..<15: sky(low: 0.2, mid: 0.35, high: 0.2, visibility: 16_000)
-            case ..<17: sky(low: 0.9, mid: 0.7, high: 0.5, visibility: 4_000)
-            default: sky(low: 0.05, mid: 0.1, high: 0.2, visibility: 24_000)
+            case ..<4: sky(low: 0.05, mid: 0.05, high: 0.1, cover: 0.1, visibility: 24_000)
+            case ..<9: sky(low: 0.85, mid: 0.4, high: 0.2, cover: 0.9, visibility: 8_000, wind: 1.2)
+            case ..<15: sky(low: 0.2, mid: 0.35, high: 0.2, cover: 0.45, visibility: 16_000, wind: 4.5)
+            case ..<17: sky(low: 0.9, mid: 0.7, high: 0.5, cover: 0.9, visibility: 4_000, rain: 0.8, wind: 9)
+            default: sky(low: 0.05, mid: 0.1, high: 0.2, cover: 0.2, visibility: 24_000)
             }
         }
     }

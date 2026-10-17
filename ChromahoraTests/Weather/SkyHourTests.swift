@@ -27,7 +27,11 @@ struct SkyHourTests {
             lowCloud: 0,
             midCloud: 0,
             highCloud: 0,
-            visibility: 10_000
+            cloudCover: 0,
+            visibility: 10_000,
+            precipitation: nil,
+            precipitationChance: 0,
+            windSpeed: 0
         )
     }
 
@@ -65,5 +69,23 @@ struct SkyHourTests {
         #expect(hours.count == 24)
         #expect(hours.first?.date == day.dayStart)
         #expect(try #require(SkyHour.peakUV(on: day, in: hours)).date == day.dayStart.addingTimeInterval(12 * SkyHour.duration))
+    }
+
+    /// The hours read as the spells' mock does, so the outlook and the timeline describe one day.
+    @Test func theMockFoldsIntoTheSpellsMock() {
+        let hours = SkyHour.mock(for: date, calendar: calendar).map { hour in
+            WeatherHour(
+                date: hour.date,
+                cloudCover: hour.cloudCover,
+                precipitation: hour.precipitation,
+                precipitationChance: hour.precipitationChance,
+                isFoggy: false
+            )
+        }
+        let spells = WeatherSpell.spells(from: hours)
+        let mock = WeatherSpell.mock(for: date, calendar: calendar)
+
+        #expect(spells.map(\.condition) == mock.map(\.condition))
+        #expect(spells.map(\.interval) == mock.map(\.interval))
     }
 }

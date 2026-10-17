@@ -156,6 +156,19 @@ struct ForecastCacheTests {
         #expect(await cache.record(for: record.key) == record)
     }
 
+    /// A record from before the hours carried total cloud, precipitation and wind, which the
+    /// outlook needs, reads as none, so the update costs one request.
+    @Test func aRecordFromTheLastVersionReadsAsNoRecord() async throws {
+        let cache = ForecastCache(directory: directory)
+        await cache.store(record)
+        let file = directory.appending(path: "Forecast.json")
+        var json = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [[String: Any]])
+        json[0]["formatVersion"] = ForecastRecord.formatVersion - 1
+        try JSONSerialization.data(withJSONObject: json).write(to: file)
+
+        #expect(await cache.record(for: record.key) == nil)
+    }
+
     @Test func removeAllForgetsTheRecord() async {
         let cache = ForecastCache(directory: directory)
         await cache.store(record)

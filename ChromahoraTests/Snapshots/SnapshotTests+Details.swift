@@ -57,7 +57,11 @@ extension SnapshotTests {
                 lowCloud: hour.lowCloud,
                 midCloud: hour.midCloud,
                 highCloud: hour.highCloud,
-                visibility: hour.visibility
+                cloudCover: hour.cloudCover,
+                visibility: hour.visibility,
+                precipitation: hour.precipitation,
+                precipitationChance: hour.precipitationChance,
+                windSpeed: hour.windSpeed
             )
         }
         await assertScreenSnapshot(of: details(.polarNight, now: now, hours: sunless))

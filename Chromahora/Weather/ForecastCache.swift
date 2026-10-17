@@ -29,7 +29,7 @@ nonisolated struct ForecastKey: Hashable, Codable, Sendable {
 nonisolated struct ForecastRecord: Codable, Equatable, Sendable {
     /// Bump it when the record's shape changes. Stored and required, so a record in any other
     /// shape reads as none, even one whose missing answer would decode as nil and read as a failure.
-    static let formatVersion = 2
+    static let formatVersion = 3
 
     let formatVersion: Int
     let key: ForecastKey
