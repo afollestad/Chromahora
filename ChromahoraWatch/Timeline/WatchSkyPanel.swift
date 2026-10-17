@@ -204,7 +204,7 @@ struct WatchSkyPanel: View {
             case .glass:
                 WeatherButton(spell: spell, range: range, inDaylight: inDaylight, scheme: SkyGradient.labelScheme(over: sky))
             case .cutout:
-                WeatherButton.glyph(for: spell.condition, inDaylight: inDaylight)
+                WeatherButton.glyph(for: spell, inDaylight: inDaylight)
                     .background(Capsule())
             }
         }

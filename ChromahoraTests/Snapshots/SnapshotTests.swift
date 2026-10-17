@@ -14,10 +14,10 @@ import Testing
 @Suite(.serialized)
 struct SnapshotTests: ScreenSnapshotting {
     /// The timeline for September 16 at `now`, which may fall on another day, marked with
-    /// `weather`. `ContentView` can't stand in, since its `TimelineView` reads the real clock
-    /// and its stores load.
-    func timeline(now: Date, weather: [WeatherSpell] = []) throws -> some View {
-        timeline(of: SolarDay.mock(for: try time(12)), now: now, weather: weather)
+    /// `weather` and `hours`. `ContentView` can't stand in, since its `TimelineView` reads the
+    /// real clock and its stores load.
+    func timeline(now: Date, weather: [WeatherSpell] = [], hours: [SkyHour] = []) throws -> some View {
+        timeline(of: SolarDay.mock(for: try time(12)), now: now, weather: weather, hours: hours)
     }
 }
 
@@ -48,14 +48,20 @@ extension ScreenSnapshotting {
         return calendar
     }
 
-    /// The timeline for `scenario` on the day containing `now`.
-    func timeline(_ scenario: MockScenario, now: Date) -> some View {
-        timeline(of: SolarDay.mock(scenario, for: now), now: now)
+    /// The timeline for `scenario` on the day containing `now`, with `hours` of forecast.
+    func timeline(_ scenario: MockScenario, now: Date, hours: [SkyHour] = []) -> some View {
+        timeline(of: SolarDay.mock(scenario, for: now), now: now, hours: hours)
     }
 
     /// The timeline for `day`, read in the day's own zone, as the store windows it.
-    func timeline(of day: SolarDay, now: Date, weather: [WeatherSpell] = [], place: Place? = MockPlaceProvider.sanFrancisco) -> some View {
-        screen(.loaded(day), selectedDate: day.dayStart, now: now, weather: weather, place: place, calendar: day.calendar)
+    func timeline(
+        of day: SolarDay,
+        now: Date,
+        weather: [WeatherSpell] = [],
+        hours: [SkyHour] = [],
+        place: Place? = MockPlaceProvider.sanFrancisco
+    ) -> some View {
+        screen(.loaded(day), selectedDate: day.dayStart, now: now, weather: weather, hours: hours, place: place, calendar: day.calendar)
     }
 
     /// The screen in `state`, with `selectedDate` chosen, at `now`, open on `initialPane`. The title

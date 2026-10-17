@@ -13,6 +13,8 @@ struct DayTimeline: View {
     let now: Date
     /// The forecast's spells, which the overlay marks where they fall on this day.
     var weather: [WeatherSpell] = []
+    /// The forecast's hours, which the cloud band and the golden hours' ratings read.
+    var hours: [SkyHour] = []
     /// The sky behind the title, which `DayScreen` tints the title and picks the bar's scheme with.
     @Binding var skyBehindTitle: Color
     /// The title's center in global coordinates, which places that sky sample.
@@ -77,6 +79,8 @@ struct DayTimeline: View {
     var body: some View {
         // Worked out once here, not on each frame the sky behind the title and the sources button is sampled.
         let skyStops = SkyGradient.stops(for: day)
+        // Here rather than in the overlay, which lays out every label twice, for the glass and its cutout.
+        let phaseRatings = PhotoOutlook.labelRatings(on: day, hours: hours)
         ScrollViewReader { proxy in
             ScrollView {
                 ZStack {
@@ -85,11 +89,15 @@ struct DayTimeline: View {
                     SkyGradient(day: day)
                         .id(day.phaseSequence)
                         .transition(.opacity)
+                    // Under the overlay's scrim, which keeps the ruler legible over it.
+                    CloudBand(day: day, hours: hours, leadingInset: labelInsets.leading)
                     DayTimelineOverlay(
                         day: day,
                         now: now,
                         safeAreaInsets: labelInsets,
                         weather: weather,
+                        phaseRatings: phaseRatings,
+                        showsCloudCover: hours.contains { $0.falls(on: day) },
                         lineTrailingInset: panelInset > 0 ? labelInsets.trailing : 0
                     )
                         // Past accessibility1, even a shortened phase label wraps beside a marker
@@ -278,6 +286,7 @@ extension DayTimeline {
         day: day,
         now: .now,
         weather: WeatherSpell.mock(),
+        hours: SkyHour.mock(),
         skyBehindTitle: $sky,
         isSourcesDark: $isSourcesDark,
         safeAreaInsets: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0),

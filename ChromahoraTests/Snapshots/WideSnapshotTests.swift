@@ -22,8 +22,8 @@ struct WideSnapshotTests: ScreenSnapshotting {
     }
 
     /// The timeline for June 21 at `now`, which may fall on another day, marked with
-    /// `weather`, at a place found by location.
-    func timeline(now: Date, weather: [WeatherSpell] = []) throws -> some View {
-        timeline(of: SolarDay.mock(for: try june(12)), now: now, weather: weather)
+    /// `weather` and `hours`, at a place found by location.
+    func timeline(now: Date, weather: [WeatherSpell] = [], hours: [SkyHour] = []) throws -> some View {
+        timeline(of: SolarDay.mock(for: try june(12)), now: now, weather: weather, hours: hours)
     }
 }

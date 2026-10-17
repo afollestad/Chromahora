@@ -100,6 +100,34 @@ extension SnapshotTests {
         try await assertScreenSnapshot(of: timeline(now: time(16, 30), weather: WeatherSpell.mock(for: time(day: 17, 12))))
     }
 
+    // MARK: Outlook
+
+    /// The forecast's cloud bulges from the ruler's edge through the shower, the sky markers name
+    /// their cover, and the evening's golden hour carries its rating: great, clearing after rain.
+    @Test func outlookThisAfternoon() async throws {
+        let timeline = try timeline(now: time(16, 30), weather: WeatherSpell.mock(for: time(12)), hours: SkyHour.mock(for: time(12)))
+        await assertScreenSnapshot(of: timeline)
+    }
+
+    /// Over night, the clear hours leave the band thin until the clouds arrive at 4 AM, and the
+    /// morning's golden hour rates poor under them.
+    @Test func outlookBeforeDawn() async throws {
+        let timeline = try timeline(now: time(3), weather: WeatherSpell.mock(for: time(12)), hours: SkyHour.mock(for: time(12)))
+        await assertScreenSnapshot(of: timeline)
+    }
+
+    /// Rated labels fall back to the phase and rating, then the phase alone, as they grow.
+    @Test func outlookAtLargestTextSize() async throws {
+        let timeline = try timeline(now: time(7), weather: WeatherSpell.mock(for: time(12)), hours: SkyHour.mock(for: time(12)))
+        await assertScreenSnapshot(of: timeline.environment(\.dynamicTypeSize, .accessibility5))
+    }
+
+    /// Tromsø's December: the morning's rating rides its golden hour, and the evening's its lone blue hour.
+    @Test func outlookInPolarTwilight() async throws {
+        let now = try time(month: 12, day: 10, 11, 30)
+        await assertScreenSnapshot(of: timeline(.polarTwilight, now: now, hours: SkyHour.mock(for: now)))
+    }
+
     // MARK: High-latitude days, on the dates their scenarios come from
 
     /// Reykjavík's December golden hour lasts all day and holds its color, with no daylight.

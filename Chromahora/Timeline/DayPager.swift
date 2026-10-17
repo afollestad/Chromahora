@@ -35,7 +35,8 @@ struct DayPager: View {
     let now: Date
     /// The forecast's spells, which each page marks where they fall on its day.
     var weather: [WeatherSpell] = []
-    /// The forecast's hours, which the details read the day's light and sky from.
+    /// The forecast's hours, which each page's cloud band and ratings read, and the details the
+    /// day's light and sky from.
     var hours: [SkyHour] = []
     /// The sky behind the title, which the page on screen reports.
     @Binding var skyBehindTitle: Color
@@ -115,17 +116,25 @@ struct DayPager: View {
             }
             // Uncovered as the timeline overscrolls past either end or slides away, or a sideways
             // swipe overscrolls. The bars' soft edge effect fades toward it too, so each page's copy
-            // moves with the page through a push between days, and it carries the ruler's scrim
-            // where the timeline has it.
+            // moves with the page through a push between days, and it carries the cloud band and the
+            // ruler's scrim where the timeline has them.
             .background {
                 ZStack {
                     ForEach(pages) { page in
                         let pageDay = page.frozenDay ?? day
-                        DaySky(
-                            day: pageDay,
-                            height: DayTimeline.contentHeight(of: pageDay),
-                            top: page.frozenSkyTop.map { .constant($0) } ?? $skyTop
-                        )
+                        let height = DayTimeline.contentHeight(of: pageDay)
+                        let top = page.frozenSkyTop.map { .constant($0) } ?? $skyTop
+                        ZStack {
+                            DaySky(day: pageDay, height: height, top: top)
+                            SlidingCloudBand(
+                                day: pageDay,
+                                hours: hours,
+                                height: height,
+                                leadingInset: safeAreaInsets.leading,
+                                top: top,
+                                paneOffset: $paneOffset
+                            )
+                        }
                         .offset(y: reduceMotion ? 0 : offset(past: page.offscreenEdge))
                         .opacity(reduceMotion && page.offscreenEdge != nil ? 0 : 1)
                         .zIndex(Double(page.id))
@@ -237,6 +246,7 @@ struct DayPager: View {
                     day: page.frozenDay ?? day,
                     now: now,
                     weather: weather,
+                    hours: hours,
                     skyBehindTitle: $skyBehindTitle,
                     titleMidY: titleMidY,
                     isSourcesDark: $isSourcesDark,
@@ -357,10 +367,42 @@ private struct SlidingScrim: View {
     }
 }
 
+/// A page's cloud band behind the pages, where the timeline's scroll puts the day and sliding
+/// sideways with the timeline, like the scrim over it. Only `PagedOffset` reads the scroll, so
+/// each frame moves the band without drawing it again.
+private struct SlidingCloudBand: View {
+    let day: SolarDay
+    let hours: [SkyHour]
+    let height: CGFloat
+    let leadingInset: CGFloat
+    @Binding var top: CGFloat
+    @Binding var paneOffset: CGFloat
+
+    var body: some View {
+        Color.clear
+            .overlay(alignment: .top) {
+                CloudBand(day: day, hours: hours, leadingInset: leadingInset)
+                    .frame(height: height)
+                    .modifier(PagedOffset(top: $top, paneOffset: $paneOffset))
+            }
+    }
+}
+
+/// Moves a page's copy `top` points down the screen and back by the sideways scroll.
+private struct PagedOffset: ViewModifier {
+    @Binding var top: CGFloat
+    @Binding var paneOffset: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: -paneOffset, y: top)
+    }
+}
+
 #Preview {
     @Previewable @State var day = SolarDay.mock()
     @Previewable @State var sky = DayPhase.night.color
-    DayPager(day: day, now: .now, weather: WeatherSpell.mock(), skyBehindTitle: $sky) { offset, shown in
+    DayPager(day: day, now: .now, weather: WeatherSpell.mock(), hours: SkyHour.mock(), skyBehindTitle: $sky) { offset, shown in
         guard let date = shown.calendar.date(byAdding: .day, value: offset, to: shown.dayStart) else {
             return false
         }

@@ -15,6 +15,11 @@ struct DayTimelineOverlay: View {
     let safeAreaInsets: EdgeInsets
     /// The forecast's spells, of any day. Those overlapping this one get a marker each.
     var weather: [WeatherSpell] = []
+    /// The outlook's rating for each golden or blue hour whose label carries one, by its start,
+    /// from `PhotoOutlook.labelRatings(on:in:hours:)`.
+    var phaseRatings: [Date: OutlookRating] = [:]
+    /// Whether the cloud band draws the day's cover, which the sky markers then name.
+    var showsCloudCover = false
     /// How far short of the trailing edge marker lines stop, so they end at the day panel
     /// rather than showing through its glass. Zero runs them edge to edge.
     var lineTrailingInset: CGFloat = 0
@@ -168,21 +173,26 @@ struct DayTimelineOverlay: View {
     }
 
     /// Phase labels drop their time range when the full text won't fit beside a marker
-    /// label, which happens at large text sizes. VoiceOver still reads the range.
+    /// label, which happens at large text sizes, then a rating. VoiceOver still reads both.
     ///
     /// Each capsule is tinted with its phase's color, so that color picks its scheme too.
     private func phaseLabels(size: CGSize, beside markers: [PlacedMarker], style: LabelStyle) -> some View {
         ForEach(placedPhases(size: size)) { placed in
-            let phaseColor = placed.segment.phase.color
+            let segment = placed.segment
+            let phaseColor = segment.phase.color
             let glass = Glass.regular.tint(phaseColor.opacity(0.5))
             let scheme = SkyGradient.labelScheme(over: phaseColor)
+            let rating = phaseRatings[segment.interval.start]
             row(at: placed.labelY, alignment: .trailing, size: size) {
                 ViewThatFits(in: .horizontal) {
-                    label(text(for: placed.segment), glass: glass, scheme: scheme, style: style)
-                    label(placed.segment.phase.title, glass: glass, scheme: scheme, style: style)
+                    label(text(for: segment, rating: rating), glass: glass, scheme: scheme, style: style)
+                    if let rating {
+                        label("\(segment.phase.title) · \(rating.title)", glass: glass, scheme: scheme, style: style)
+                    }
+                    label(segment.phase.title, glass: glass, scheme: scheme, style: style)
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(text(for: placed.segment))
+                .accessibilityLabel(text(for: segment) + (rating.map { ", \($0.title) outlook" } ?? ""))
                 .accessibilityAddTraits(.isStaticText)
                 .frame(maxWidth: phaseLabelWidth(for: placed, beside: markers, size: size), alignment: .trailing)
                 .padding(.trailing, safeAreaInsets.trailing + horizontalPadding)
@@ -241,9 +251,9 @@ struct DayTimelineOverlay: View {
         case .weather(let spell, let range, let inDaylight):
             switch style {
             case .glass:
-                WeatherButton(spell: spell, range: range, inDaylight: inDaylight, scheme: scheme)
+                WeatherButton(spell: spell, range: range, inDaylight: inDaylight, scheme: scheme, showsCloudCover: showsCloudCover)
             case .cutout:
-                WeatherButton.glyph(for: spell.condition, inDaylight: inDaylight)
+                WeatherButton.glyph(for: spell, inDaylight: inDaylight, showsCloudCover: showsCloudCover)
                     .background(Capsule())
             }
         }
@@ -267,8 +277,9 @@ struct DayTimelineOverlay: View {
         }
     }
 
-    private func text(for segment: DaySegment) -> String {
-        "\(segment.phase.title) · \(day.rangeText(of: segment))"
+    /// The phase, its rating if it carries one, and when it runs.
+    private func text(for segment: DaySegment, rating: OutlookRating? = nil) -> String {
+        [segment.phase.title, rating?.title, day.rangeText(of: segment)].compactMap(\.self).joined(separator: " · ")
     }
 
     /// Lays `content` across the full width, aligned to one edge, centered on `y`.
@@ -369,7 +380,14 @@ struct DayTimelineOverlay: View {
 }
 
 #Preview {
-    DayTimelineOverlay(day: .mock(), now: .now, safeAreaInsets: EdgeInsets(), weather: WeatherSpell.mock())
+    DayTimelineOverlay(
+        day: .mock(),
+        now: .now,
+        safeAreaInsets: EdgeInsets(),
+        weather: WeatherSpell.mock(),
+        phaseRatings: PhotoOutlook.labelRatings(on: .mock(), hours: SkyHour.mock()),
+        showsCloudCover: true
+    )
         .frame(height: 24 * 72)
         .background(SkyGradient(day: .mock()))
 }

@@ -17,6 +17,9 @@ struct WeatherButton: View {
     /// The scheme of the sky behind the capsule, which the overlay picks for every label.
     /// Only the capsule takes it, so the popover keeps the system's.
     let scheme: ColorScheme
+    /// Whether a sky spell names its cloud cover beside its icon, which says what the timeline's
+    /// cloud band beside it measures.
+    var showsCloudCover = false
 
     @State private var isPresented = false
 
@@ -24,7 +27,7 @@ struct WeatherButton: View {
         Button {
             isPresented = true
         } label: {
-            Self.glyph(for: spell.condition, inDaylight: inDaylight)
+            Self.glyph(for: spell, inDaylight: inDaylight, showsCloudCover: showsCloudCover)
                 .glassEffect(.regular.interactive(), in: Capsule())
                 .environment(\.colorScheme, scheme)
                 // A taller target than the capsule, without widening what the overlay measures.
@@ -55,18 +58,42 @@ struct WeatherButton: View {
 
     /// The icon padded to fill its capsule, which the overlay also cuts out of the lines behind it.
     /// The same font and padding as the overlay's text labels, so the capsule is as tall as
-    /// theirs and marker spacing holds.
-    static func glyph(for condition: SkyCondition, inDaylight: Bool) -> some View {
-        Text("\(Image(systemName: condition.symbolName(inDaylight: inDaylight)))")
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 7)
-            .padding(.vertical, 5)
+    /// theirs and marker spacing holds. With `showsCloudCover`, a clear or cloudy spell names its
+    /// cover after the icon, as in "90% cloud", since a bare figure could be a chance of rain.
+    /// Precipitation and fog name none, so their figures never read as cover.
+    static func glyph(for spell: WeatherSpell, inDaylight: Bool, showsCloudCover: Bool = false) -> some View {
+        let icon = Image(systemName: spell.condition.symbolName(inDaylight: inDaylight))
+        let cover = showsCloudCover ? cloudCover(of: spell) : nil
+        return Group {
+            if let cover {
+                Text("\(icon) \(cover.formatted(Self.percent)) cloud")
+                    .monospacedDigit()
+            } else {
+                Text("\(icon)")
+            }
+        }
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, cover == nil ? 7 : 10)
+        .padding(.vertical, 5)
+    }
+
+    private static let percent = FloatingPointFormatStyle<Double>.Percent().precision(.fractionLength(0))
+
+    /// The share of the sky a clear or cloudy spell covers, or nil for precipitation and fog.
+    private static func cloudCover(of spell: WeatherSpell) -> Double? {
+        switch spell.condition {
+        case .clear, .partlyCloudy, .cloudy: spell.cloudCover
+        case .fog, .rain, .snow, .sleet, .hail, .mixed: nil
+        }
     }
 }
 
 #Preview {
-    let spell = WeatherSpell.mock()[3]
-    WeatherButton(spell: spell, range: "3:00 – 5:00 PM", inDaylight: true, scheme: .light)
-        .padding()
-        .background(DayPhase.daylight.color)
+    let spells = WeatherSpell.mock()
+    VStack {
+        WeatherButton(spell: spells[3], range: "3:00 – 5:00 PM", inDaylight: true, scheme: .light)
+        WeatherButton(spell: spells[2], range: "9:00 AM – 3:00 PM", inDaylight: true, scheme: .light, showsCloudCover: true)
+    }
+    .padding()
+    .background(DayPhase.daylight.color)
 }
