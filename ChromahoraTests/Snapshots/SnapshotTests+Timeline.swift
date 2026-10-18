@@ -40,8 +40,11 @@ extension SnapshotTests {
     }
 
     /// With now on another day there's no now marker, and the timeline centers on daylight.
+    ///
+    /// The bottom edge's blur over the golden hour's labels renders about a Delta E of 2 apart
+    /// on CI's runners, across more than 1% of the screen, so the comparison allows that much.
     @Test func anotherDay() async throws {
-        try await assertScreenSnapshot(of: timeline(now: time(day: 17, 9)))
+        try await assertScreenSnapshot(of: timeline(now: time(day: 17, 9)), perceptualPrecision: 0.98)
     }
 
     // MARK: Weather
