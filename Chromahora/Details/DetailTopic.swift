@@ -140,7 +140,7 @@ nonisolated enum DetailTopic: Sendable {
             """
             A rating from Poor to Great for the light between the golden hours. Cloud over three quarters of the sky \
             softens it, while a UV index from 6, High on the WHO's scale, marks hard light. Rain or snow from a 30% \
-            chance, haze and fog rate lower.
+            chance, haze, fog and wind rate lower.
             """
         case .nightOutlook:
             """

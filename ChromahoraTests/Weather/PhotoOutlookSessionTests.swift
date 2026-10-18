@@ -37,10 +37,10 @@ struct PhotoOutlookSessionTests {
 
         #expect(sessions.map(\.kind) == [.morning, .daylight, .evening, .night])
         #expect(sessions.map(\.rating) == [.poor, .poor, .great, .good])
-        #expect(sessions[0].reasons == ["Low cloud may block the sun", "Calm air for reflections"])
-        #expect(sessions[1].reasons == ["80% chance of rain", "Harsh light, UV 6", "Broken cloud"])
-        #expect(sessions[2].reasons == ["Clearing after rain", "Clear sky", "Calm air for reflections"])
-        #expect(sessions[3].reasons == ["Partly cloudy"])
+        #expect(sessions[0].reasons == ["Low cloud blocks the sun", "Calm air for reflections"])
+        #expect(sessions[1].reasons == ["80% chance of rain", "Harsh light, UV 6", "Broken cloud, uneven light"])
+        #expect(sessions[2].reasons == ["Clean air after rain", "No cloud to catch color", "Calm air for reflections"])
+        #expect(sessions[3].reasons == ["Cloud hides some stars"])
         #expect(abs(sessions[2].cloudCover - 0.2) < 0.0001)
     }
 
@@ -116,7 +116,7 @@ struct PhotoOutlookSessionTests {
         #expect(sessions.map(\.kind) == [.morning, .evening, .night])
         #expect(night.intervals == day.astronomicalNight)
         #expect(night.rating == .fair)
-        #expect(night.reasons.contains("Moon up"))
+        #expect(night.reasons.contains("Moonlight washes out stars"))
         #expect(Set(PhotoOutlook.labelRatings(on: day, hours: hours).keys) == [time(10, 30, on: day), time(16, 21, on: day)])
     }
 
@@ -127,7 +127,7 @@ struct PhotoOutlookSessionTests {
 
         #expect(sessions.map(\.kind) == [.night])
         #expect(sessions[0].intervals == day.astronomicalNight)
-        #expect(!sessions[0].reasons.contains("Moon up"))
+        #expect(!sessions[0].reasons.contains("Moonlight washes out stars"))
     }
 
     @Test(arguments: [MockScenario.goldenNight, .blueHourPastMidnight, .midnightSun])

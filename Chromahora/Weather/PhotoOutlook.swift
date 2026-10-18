@@ -114,7 +114,8 @@ nonisolated enum PhotoOutlook {
     static let hazeVisibility = 5_000.0
     /// Up to Beaufort 1, light air, ripples are too slight to break a reflection.
     static let calmWind = 1.5
-    /// From Beaufort 5, a fresh breeze, a tripod shakes through a long exposure.
+    /// From Beaufort 5, a fresh breeze, hair, clothing, branches and water won't hold still, and
+    /// a tripod shakes through a long exposure.
     static let windyWind = 8.0
     /// A shower that clears within this long of the low sun leaves broken cloud and washed air.
     static let clearingLookback: TimeInterval = 3 * 60 * 60
@@ -257,6 +258,9 @@ nonisolated enum PhotoOutlook {
 
     /// One finding about the readings: what it says, and how it moves or caps the rating.
     private struct Reason {
+        /// What the finding does to a photograph, as in "No cloud to catch color", not just
+        /// what the sky holds, since a clear sky alone can't say why it earns Good one session
+        /// and Excellent another.
         let text: String
         let effect: Effect
         var step = 0
@@ -292,13 +296,13 @@ nonisolated enum PhotoOutlook {
     /// cloud shuts out, and too much upper cloud blocks. A clear sky still gives warm light.
     private static func magicHourBase(_ readings: Readings) -> (rating: OutlookRating, reasons: [Reason]) {
         guard readings.lowCloud < WeatherHour.cloudyCover else {
-            return (.poor, [Reason(text: "Low cloud may block the sun", effect: .lowers)])
+            return (.poor, [Reason(text: "Low cloud blocks the sun", effect: .lowers)])
         }
         let isHigh = readings.highCloud >= readings.midCloud
         let littleLowCloud = readings.lowCloud <= WeatherHour.clearCover
-        let someLowCloud = Reason(text: "Some low cloud", effect: .lowers)
+        let someLowCloud = Reason(text: "Low cloud may block the sun", effect: .lowers)
         if readings.upperCloud < colorCloud.lowerBound {
-            return littleLowCloud ? (.good, [Reason(text: "Clear sky", effect: .neutral)]) : (.fair, [someLowCloud])
+            return littleLowCloud ? (.good, [Reason(text: "No cloud to catch color", effect: .neutral)]) : (.fair, [someLowCloud])
         }
         if colorCloud.contains(readings.upperCloud) {
             let catchesColor = Reason(text: isHigh ? "High cloud to catch color" : "Mid cloud to catch color", effect: .raises)
@@ -314,14 +318,15 @@ nonisolated enum PhotoOutlook {
         if readings.cloudCover >= WeatherHour.cloudyCover {
             return (.great, [Reason(text: "Soft light under cloud", effect: .raises)])
         }
-        return (.good, [Reason(text: readings.cloudCover <= WeatherHour.clearCover ? "Clear sky" : "Broken cloud", effect: .neutral)])
+        let text = readings.cloudCover <= WeatherHour.clearCover ? "No cloud to soften the light" : "Broken cloud, uneven light"
+        return (.good, [Reason(text: text, effect: .neutral)])
     }
 
     private static func nightBase(_ readings: Readings) -> (rating: OutlookRating, reasons: [Reason]) {
         switch readings.cloudCover {
-        case ...WeatherHour.clearCover: (.excellent, [Reason(text: "Clear sky", effect: .raises)])
-        case ...halfSky: (.good, [Reason(text: "Partly cloudy", effect: .neutral)])
-        case ..<WeatherHour.cloudyCover: (.fair, [Reason(text: "Mostly cloudy", effect: .lowers)])
+        case ...WeatherHour.clearCover: (.excellent, [Reason(text: "Clear sky for stars", effect: .raises)])
+        case ...halfSky: (.good, [Reason(text: "Cloud hides some stars", effect: .neutral)])
+        case ..<WeatherHour.cloudyCover: (.fair, [Reason(text: "Cloud hides most stars", effect: .lowers)])
         default: (.poor, [Reason(text: "Cloud hides the stars", effect: .lowers)])
         }
     }
@@ -331,13 +336,15 @@ nonisolated enum PhotoOutlook {
     private static func caps(for kind: OutlookSession.Kind, _ readings: Readings, night: NightSky) -> [Reason] {
         var caps: [Reason] = []
         if readings.visibility < fogVisibility {
-            caps.append(Reason(text: "Fog", effect: .lowers, cap: kind == .night ? .poor : .fair))
+            caps.append(kind == .night
+                ? Reason(text: "Fog hides the stars", effect: .lowers, cap: .poor)
+                : Reason(text: "Fog hides the sky", effect: .lowers, cap: .fair))
         }
         if let chance = chanceText(readings), readings.precipitationChance >= WeatherSpell.likelyChance {
             caps.append(Reason(text: chance, effect: .lowers, step: -1, cap: .fair))
         }
         if kind == .night, night == .moonUp {
-            caps.append(Reason(text: "Moon up", effect: .lowers, cap: .fair))
+            caps.append(Reason(text: "Moonlight washes out stars", effect: .lowers, cap: .fair))
         }
         return caps
     }
@@ -349,7 +356,7 @@ nonisolated enum PhotoOutlook {
         var steps: [Reason] = []
         if isMagicHour, let earlier = readings.precipitationBefore, readings.chanceBefore >= WeatherSpell.likelyChance,
            readings.precipitationChance < WeatherHour.possibleChance {
-            steps.append(Reason(text: "Clearing after \(earlier.title.lowercased())", effect: .raises, step: 1))
+            steps.append(Reason(text: "Clean air after \(earlier.title.lowercased())", effect: .raises, step: 1))
         }
         if isMagicHour, readings.windSpeed <= calmWind {
             steps.append(Reason(text: "Calm air for reflections", effect: .neutral))
@@ -362,10 +369,11 @@ nonisolated enum PhotoOutlook {
             steps.append(Reason(text: chance, effect: .lowers, step: -1))
         }
         if readings.visibility >= fogVisibility, readings.visibility < hazeVisibility {
-            steps.append(Reason(text: "Haze", effect: .lowers, step: -1))
+            steps.append(Reason(text: kind == .night ? "Haze dims the stars" : "Haze dulls color and detail", effect: .lowers, step: -1))
         }
-        if kind != .daylight, readings.windSpeed >= windyWind {
-            steps.append(Reason(text: "Windy", effect: .lowers, step: -1))
+        if readings.windSpeed >= windyWind {
+            let text = kind == .night ? "Wind shakes tripods and trees" : "Wind moves hair, trees and water"
+            steps.append(Reason(text: text, effect: .lowers, step: -1))
         }
         return steps
     }
