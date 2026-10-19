@@ -39,7 +39,7 @@ struct WeatherButton: View {
         #if os(iOS)
         .popover(isPresented: $isPresented, arrowEdge: .leading) {
             WeatherSpellDetails(spell: spell, range: range, inDaylight: inDaylight)
-                .padding()
+                .popoverPadding()
                 // Stops growing at accessibility1, like the timeline's labels. Past it, the popover runs
                 // out of room beside its marker and truncates the time range and the credit.
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)

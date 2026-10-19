@@ -37,21 +37,26 @@ nonisolated enum OutlookRating: Int, Comparable, CaseIterable, Sendable {
 /// A stretch of a day the outlook rates, and what it makes of the forecast over it.
 nonisolated struct OutlookSession: Identifiable, Equatable, Sendable {
     enum Kind: Sendable {
+        /// The dark sky before the day's noon, as `DayRun.noon(of:)` places it, or astronomical
+        /// night where the moon is up through it or can't be placed: the small hours.
+        case beforeDawn
         /// The morning's golden and blue hours, as `DayRun.ends(of:)` parts them.
         case morning
         /// The daylight, rated by how soft or harsh its light is.
         case daylight
         /// The evening's golden and blue hours.
         case evening
-        /// The dark sky, or astronomical night where the moon is up through it or can't be placed.
+        /// The same ending after the day's noon: the evening's, or one that runs through noon, as
+        /// in a polar night.
         case night
 
         var title: String {
             switch self {
+            case .beforeDawn: "Before dawn"
             case .morning: "Morning"
             case .daylight: "Daylight"
             case .evening: "Evening"
-            case .night: "Night"
+            case .night: "Tonight"
             }
         }
 
@@ -61,14 +66,19 @@ nonisolated struct OutlookSession: Identifiable, Equatable, Sendable {
             case .morning: "sunrise.fill"
             case .daylight: "sun.max.fill"
             case .evening: "sunset.fill"
-            case .night: "sparkles"
+            case .beforeDawn, .night: "sparkles"
             }
+        }
+
+        /// Whether it rates the dark sky, by how many stars show.
+        var isNight: Bool {
+            self == .beforeDawn || self == .night
         }
     }
 
     let kind: Kind
     /// What it rates, in time order, and never empty: the end's golden and blue hours, the
-    /// daylight, or the night's stretches.
+    /// daylight, or the dark sky on one side of noon.
     let intervals: [DateInterval]
     let rating: OutlookRating
     /// What led to the rating, the most telling first.
@@ -154,25 +164,35 @@ nonisolated enum PhotoOutlook {
         return stretch.flatMap { rate($0, hours: hours) }
     }
 
-    /// The rating each of `day`'s golden hours carries on the timeline, keyed by its start, or
-    /// for an end with no golden hour, as near the poles, its blue hours, so the label of the
-    /// stretch a rating is mostly about carries it.
-    static func labelRatings(on day: SolarDay, in run: DayRun? = nil, hours: [SkyHour]) -> [Date: OutlookRating] {
+    /// The session each of `day`'s phases carries on the timeline, keyed by the phase's start:
+    /// an end's golden hours, or for an end with no golden hour, as near the poles, its blue
+    /// hours, so the label of the stretch a rating is mostly about carries it; every daylight;
+    /// and every night holding a dark sky the outlook rates. A night that holds both, as a polar
+    /// night does, carries tonight's.
+    static func labelSessions(on day: SolarDay, in run: DayRun? = nil, hours: [SkyHour]) -> [Date: OutlookSession] {
         let run = run ?? DayRun(day)
         let ends = run.ends(of: day)
-        var ratings: [Date: OutlookRating] = [:]
+        var labeled: [Date: OutlookSession] = [:]
         for session in sessions(on: day, in: run, hours: hours) {
-            let magicHours = switch session.kind {
-            case .morning: ends.morning.magicHours
-            case .evening: ends.evening.magicHours
-            case .daylight, .night: [DaySegment]()
+            let segments = switch session.kind {
+            case .morning: goldenOrBlue(ends.morning.magicHours)
+            case .evening: goldenOrBlue(ends.evening.magicHours)
+            case .daylight: day.segments.filter { $0.phase == .daylight }
+            case .beforeDawn, .night:
+                day.segments.filter { segment in
+                    segment.phase == .night && session.intervals.contains { $0.start < segment.interval.end && $0.end > segment.interval.start }
+                }
             }
-            let golden = magicHours.filter { $0.phase == .goldenHour }
-            for segment in golden.isEmpty ? magicHours : golden {
-                ratings[segment.interval.start] = session.rating
+            for segment in segments {
+                labeled[segment.interval.start] = session
             }
         }
-        return ratings
+        return labeled
+    }
+
+    private static func goldenOrBlue(_ magicHours: [DaySegment]) -> [DaySegment] {
+        let golden = magicHours.filter { $0.phase == .goldenHour }
+        return golden.isEmpty ? magicHours : golden
     }
 
     // MARK: Sessions
@@ -186,28 +206,36 @@ nonisolated enum PhotoOutlook {
 
     private static func stretches(on day: SolarDay, in run: DayRun) -> [Stretch] {
         let ends = run.ends(of: day)
+        let nights = Self.nights(on: day)
         return [
+            nights.beforeDawn,
             Stretch(kind: .morning, intervals: ends.morning.magicHours.map(\.interval)),
             Stretch(kind: .daylight, intervals: day.segments.filter { $0.phase == .daylight }.map(\.interval)),
             Stretch(kind: .evening, intervals: ends.evening.magicHours.map(\.interval)),
-            night(on: day)
+            nights.tonight
         ]
         .compactMap(\.self)
         .filter { !$0.intervals.isEmpty }
     }
 
     /// The dark sky the details list, or astronomical night where the moon is up through it or
-    /// can't be placed. None where the day never gets that dark.
-    private static func night(on day: SolarDay) -> Stretch? {
+    /// can't be placed, parted at the day's noon, since the small hours and the evening are
+    /// different nights to go out in. Neither where the day never gets that dark.
+    private static func nights(on day: SolarDay) -> (beforeDawn: Stretch?, tonight: Stretch?) {
         guard !day.astronomicalNight.isEmpty else {
-            return nil
+            return (nil, nil)
         }
-        guard let darkSky = day.darkSky else {
-            return Stretch(kind: .night, intervals: day.astronomicalNight, night: .moonUnknown)
+        let (intervals, night): ([DateInterval], NightSky) = switch day.darkSky {
+        case nil: (day.astronomicalNight, .moonUnknown)
+        case let darkSky? where darkSky.isEmpty: (day.astronomicalNight, .moonUp)
+        case let darkSky?: (darkSky, .dark)
         }
-        return darkSky.isEmpty
-            ? Stretch(kind: .night, intervals: day.astronomicalNight, night: .moonUp)
-            : Stretch(kind: .night, intervals: darkSky)
+        // Parted by where each stretch ends, so one that runs through noon, as in a polar night, is tonight's.
+        let noon = DayRun.noon(of: day)
+        return (
+            Stretch(kind: .beforeDawn, intervals: intervals.filter { $0.end <= noon }, night: night),
+            Stretch(kind: .night, intervals: intervals.filter { $0.end > noon }, night: night)
+        )
     }
 
     private static func rate(_ stretch: Stretch, hours: [SkyHour]) -> OutlookSession? {
@@ -258,7 +286,7 @@ nonisolated enum PhotoOutlook {
 
     /// One finding about the readings: what it says, and how it moves or caps the rating.
     private struct Reason {
-        /// What the finding does to a photograph, as in "No cloud to catch color", not just
+        /// What the finding does to a photograph, as in "Little cloud to catch color", not just
         /// what the sky holds, since a clear sky alone can't say why it earns Good one session
         /// and Excellent another.
         let text: String
@@ -288,7 +316,7 @@ nonisolated enum PhotoOutlook {
         switch kind {
         case .morning, .evening: magicHourBase(readings)
         case .daylight: daylightBase(readings)
-        case .night: nightBase(readings)
+        case .beforeDawn, .night: nightBase(readings)
         }
     }
 
@@ -302,7 +330,7 @@ nonisolated enum PhotoOutlook {
         let littleLowCloud = readings.lowCloud <= WeatherHour.clearCover
         let someLowCloud = Reason(text: "Low cloud may block the sun", effect: .lowers)
         if readings.upperCloud < colorCloud.lowerBound {
-            return littleLowCloud ? (.good, [Reason(text: "No cloud to catch color", effect: .neutral)]) : (.fair, [someLowCloud])
+            return littleLowCloud ? (.good, [Reason(text: "Little cloud to catch color", effect: .neutral)]) : (.fair, [someLowCloud])
         }
         if colorCloud.contains(readings.upperCloud) {
             let catchesColor = Reason(text: isHigh ? "High cloud to catch color" : "Mid cloud to catch color", effect: .raises)
@@ -318,7 +346,7 @@ nonisolated enum PhotoOutlook {
         if readings.cloudCover >= WeatherHour.cloudyCover {
             return (.great, [Reason(text: "Soft light under cloud", effect: .raises)])
         }
-        let text = readings.cloudCover <= WeatherHour.clearCover ? "No cloud to soften the light" : "Broken cloud, uneven light"
+        let text = readings.cloudCover <= WeatherHour.clearCover ? "Little cloud to soften the light" : "Broken cloud, uneven light"
         return (.good, [Reason(text: text, effect: .neutral)])
     }
 
@@ -336,14 +364,14 @@ nonisolated enum PhotoOutlook {
     private static func caps(for kind: OutlookSession.Kind, _ readings: Readings, night: NightSky) -> [Reason] {
         var caps: [Reason] = []
         if readings.visibility < fogVisibility {
-            caps.append(kind == .night
+            caps.append(kind.isNight
                 ? Reason(text: "Fog hides the stars", effect: .lowers, cap: .poor)
                 : Reason(text: "Fog hides the sky", effect: .lowers, cap: .fair))
         }
         if let chance = chanceText(readings), readings.precipitationChance >= WeatherSpell.likelyChance {
             caps.append(Reason(text: chance, effect: .lowers, step: -1, cap: .fair))
         }
-        if kind == .night, night == .moonUp {
+        if kind.isNight, night == .moonUp {
             caps.append(Reason(text: "Moonlight washes out stars", effect: .lowers, cap: .fair))
         }
         return caps
@@ -369,10 +397,10 @@ nonisolated enum PhotoOutlook {
             steps.append(Reason(text: chance, effect: .lowers, step: -1))
         }
         if readings.visibility >= fogVisibility, readings.visibility < hazeVisibility {
-            steps.append(Reason(text: kind == .night ? "Haze dims the stars" : "Haze dulls color and detail", effect: .lowers, step: -1))
+            steps.append(Reason(text: kind.isNight ? "Haze dims the stars" : "Haze dulls color and detail", effect: .lowers, step: -1))
         }
         if readings.windSpeed >= windyWind {
-            let text = kind == .night ? "Wind shakes tripods and trees" : "Wind moves hair, trees and water"
+            let text = kind.isNight ? "Wind shakes tripods and trees" : "Wind moves hair, trees and water"
             steps.append(Reason(text: text, effect: .lowers, step: -1))
         }
         return steps

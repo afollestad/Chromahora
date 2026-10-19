@@ -83,7 +83,7 @@ struct PhotoOutlookTests {
         var readings = Readings(precipitationBefore: .rain, chanceBefore: 0.5)
 
         #expect(assess(.evening, readings).rating == .great)
-        #expect(assess(.evening, readings).reasons == ["Clean air after rain", "No cloud to catch color"])
+        #expect(assess(.evening, readings).reasons == ["Clean air after rain", "Little cloud to catch color"])
 
         readings.chanceBefore = 0.49
         #expect(assess(.evening, readings).rating == .good)
@@ -94,7 +94,7 @@ struct PhotoOutlookTests {
         let readings = Readings(precipitation: .rain, precipitationChance: 0.3, precipitationBefore: .rain, chanceBefore: 0.9)
 
         #expect(assess(.evening, readings).rating == .fair)
-        #expect(assess(.evening, readings).reasons == ["30% chance of rain", "No cloud to catch color"])
+        #expect(assess(.evening, readings).reasons == ["30% chance of rain", "Little cloud to catch color"])
     }
 
     @Test func windLowersItALevel() {
@@ -122,7 +122,7 @@ struct PhotoOutlookTests {
         let readings = Readings(precipitation: .rain, precipitationChance: 0.4)
 
         #expect(assess(.evening, readings).rating == .fair)
-        #expect(assess(.evening, readings).reasons == ["40% chance of rain", "No cloud to catch color"])
+        #expect(assess(.evening, readings).reasons == ["40% chance of rain", "Little cloud to catch color"])
         #expect(assess(.evening, Readings(precipitation: .rain, precipitationChance: 0.29)).rating == .good)
     }
 
@@ -168,11 +168,11 @@ struct PhotoOutlookTests {
     // MARK: Daylight
 
     @Test(arguments: [
-        (0.1, 0, OutlookRating.good, ["No cloud to soften the light"]),
+        (0.1, 0, OutlookRating.good, ["Little cloud to soften the light"]),
         (0.5, 5, .good, ["Broken cloud, uneven light"]),
         (0.75, 0, .great, ["Soft light under cloud"]),
-        (0.1, 6, .fair, ["Harsh light, UV 6", "No cloud to soften the light"]),
-        (0.1, 8, .poor, ["Harsh light, UV 8", "No cloud to soften the light"]),
+        (0.1, 6, .fair, ["Harsh light, UV 6", "Little cloud to soften the light"]),
+        (0.1, 8, .poor, ["Harsh light, UV 8", "Little cloud to soften the light"]),
         (0.9, 11, .fair, ["Harsh light, UV 11", "Soft light under cloud"])
     ])
     func daylightRatesHowSoftTheLightIs(cloudCover: Double, peakUV: Int, rating: OutlookRating, reasons: [String]) {
@@ -215,6 +215,12 @@ struct PhotoOutlookTests {
         #expect(assess(.night, Readings(windSpeed: 9)).rating == .great)
         #expect(assess(.night, Readings(windSpeed: 9)).reasons == ["Clear sky for stars", "Wind shakes tripods and trees"])
         #expect(assess(.night, Readings(windSpeed: 0)).reasons == ["Clear sky for stars"])
+    }
+
+    /// The small hours are rated as tonight is, by how many stars show.
+    @Test(arguments: [Readings(cloudCover: 0.6), Readings(visibility: 500), Readings(visibility: 4_000), Readings(windSpeed: 9)])
+    func theSmallHoursRateAsTonightDoes(readings: PhotoOutlook.Readings) {
+        #expect(assess(.beforeDawn, readings, night: .moonUp) == assess(.night, readings, night: .moonUp))
     }
 
     @Test func aPoorRatingStopsAtTheBottom() {

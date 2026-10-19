@@ -17,7 +17,7 @@ These rules cover `ChromahoraWatch/`, the watchOS app the iOS app embeds, which 
 - Keep the top of every card dark, since the system draws the clock in white whatever's behind it. The summary's sky climbs from night at the top, and the end cards hold their sky in a `WatchSkyPanel` under the header.
 - Name each phase where it begins, in one column with the markers, through `WatchSkyPanel`, never the phone's `DayTimelineOverlay`. Two columns of labels don't fit the watch's width, and sunrise falls in the middle of golden hour, so a phase label beside it would have no room.
 - Show the day's details through the phone's `DayDetails` on `WatchDetailsPage`, the last card, never a copy of its rows, so both stay true to `DetailTopic` and the model.
-- The watch can't open web pages, so credit services in text: `WatchSourcesButton` at the foot of `WatchDetailsPage`, the foot of the day, always names sunrise-sunset.org and leads with the Apple Weather mark whenever the day shows weather, and its sheet opens WeatherKit's legal text in place of the phone's link. An end card whose panel shows weather, and the summary card while it shows an outlook, carry the mark in their header, and weather sheets show the mark alone.
+- The watch can't open web pages, so credit services in text: `WatchSourcesButton` at the foot of `WatchDetailsPage`, the foot of the day, always names sunrise-sunset.org and leads with the Apple Weather mark whenever the day shows weather, and its sheet opens WeatherKit's legal text in place of the phone's link. An end card while it shows an outlook or its panel shows weather, and the summary card while it shows an outlook, carry the mark in their header, and weather sheets show the mark alone.
 
 ### Verifying
 

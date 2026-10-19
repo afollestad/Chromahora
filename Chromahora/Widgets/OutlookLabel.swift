@@ -16,13 +16,14 @@ struct OutlookLabel: View {
     private static let percent = FloatingPointFormatStyle<Double>.Percent().precision(.fractionLength(0))
 
     var body: some View {
-        text
+        Self.text(rating: rating, cloudCover: cloudCover)
             .monospacedDigit()
             .accessibilityLabel(Self.spoken(rating: rating, cloudCover: cloudCover))
     }
 
-    private var text: Text {
-        let cloud = cloudCover.map { Text("\(Image(systemName: "cloud")) \($0.formatted(Self.percent))") }
+    /// What the label shows, for text that runs it into more, like a timeline label.
+    static func text(rating: OutlookRating?, cloudCover: Double?) -> Text {
+        let cloud = cloudCover.map { Text("\(Image(systemName: "cloud")) \($0.formatted(percent))") }
         return switch (rating, cloud) {
         case let (rating?, cloud?): Text("\(rating.title) · \(cloud)")
         case let (rating?, nil): Text(rating.title)

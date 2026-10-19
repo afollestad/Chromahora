@@ -49,7 +49,7 @@ nonisolated enum DetailTopic: Sendable {
         self = switch kind {
         case .morning, .evening: .magicHourOutlook
         case .daylight: .daylightOutlook
-        case .night: .nightOutlook
+        case .beforeDawn, .night: .nightOutlook
         }
     }
 
@@ -144,9 +144,9 @@ nonisolated enum DetailTopic: Sendable {
             """
         case .nightOutlook:
             """
-            A rating from Poor to Excellent for the dark sky, or for astronomical night where the moon is up all night \
-            or can't be placed. Cloud over a quarter of the sky, rain or snow from a 30% chance, haze, fog and wind rate \
-            lower, and a moon up all night holds it at Fair.
+            A rating from Poor to Excellent for the dark sky before dawn and tonight, each on its own, or for \
+            astronomical night where the moon is up all night or can't be placed. Cloud over a quarter of the sky, rain \
+            or snow from a 30% chance, haze, fog and wind rate lower, and a moon up all night holds it at Fair.
             """
         }
     }

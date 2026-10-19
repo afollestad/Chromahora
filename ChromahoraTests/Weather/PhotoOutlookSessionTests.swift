@@ -31,45 +31,56 @@ struct PhotoOutlookSessionTests {
 
     // MARK: The typical day
 
-    /// The mock's low morning cloud, its afternoon shower and the clear evening after it.
+    /// The mock's cloudier small hours, its low morning cloud, its afternoon shower and the
+    /// clear evening and night after it. The small hours don't dim tonight, which reads only its own sky.
     @Test func theMockDayRatesEachSession() throws {
         let sessions = PhotoOutlook.sessions(on: day(), hours: hours)
 
-        #expect(sessions.map(\.kind) == [.morning, .daylight, .evening, .night])
-        #expect(sessions.map(\.rating) == [.poor, .poor, .great, .good])
-        #expect(sessions[0].reasons == ["Low cloud blocks the sun", "Calm air for reflections"])
-        #expect(sessions[1].reasons == ["80% chance of rain", "Harsh light, UV 6", "Broken cloud, uneven light"])
-        #expect(sessions[2].reasons == ["Clean air after rain", "No cloud to catch color", "Calm air for reflections"])
-        #expect(sessions[3].reasons == ["Cloud hides some stars"])
-        #expect(abs(sessions[2].cloudCover - 0.2) < 0.0001)
+        #expect(sessions.map(\.kind) == [.beforeDawn, .morning, .daylight, .evening, .night])
+        #expect(sessions.map(\.rating) == [.good, .poor, .poor, .great, .excellent])
+        #expect(sessions[0].reasons == ["Cloud hides some stars"])
+        #expect(sessions[1].reasons == ["Low cloud blocks the sun", "Calm air for reflections"])
+        #expect(sessions[2].reasons == ["80% chance of rain", "Harsh light, UV 6", "Broken cloud, uneven light"])
+        #expect(sessions[3].reasons == ["Clean air after rain", "Little cloud to catch color", "Calm air for reflections"])
+        #expect(sessions[4].reasons == ["Clear sky for stars"])
+        #expect(abs(sessions[3].cloudCover - 0.2) < 0.0001)
     }
 
-    @Test func sessionsCoverTheMagicHoursTheDaylightAndTheDarkSky() {
+    /// The dark sky parts at noon, before dawn and tonight.
+    @Test func sessionsCoverTheMagicHoursTheDaylightAndTheDarkSky() throws {
         let sessions = PhotoOutlook.sessions(on: day(), hours: hours)
+        let darkSky = try #require(day().darkSky)
 
-        #expect(sessions[0].intervals == [DateInterval(start: time(6, 12), end: time(6, 38)), DateInterval(start: time(6, 38), end: time(7, 42))])
-        #expect(sessions[1].intervals == [DateInterval(start: time(7, 42), end: time(18, 5))])
-        #expect(sessions[2].start == time(18, 5))
-        #expect(sessions[2].end == time(19, 36))
-        #expect(sessions[3].intervals == day().darkSky)
+        #expect(sessions[0].intervals == darkSky.filter { $0.end <= time(12) })
+        #expect(sessions[1].intervals == [DateInterval(start: time(6, 12), end: time(6, 38)), DateInterval(start: time(6, 38), end: time(7, 42))])
+        #expect(sessions[2].intervals == [DateInterval(start: time(7, 42), end: time(18, 5))])
+        #expect(sessions[3].start == time(18, 5))
+        #expect(sessions[3].end == time(19, 36))
+        #expect(sessions[4].intervals == darkSky.filter { $0.start >= time(12) })
+        #expect(sessions[0].intervals + sessions[4].intervals == darkSky)
     }
 
     /// The golden hour, the longest stretch of an end, is where the timeline centers.
-    @Test func aSessionFocusesOnItsLongestStretch() {
-        let evening = PhotoOutlook.sessions(on: day(), hours: hours)[2]
+    @Test func aSessionFocusesOnItsLongestStretch() throws {
+        let evening = try #require(PhotoOutlook.sessions(on: day(), hours: hours).first { $0.kind == .evening })
 
         #expect(evening.focusDate == time(18, 37).addingTimeInterval(30))
     }
 
-    /// The timeline's golden-hour labels carry their end's rating.
-    @Test func goldenHoursCarryTheirEndsRating() {
-        #expect(PhotoOutlook.labelRatings(on: day(), hours: hours) == [time(6, 38): .poor, time(18, 5): .great])
+    /// The timeline's golden-hour labels carry their end's session, the daylight's its own, and
+    /// each night the dark sky it holds.
+    @Test func theLabelsCarryTheirSessions() {
+        let sessions = PhotoOutlook.sessions(on: day(), hours: hours)
+
+        #expect(PhotoOutlook.labelSessions(on: day(), hours: hours) == [
+            time(0): sessions[0], time(6, 38): sessions[1], time(7, 42): sessions[2], time(18, 5): sessions[3], time(19, 36): sessions[4]
+        ])
     }
 
     @Test func aGoldenOrBlueHourFindsItsSession() throws {
         let run = DayRun(day())
         let blueHour = try #require(day().segments.first { $0.phase == .blueHour && $0.interval.start > time(12) })
-        let evening = PhotoOutlook.sessions(on: day(), hours: hours)[2]
+        let evening = PhotoOutlook.sessions(on: day(), hours: hours).first { $0.kind == .evening }
 
         #expect(PhotoOutlook.session(for: blueHour, in: run, hours: hours) == evening)
     }
@@ -78,14 +89,14 @@ struct PhotoOutlookSessionTests {
 
     @Test func noHoursRateNothing() {
         #expect(PhotoOutlook.sessions(on: day(), hours: []).isEmpty)
-        #expect(PhotoOutlook.labelRatings(on: day(), hours: []).isEmpty)
+        #expect(PhotoOutlook.labelSessions(on: day(), hours: []).isEmpty)
     }
 
     /// A missing hour leaves out only the session it falls in.
     @Test func aGapLeavesOutOnlyTheSessionItTouches() {
         let gapped = hours.filter { $0.date != time(12) }
 
-        #expect(PhotoOutlook.sessions(on: day(), hours: gapped).map(\.kind) == [.morning, .evening, .night])
+        #expect(PhotoOutlook.sessions(on: day(), hours: gapped).map(\.kind) == [.beforeDawn, .morning, .evening, .night])
     }
 
     /// Each hour counts for the share of the session it covers: a quarter of clear sky and
@@ -106,44 +117,51 @@ struct PhotoOutlookSessionTests {
 
     // MARK: High latitudes
 
-    /// Reykjavík in December: the moon is up through all of astronomical night, and the
-    /// evening has only a blue hour, whose label carries its rating.
+    /// Reykjavík in December: the moon is up through all of astronomical night, which holds the
+    /// small hours and tonight at Fair, and the evening has only a blue hour, whose label carries its rating.
     @Test func aMoonUpAllNightHoldsTheNightAtFair() throws {
         let day = day(.allDayGolden)
         let sessions = PhotoOutlook.sessions(on: day, hours: hours)
-        let night = try #require(sessions.last)
+        let nights = sessions.filter(\.kind.isNight)
 
-        #expect(sessions.map(\.kind) == [.morning, .evening, .night])
-        #expect(night.intervals == day.astronomicalNight)
-        #expect(night.rating == .fair)
-        #expect(night.reasons.contains("Moonlight washes out stars"))
-        #expect(Set(PhotoOutlook.labelRatings(on: day, hours: hours).keys) == [time(10, 30, on: day), time(16, 21, on: day)])
+        #expect(sessions.map(\.kind) == [.beforeDawn, .morning, .evening, .night])
+        #expect(nights.flatMap(\.intervals) == day.astronomicalNight)
+        #expect(nights.map(\.rating) == [.fair, .fair])
+        #expect(nights.allSatisfy { $0.reasons.contains("Moonlight washes out stars") })
+        #expect(Set(PhotoOutlook.labelSessions(on: day, hours: hours).keys) == [
+            time(0, on: day), time(10, 30, on: day), time(16, 21, on: day), time(16, 48, on: day)
+        ])
     }
 
-    /// Longyearbyen's polar night can't place its moon, so astronomical night is rated without it.
+    /// Longyearbyen's polar night can't place its moon, so astronomical night is rated without
+    /// it, on each side of the twilight at noon. Its one night's label carries tonight's.
     @Test func aNightWithoutAMoonRatesAstronomicalNight() throws {
         let day = day(.polarNight)
         let sessions = PhotoOutlook.sessions(on: day, hours: hours)
 
-        #expect(sessions.map(\.kind) == [.night])
-        #expect(sessions[0].intervals == day.astronomicalNight)
-        #expect(!sessions[0].reasons.contains("Moonlight washes out stars"))
+        #expect(sessions.map(\.kind) == [.beforeDawn, .night])
+        #expect(sessions.flatMap(\.intervals) == day.astronomicalNight)
+        #expect(!sessions.contains { $0.reasons.contains("Moonlight washes out stars") })
+        #expect(PhotoOutlook.labelSessions(on: day, hours: hours) == [day.dayStart: sessions[1]])
     }
 
     @Test(arguments: [MockScenario.goldenNight, .blueHourPastMidnight, .midnightSun])
     func aDayThatNeverGetsFullyDarkHasNoNight(scenario: MockScenario) {
-        #expect(!PhotoOutlook.sessions(on: day(scenario), hours: hours).contains { $0.kind == .night })
+        #expect(!PhotoOutlook.sessions(on: day(scenario), hours: hours).contains { $0.kind.isNight })
     }
 
     @Test func aMidnightSunRatesOnlyItsDaylight() {
         #expect(PhotoOutlook.sessions(on: day(.midnightSun), hours: hours).map(\.kind) == [.daylight])
     }
 
-    /// Tromsø in December: the morning's golden hour and the evening's lone blue hour carry the labels.
+    /// Tromsø in December: the morning's golden hour and the evening's lone blue hour carry their
+    /// ends' sessions, and each night a night session of its own.
     @Test func polarTwilightLabelsTheGoldenHourAndTheEveningsBlueHour() {
         let day = day(.polarTwilight)
 
-        #expect(Set(PhotoOutlook.labelRatings(on: day, hours: hours).keys) == [time(10, 6, on: day), time(13, 7, on: day)])
+        #expect(Set(PhotoOutlook.labelSessions(on: day, hours: hours).keys) == [
+            time(0, on: day), time(10, 6, on: day), time(13, 7, on: day), time(13, 58, on: day)
+        ])
     }
 
     /// St. Petersburg in June: a blue hour that began the evening before belongs to no session

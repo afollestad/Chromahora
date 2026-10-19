@@ -17,4 +17,10 @@ extension View {
         frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .presentationCompactAdaptation(.popover)
     }
+
+    /// Insets a popover's text from its glass. The default 16 pt crowds the first and last lines
+    /// against the glass's large corners, as a credit under the text shows.
+    func popoverPadding() -> some View {
+        padding(20)
+    }
 }

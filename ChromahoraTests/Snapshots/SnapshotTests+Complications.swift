@@ -63,19 +63,19 @@ extension SnapshotTests {
 
     // MARK: Outlook
 
-    /// The evening's golden hour is next, rated great, so the ring fills four of its five arcs
-    /// around the setting sun, and the rectangle credits Apple Weather.
+    /// The evening's golden hour is next, rated great, so the circle reads "Great" under
+    /// "Evening", and the rectangle credits Apple Weather.
     @Test func outlookComplicationsThisAfternoon() async throws {
         try await assertScreenSnapshot(of: outlookComplications(at: time(16, 30)))
     }
 
-    /// The day's golden and blue hours are over, so they rate tomorrow's poor morning, one arc
-    /// around the rising sun.
+    /// The day's golden and blue hours are over, so they rate tomorrow's poor morning.
     @Test func outlookComplicationsAfterDark() async throws {
         try await assertScreenSnapshot(of: outlookComplications(at: time(22)))
     }
 
-    /// Before the watch app has a forecast, an empty ring, and no mark, since no weather shows.
+    /// Before the watch app has a forecast, the circle shows a dash, and neither has the mark,
+    /// since no weather shows.
     @Test func outlookComplicationsWithoutForecast() async throws {
         let now = try time(16, 30)
         let content = content(.typical, at: now, forecastEnd: try time(0))
@@ -93,8 +93,7 @@ extension SnapshotTests {
         try await assertScreenSnapshot(of: outlookComplications(at: time(16, 30)).environment(\.dynamicTypeSize, .accessibility5))
     }
 
-    /// A tinted face draws the filled arcs in its one color and the empty ones faint, so the
-    /// rating still counts out.
+    /// A tinted face draws everything in its one color, so the rating reads in words alone.
     @Test func outlookComplicationsAccented() async throws {
         try await assertScreenSnapshot(of: outlookComplications(at: time(16, 30)).environment(\.widgetRenderingMode, .accented))
     }

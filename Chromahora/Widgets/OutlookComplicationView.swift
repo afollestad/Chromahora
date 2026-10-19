@@ -7,9 +7,8 @@ import SwiftUI
 import WidgetKit
 
 /// The outlook for the golden and blue hours under way or next, as a complication on the watch
-/// face, from the forecast the watch app last stored. The circle fills a ring of five arcs to
-/// the rating around its end's sun; the rectangle names the end, when it starts, the rating and
-/// its cloud cover.
+/// face, from the forecast the watch app last stored. The circle names the end over its rating,
+/// large, and its cloud cover; the rectangle adds when it starts.
 ///
 /// Only the rectangle has room for Apple Weather's mark. The circle carries none, leaving the
 /// credit to the watch app a tap away, as `PhaseComplicationView` does for sunrise-sunset.org.
@@ -22,16 +21,6 @@ struct OutlookComplicationView: View {
 
     let entry: SkyEntry
     let layout: Layout
-
-    /// The gap between the ring's arcs, as a share of the whole ring, wide enough to count them
-    /// apart at a glance on the smallest disc.
-    private static let arcGap = 0.035
-    /// The ring's stroke, as a share of the disc's width.
-    private static let ringShare = 0.09
-    /// The end's sun in the ring's middle, as a share of the disc's width.
-    private static let symbolShare = 0.36
-    /// Unfilled arcs, faint enough to tell from filled ones on a tinted face, which draws both in one color.
-    private static let unfilledOpacity = 0.3
 
     var body: some View {
         Group {
@@ -64,47 +53,40 @@ struct OutlookComplicationView: View {
         }
     }
 
-    /// A ring of five arcs, filled to the rating, around the end's sun. Without an outlook, as
-    /// before the watch app has a forecast or past the one it has, an empty ring around the horizon.
+    /// The end's name over its rating, large, as the phase complication shows a time, and its
+    /// cloud cover, all in words, which a tinted face's one color can't blur together. Without an
+    /// outlook, as before the watch app has a forecast or past the one it has, a dash.
     private func circular(_ session: OutlookSession?) -> some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            GeometryReader { proxy in
-                let width = min(proxy.size.width, proxy.size.height)
-                let filled = session.map { $0.rating.rawValue + 1 } ?? 0
-                ZStack {
-                    ForEach(0..<OutlookRating.allCases.count, id: \.self) { index in
-                        arc(index, isFilled: index < filled, lineWidth: width * Self.ringShare)
-                    }
-                    Image(systemName: session?.kind.symbolName ?? "sun.horizon")
-                        .font(.system(size: width * Self.symbolShare))
-                        .foregroundStyle(DayPhase.goldenHour.faceColor)
-                        .widgetAccentable()
+        ComplicationDisc { scale in
+            // Overlaps the rows' leading, which would push the name and cloud cover into the curve.
+            VStack(spacing: scale.width * -0.03) {
+                Text(session?.kind.title ?? "Outlook")
+                    .font(.system(size: scale.label, weight: .semibold))
+                    .foregroundStyle(DayPhase.goldenHour.faceColor)
+                    .widgetAccentable()
+                Text(session?.rating.title ?? "—")
+                    .font(.system(size: scale.reading, weight: .semibold).width(.condensed))
+                    // Reaches into the curve's inset where the disc is widest, since "Excellent"
+                    // needs the room even condensed.
+                    .padding(.horizontal, scale.width * -0.08)
+                if let session {
+                    OutlookLabel.text(rating: nil, cloudCover: session.cloudCover)
+                        .font(.system(size: scale.label, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
                 }
-                .padding(width * Self.ringShare)
-                .frame(width: proxy.size.width, height: proxy.size.height)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(session.map { "\($0.kind.title) outlook, \($0.rating.title)" } ?? "No outlook yet")
+        .accessibilityLabel(spokenText(session))
     }
 
-    /// One of the ring's five arcs, the first at the top and the rest clockwise, with a gap either side.
-    @ViewBuilder
-    private func arc(_ index: Int, isFilled: Bool, lineWidth: CGFloat) -> some View {
-        let count = Double(OutlookRating.allCases.count)
-        let shape = Circle()
-            .trim(from: Double(index) / count + Self.arcGap / 2, to: Double(index + 1) / count - Self.arcGap / 2)
-            .rotation(.degrees(-90))
-            .stroke(style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-        if isFilled {
-            shape
-                .foregroundStyle(DayPhase.goldenHour.faceColor)
-                .widgetAccentable()
-        } else {
-            shape
-                .foregroundStyle(.primary.opacity(Self.unfilledOpacity))
+    /// What VoiceOver reads for the circle, as in "Evening, Great outlook, 20% cloud cover".
+    private func spokenText(_ session: OutlookSession?) -> String {
+        guard let session else {
+            return "No outlook yet"
         }
+        return "\(session.kind.title), \(OutlookLabel.spoken(rating: session.rating, cloudCover: session.cloudCover))"
     }
 
     /// The end and when it starts, over its rating and cloud cover, over Apple Weather's mark.

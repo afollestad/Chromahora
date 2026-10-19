@@ -93,7 +93,7 @@ private struct SourcesDetails: View {
         .font(.subheadline)
         // Wide enough for the credit on one line at the default size, so sentences wrap evenly.
         .frame(width: 280, alignment: .leading)
-        .padding()
+        .popoverPadding()
         // Stops growing at accessibility1, like the timeline's labels. A popover can't outgrow
         // the screen, so past it the text truncates to a word or two a line.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)

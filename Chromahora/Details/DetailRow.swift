@@ -40,6 +40,9 @@ struct DetailRow<Leading: View>: View {
                     lines
                         .padding(.leading, DetailMetrics.leadingWidth + DetailMetrics.leadingSpacing)
                 }
+                // As tall as its lines need. Without it, a name that wraps, as "Before dawn" does at
+                // accessibility1 on a 40 mm watch, cuts the detail under it short.
+                .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             } else {
                 heading

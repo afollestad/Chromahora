@@ -116,7 +116,7 @@ private struct TopicDetails: View {
         #if os(iOS)
         // `SourcesButton`'s popover width, so sentences wrap evenly.
         .frame(width: 280, alignment: .leading)
-        .padding()
+        .popoverPadding()
         #else
         .frame(maxWidth: .infinity, alignment: .leading)
         .scenePadding(.horizontal)

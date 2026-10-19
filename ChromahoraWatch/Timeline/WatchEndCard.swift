@@ -5,10 +5,10 @@
 
 import SwiftUI
 
-/// One end of the day as a card: its golden and blue hours and its sunrise or sunset on their
-/// stretch of sky, zoomed to fill a panel, so the Crown doesn't scroll through hours of one
-/// color to reach them. Leads with Apple Weather's mark while the panel shows weather, since
-/// App Review looks for it wherever weather shows.
+/// One end of the day as a card: its outlook, and its golden and blue hours and its sunrise or
+/// sunset on their stretch of sky, zoomed to fill a panel, so the Crown doesn't scroll through
+/// hours of one color to reach them. Leads with Apple Weather's mark while it shows weather, in
+/// the outlook or the panel, since App Review looks for it wherever weather shows.
 struct WatchEndCard: View {
     enum Kind {
         case morning
@@ -28,6 +28,8 @@ struct WatchEndCard: View {
     let now: Date
     /// The forecast's spells, of any day. Those reaching the stretch get a marker each.
     let weather: [WeatherSpell]
+    /// The end's rated session, while the forecast covers it.
+    var session: OutlookSession?
 
     /// The height the scroll view shows under the title, which the panel fills.
     @State private var visibleHeight: CGFloat = 0
@@ -72,20 +74,31 @@ struct WatchEndCard: View {
         .environment(\.colorScheme, .dark)
     }
 
-    /// The end's name with Apple Weather's mark beside it, or under it where large text leaves
-    /// no room, rather than break the name.
+    /// The end's name with Apple Weather's mark beside it, over the outlook, as in "Good · ☁︎ 10%",
+    /// or where large text leaves no room, each on a line of its own rather than break the name.
+    /// Even a 46 mm watch can't fit "Morning · Good · ☁︎ 70%" on one line, so the outlook keeps a
+    /// line of its own on every watch, and the mark never follows it, where "10% Weather" would
+    /// read as a forecast.
     private var header: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline) {
-                title
-                Spacer(minLength: 4)
-                weatherMark
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    title
+                    Spacer(minLength: 4)
+                    weatherMark
+                }
+                outlook
+                    .fixedSize()
             }
             VStack(alignment: .leading, spacing: 0) {
                 title
+                outlook
+                    .fixedSize(horizontal: false, vertical: true)
                 weatherMark
             }
         }
+        // VoiceOver reads the outlook after the name, before the mark beside it.
+        .accessibilityElement(children: .contain)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, 6)
         // Clear of the page dots beside the Crown.
@@ -97,6 +110,18 @@ struct WatchEndCard: View {
             .font(.headline)
             .fixedSize()
             .accessibilityAddTraits(.isHeader)
+            .accessibilitySortPriority(2)
+    }
+
+    /// The rating and cloud cover in the title's size but regular weight, as `PhaseOutlookTitle`
+    /// sets its rating apart.
+    @ViewBuilder
+    private var outlook: some View {
+        if let session {
+            OutlookLabel(rating: session.rating, cloudCover: session.cloudCover)
+                .font(.headline.weight(.regular))
+                .accessibilitySortPriority(1)
+        }
     }
 
     @ViewBuilder
@@ -126,7 +151,7 @@ struct WatchEndCard: View {
     }
 
     private var showsWeather: Bool {
-        span.map { !WatchSkyPanel.spells(in: weather, reaching: $0, on: day).isEmpty } ?? false
+        session != nil || span.map { !WatchSkyPanel.spells(in: weather, reaching: $0, on: day).isEmpty } ?? false
     }
 
     /// The day's sky at the end's middle, in the panel's place, saying there's nothing to show.
@@ -148,11 +173,16 @@ struct WatchEndCard: View {
     let now = Date.now
     let day = SolarDay.mock(for: now)
     let ends = DayRun(day).ends(of: day)
+    let sessions = PhotoOutlook.sessions(on: day, hours: SkyHour.mock(for: now))
     TabView(selection: $card) {
-        WatchEndCard(kind: .morning, day: day, end: ends.morning, now: now, weather: WeatherSpell.mock())
-            .tag(0)
-        WatchEndCard(kind: .evening, day: day, end: ends.evening, now: now, weather: WeatherSpell.mock())
-            .tag(1)
+        WatchEndCard(
+            kind: .morning, day: day, end: ends.morning, now: now, weather: WeatherSpell.mock(), session: sessions.first { $0.kind == .morning }
+        )
+        .tag(0)
+        WatchEndCard(
+            kind: .evening, day: day, end: ends.evening, now: now, weather: WeatherSpell.mock(), session: sessions.first { $0.kind == .evening }
+        )
+        .tag(1)
     }
     .tabViewStyle(.verticalPage)
 }

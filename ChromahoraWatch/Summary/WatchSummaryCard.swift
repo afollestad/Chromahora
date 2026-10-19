@@ -191,7 +191,7 @@ struct WatchSummaryCard: View {
             switch session.kind {
             case .morning: ratings[.sunrise] = session.rating
             case .evening: ratings[.sunset] = session.rating
-            case .daylight, .night: break
+            case .beforeDawn, .daylight, .night: break
             }
         }
         return ratings

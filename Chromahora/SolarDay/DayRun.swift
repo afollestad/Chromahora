@@ -103,18 +103,10 @@ nonisolated struct DayRun: Sendable {
         let event: SolarEvent?
     }
 
-    /// `day`'s golden and blue hours that begin on it, parted where its sun is highest: the middle
-    /// of its longest daylight, or where it has none, of its longest brightest phase, since near
-    /// the poles a brief dip around midnight can part daylight in two. Near the poles an end can
-    /// have several golden and blue hours, or none.
+    /// `day`'s golden and blue hours that begin on it, parted at its `noon(of:)`. Near the poles
+    /// an end can have several golden and blue hours, or none.
     func ends(of day: SolarDay) -> (morning: End, evening: End) {
-        let brightness: [DayPhase] = [.night, .blueHour, .goldenHour, .daylight]
-        let brightest = day.segments.max { lhs, rhs in
-            let lhsRank = brightness.firstIndex(of: lhs.phase) ?? 0
-            let rhsRank = brightness.firstIndex(of: rhs.phase) ?? 0
-            return lhsRank == rhsRank ? lhs.interval.duration < rhs.interval.duration : lhsRank < rhsRank
-        }
-        let noon = brightest?.midpoint ?? day.dayStart.addingTimeInterval(day.duration / 2)
+        let noon = Self.noon(of: day)
         // Merged across midnight, so an evening blue hour that runs into tomorrow reads whole.
         // One cut off at the day's start began the evening before.
         let magicHours = segments.filter { $0.phase.isMagicHour && $0.interval.start > day.dayStart && $0.interval.start < day.dayEnd }
@@ -122,6 +114,19 @@ nonisolated struct DayRun: Sendable {
             End(magicHours: magicHours.filter { $0.interval.start < noon }, event: day.events.first { $0.kind == .sunrise }),
             End(magicHours: magicHours.filter { $0.interval.start >= noon }, event: day.events.first { $0.kind == .sunset })
         )
+    }
+
+    /// Where `day`'s sun is highest, which parts its morning from its evening: the middle of its
+    /// longest daylight, or where it has none, of its longest brightest phase, since near the poles
+    /// a brief dip around midnight can part daylight in two.
+    static func noon(of day: SolarDay) -> Date {
+        let brightness: [DayPhase] = [.night, .blueHour, .goldenHour, .daylight]
+        let brightest = day.segments.max { lhs, rhs in
+            let lhsRank = brightness.firstIndex(of: lhs.phase) ?? 0
+            let rhsRank = brightness.firstIndex(of: rhs.phase) ?? 0
+            return lhsRank == rhsRank ? lhs.interval.duration < rhs.interval.duration : lhsRank < rhsRank
+        }
+        return brightest?.midpoint ?? day.dayStart.addingTimeInterval(day.duration / 2)
     }
 
     /// The day a widget showing a whole day shows at `date`:the one containing it until its

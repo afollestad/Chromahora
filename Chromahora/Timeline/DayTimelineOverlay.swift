@@ -15,9 +15,9 @@ struct DayTimelineOverlay: View {
     let safeAreaInsets: EdgeInsets
     /// The forecast's spells, of any day. Those overlapping this one get a marker each.
     var weather: [WeatherSpell] = []
-    /// The outlook's rating for each golden or blue hour whose label carries one, by its start,
-    /// from `PhotoOutlook.labelRatings(on:in:hours:)`.
-    var phaseRatings: [Date: OutlookRating] = [:]
+    /// The outlook session each phase whose label carries one rates, by the phase's start, from
+    /// `PhotoOutlook.labelSessions(on:in:hours:)`.
+    var phaseSessions: [Date: OutlookSession] = [:]
     /// Whether the cloud band draws the day's cover, which the sky markers then name.
     var showsCloudCover = false
     /// How far short of the trailing edge marker lines stop, so they end at the day panel
@@ -172,28 +172,34 @@ struct DayTimelineOverlay: View {
             .id(day.phaseSequence)
     }
 
-    /// Phase labels drop their time range when the full text won't fit beside a marker
-    /// label, which happens at large text sizes, then a rating. VoiceOver still reads both.
-    ///
-    /// Each capsule is tinted with its phase's color, so that color picks its scheme too.
+    /// Each capsule is tinted with its phase's color, so that color picks its scheme too. A rated
+    /// label opens its session's outlook, which says why it rates as it does.
     private func phaseLabels(size: CGSize, beside markers: [PlacedMarker], style: LabelStyle) -> some View {
         ForEach(placedPhases(size: size)) { placed in
             let segment = placed.segment
             let phaseColor = segment.phase.color
             let glass = Glass.regular.tint(phaseColor.opacity(0.5))
             let scheme = SkyGradient.labelScheme(over: phaseColor)
-            let rating = phaseRatings[segment.interval.start]
+            let session = phaseSessions[segment.interval.start]
+            let spoken = [text(for: segment), session.map { OutlookLabel.spoken(rating: $0.rating, cloudCover: $0.cloudCover) }]
+                .compactMap(\.self)
+                .joined(separator: ", ")
             row(at: placed.labelY, alignment: .trailing, size: size) {
-                ViewThatFits(in: .horizontal) {
-                    label(text(for: segment, rating: rating), glass: glass, scheme: scheme, style: style)
-                    if let rating {
-                        label("\(segment.phase.title) · \(rating.title)", glass: glass, scheme: scheme, style: style)
+                Group {
+                    if let session, style == .glass {
+                        OutlookButton(session: session) {
+                            phaseLabel(for: segment, session: session, glass: glass.interactive(), scheme: scheme, style: style)
+                        }
+                        .accessibilityLabel(spoken)
+                    } else {
+                        phaseLabel(for: segment, session: session, glass: glass, scheme: scheme, style: style)
+                            // Replaces the label's tree, where an element that ignores its children
+                            // still leaves VoiceOver a second copy of the text.
+                            .accessibilityRepresentation {
+                                Text(spoken)
+                            }
                     }
-                    label(segment.phase.title, glass: glass, scheme: scheme, style: style)
                 }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(text(for: segment) + (rating.map { ", \($0.title) outlook" } ?? ""))
-                .accessibilityAddTraits(.isStaticText)
                 .frame(maxWidth: phaseLabelWidth(for: placed, beside: markers, size: size), alignment: .trailing)
                 .padding(.trailing, safeAreaInsets.trailing + horizontalPadding)
                 .visualEffect { [safeAreaInsets, heldLabelInset, slack = placed.slack] content, proxy in
@@ -259,11 +265,35 @@ struct DayTimelineOverlay: View {
         }
     }
 
+    /// A phase's label in the longest form that fits beside a marker label, which at large text
+    /// sizes runs out of room: with a session, its rating, cloud cover and time, then the rating
+    /// and time, then the rating alone, and last the phase alone. VoiceOver reads every part,
+    /// whichever form shows.
+    private func phaseLabel(for segment: DaySegment, session: OutlookSession?, glass: Glass, scheme: ColorScheme, style: LabelStyle) -> some View {
+        let title = segment.phase.title
+        let range = day.rangeText(of: segment)
+        return ViewThatFits(in: .horizontal) {
+            if let session {
+                let outlook = OutlookLabel.text(rating: session.rating, cloudCover: session.cloudCover)
+                label(Text("\(title) · \(outlook) · \(range)"), glass: glass, scheme: scheme, style: style)
+                label(Text("\(title) · \(session.rating.title) · \(range)"), glass: glass, scheme: scheme, style: style)
+                label(Text("\(title) · \(session.rating.title)"), glass: glass, scheme: scheme, style: style)
+            } else {
+                label(Text(text(for: segment)), glass: glass, scheme: scheme, style: style)
+            }
+            label(Text(title), glass: glass, scheme: scheme, style: style)
+        }
+    }
+
+    private func label(_ text: String, scheme: ColorScheme, style: LabelStyle) -> some View {
+        label(Text(text), scheme: scheme, style: style)
+    }
+
     /// `scheme` comes from the sky behind the label, which the system's appearance knows
     /// nothing about. White text over daylight contrasts at only 1.5:1.
     @ViewBuilder
-    private func label(_ text: String, glass: Glass = .regular, scheme: ColorScheme, style: LabelStyle) -> some View {
-        let content = Text(text)
+    private func label(_ text: Text, glass: Glass = .regular, scheme: ColorScheme, style: LabelStyle) -> some View {
+        let content = text
             .font(.caption2.weight(.semibold).monospacedDigit())
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -277,9 +307,9 @@ struct DayTimelineOverlay: View {
         }
     }
 
-    /// The phase, its rating if it carries one, and when it runs.
-    private func text(for segment: DaySegment, rating: OutlookRating? = nil) -> String {
-        [segment.phase.title, rating?.title, day.rangeText(of: segment)].compactMap(\.self).joined(separator: " · ")
+    /// The phase and when it runs.
+    private func text(for segment: DaySegment) -> String {
+        "\(segment.phase.title) · \(day.rangeText(of: segment))"
     }
 
     /// Lays `content` across the full width, aligned to one edge, centered on `y`.
@@ -351,8 +381,9 @@ struct DayTimelineOverlay: View {
     private func placedPhases(size: CGSize) -> [PlacedPhase] {
         // Night goes unlabeled. Its band is unmistakable, midnight cuts its range
         // short, and the blue hour labels already mark where it begins and ends.
-        // A night that fills the day is the exception, since nothing else would.
-        let segments = day.segments.filter { $0.phase != .night || $0.span == .allDay }
+        // A night that fills the day is the exception, since nothing else would, and so
+        // is one that carries the night's outlook, which nothing else on the timeline shows.
+        let segments = day.segments.filter { $0.phase != .night || $0.span == .allDay || phaseSessions[$0.interval.start] != nil }
         let labelYs = LabelSpacing.spaced(segments.map { y(for: $0.midpoint, in: size) }, spacing: labelSpacing)
 
         return segments.indices.map { index in
@@ -385,7 +416,7 @@ struct DayTimelineOverlay: View {
         now: .now,
         safeAreaInsets: EdgeInsets(),
         weather: WeatherSpell.mock(),
-        phaseRatings: PhotoOutlook.labelRatings(on: .mock(), hours: SkyHour.mock()),
+        phaseSessions: PhotoOutlook.labelSessions(on: .mock(), hours: SkyHour.mock()),
         showsCloudCover: true
     )
         .frame(height: 24 * 72)

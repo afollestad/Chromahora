@@ -80,7 +80,7 @@ struct DayTimeline: View {
         // Worked out once here, not on each frame the sky behind the title and the sources button is sampled.
         let skyStops = SkyGradient.stops(for: day)
         // Here rather than in the overlay, which lays out every label twice, for the glass and its cutout.
-        let phaseRatings = PhotoOutlook.labelRatings(on: day, hours: hours)
+        let phaseSessions = PhotoOutlook.labelSessions(on: day, hours: hours)
         ScrollViewReader { proxy in
             ScrollView {
                 ZStack {
@@ -96,7 +96,7 @@ struct DayTimeline: View {
                         now: now,
                         safeAreaInsets: labelInsets,
                         weather: weather,
-                        phaseRatings: phaseRatings,
+                        phaseSessions: phaseSessions,
                         showsCloudCover: hours.contains { $0.falls(on: day) },
                         lineTrailingInset: panelInset > 0 ? labelInsets.trailing : 0
                     )

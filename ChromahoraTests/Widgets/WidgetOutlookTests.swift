@@ -57,11 +57,12 @@ struct WidgetOutlookTests {
         #expect(content.sessions(on: content.run.days[0]).isEmpty)
     }
 
-    /// A forecast that ends at noon covers the morning, but not the daylight, evening or late night past it.
-    @Test func aForecastEndingAtNoonRatesOnlyTheMorning() throws {
+    /// A forecast that ends at noon covers the small hours and the morning, but not the daylight,
+    /// evening or night past it.
+    @Test func aForecastEndingAtNoonRatesOnlyTheSmallHoursAndTheMorning() throws {
         let content = try content(forecastEnd: try time(12))
 
-        #expect(content.sessions(on: content.run.days[0]).map(\.kind) == [.morning])
+        #expect(content.sessions(on: content.run.days[0]).map(\.kind) == [.beforeDawn, .morning])
         #expect(content.cloudCover(over: DateInterval(start: try time(6), end: try time(8))) != nil)
         #expect(content.cloudCover(over: DateInterval(start: try time(11), end: try time(13))) == nil)
     }

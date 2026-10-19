@@ -93,13 +93,15 @@ private struct WatchDayCards: View {
     @Binding var card: WatchCard
 
     var body: some View {
-        let ends = DayRun(day, then: nextDay.map { [$0] } ?? []).ends(of: day)
+        let run = DayRun(day, then: nextDay.map { [$0] } ?? [])
+        let ends = run.ends(of: day)
+        let sessions = PhotoOutlook.sessions(on: day, in: run, hours: hours)
         TabView(selection: $card) {
             WatchSummaryCard(day: day, nextDay: nextDay, now: now, placeName: placeName, hours: hours)
                 .tag(WatchCard.summary)
-            WatchEndCard(kind: .morning, day: day, end: ends.morning, now: now, weather: weather)
+            WatchEndCard(kind: .morning, day: day, end: ends.morning, now: now, weather: weather, session: sessions.first { $0.kind == .morning })
                 .tag(WatchCard.morning)
-            WatchEndCard(kind: .evening, day: day, end: ends.evening, now: now, weather: weather)
+            WatchEndCard(kind: .evening, day: day, end: ends.evening, now: now, weather: weather, session: sessions.first { $0.kind == .evening })
                 .tag(WatchCard.evening)
             WatchDetailsPage(day: day, now: now, weather: weather, hours: hours)
                 .tag(WatchCard.details)
