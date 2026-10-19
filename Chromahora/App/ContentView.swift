@@ -50,6 +50,7 @@ struct ContentView: View {
                     weather: weather.spells(at: store.shownPlace),
                     hours: weather.hours(at: store.shownPlace),
                     initialPane: initialPane,
+                    initialPresentation: initialPresentation,
                     onRetry: store.reload,
                     onPage: store.selectDay(offsetBy:from:)
                 )
@@ -97,6 +98,15 @@ struct ContentView: View {
         debug?.initialPane ?? .timeline
         #else
         .timeline
+        #endif
+    }
+
+    /// What the toolbar opens on launch, which `-DebugSheet` sets in debug builds.
+    private var initialPresentation: DayToolbar.Presentation? {
+        #if DEBUG
+        debug?.initialPresentation
+        #else
+        nil
         #endif
     }
 

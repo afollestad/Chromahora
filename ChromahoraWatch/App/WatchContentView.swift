@@ -38,6 +38,7 @@ struct WatchContentView: View {
                 // For the day on screen, which keeps the last place's until the new one's loads.
                 weather: weather.spells(at: store.shownPlace),
                 hours: weather.hours(at: store.shownPlace),
+                initialCard: initialCard,
                 onRetry: store.reload,
                 neighbor: store.loadedDay(offsetBy:from:),
                 onPage: store.selectDay(offsetBy:from:),
@@ -55,6 +56,15 @@ struct WatchContentView: View {
     /// The time the app shows as now, which the debug settings can override.
     private func now(from date: Date) -> Date {
         nowOverride ?? date
+    }
+
+    /// The card to open on, which `-DebugCard` sets in debug builds.
+    private var initialCard: WatchCard {
+        #if DEBUG
+        debug?.initialCard ?? .summary
+        #else
+        .summary
+        #endif
     }
 
     /// The debug settings' clock, if it overrides the real one.

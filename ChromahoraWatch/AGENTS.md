@@ -22,6 +22,6 @@ These rules cover `ChromahoraWatch/`, the watchOS app the iOS app embeds, which 
 ### Verifying
 
 - Watch screens have no snapshot suite, since swift-snapshot-testing renders images only on iOS and tvOS. Check them with `xcrun simctl io <udid> screenshot` on `Apple Watch SE 3 (40mm)`, the narrowest, and a 46 mm or 49 mm watch.
-- Move through a day's cards with a vertical `axe drag` and between days with a sideways one, since `axe` can't turn the Crown.
+- Open on a card with `-DebugCard morning`, `evening` or `details`, and move through a day's cards with a vertical `axe drag` and between days with a sideways one, since `axe` can't turn the Crown.
 - Set a watch's text size with a launch argument after `--`, such as `-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityM` for `accessibility1`, since `xcrun simctl ui <udid> content_size` fails on watch simulators.
 - Location permission belongs to the companion app's bundle ID, and an unpaired watch simulator can't show its prompt, so grant it with `xcrun simctl privacy <udid> grant location com.afollestad.Chromahora`, or use `-DebugPlace`.

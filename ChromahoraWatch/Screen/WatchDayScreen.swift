@@ -22,6 +22,8 @@ struct WatchDayScreen: View {
     let weather: [WeatherSpell]
     /// The forecast's hours, of any day, which the details read the day's light and sky from.
     let hours: [SkyHour]
+    /// The card to open on, which `-DebugCard` sets.
+    var initialCard = WatchCard.summary
     let onRetry: () -> Void
     /// The day `offset` days from the one given, if the store holds it, as `SolarDayStore.loadedDay(offsetBy:from:)` gives it.
     let neighbor: (Int, SolarDay) -> SolarDay?
@@ -58,6 +60,9 @@ struct WatchDayScreen: View {
                         }
                     }
                 }
+        }
+        .onAppear {
+            card = initialCard
         }
     }
 

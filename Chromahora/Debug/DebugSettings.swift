@@ -63,6 +63,11 @@ final class DebugSettings {
     /// The page beside the timeline the app opens on, since `simctl` can't swipe to it. The
     /// phone's alone, since the watch has no page beside its timeline.
     var initialPane: DayPager.Pane
+    /// What the toolbar opens on launch, since `simctl` can't tap to it.
+    var initialPresentation: DayToolbar.Presentation?
+    #elseif os(watchOS)
+    /// The card the watch opens on, since `simctl` can't turn the Crown to it.
+    var initialCard: WatchCard
     #endif
     /// The app's sun-time cache, which the drawer summarizes and clears.
     var cache: SolarDayCache?
@@ -72,10 +77,12 @@ final class DebugSettings {
     var forecastCache: ForecastCache?
 
     /// Reads `-DebugProviderMode`, `-DebugScenario`, `-DebugWeather`, `-DebugNow`, `-DebugPlace`,
-    /// `-DebugChosenPlace`, `-DebugPanel` and `-DebugPane` from `arguments`, ignoring values it can't
-    /// parse. `-DebugNow` is the device's local time, as in `2026-09-16T03:00:00`, even beside a chosen
-    /// place in another zone. `-DebugPlace` is as in `59.9N,30.3E`, `-DebugChosenPlace` adds a zone and
-    /// a name, as in `35.0N,135.8E,Asia/Tokyo,Kyoto`, and `-DebugPane` is `timeline` or `details`.
+    /// `-DebugChosenPlace`, `-DebugPanel`, `-DebugPane`, `-DebugSheet` and `-DebugCard` from
+    /// `arguments`, ignoring values it can't parse. `-DebugNow` is the device's local time, as in
+    /// `2026-09-16T03:00:00`, even beside a chosen place in another zone. `-DebugPlace` is as in
+    /// `59.9N,30.3E`, `-DebugChosenPlace` adds a zone and a name, as in `35.0N,135.8E,Asia/Tokyo,Kyoto`,
+    /// `-DebugPane` is `timeline` or `details`, `-DebugSheet` is `location` or `calendar`, and the
+    /// watch's `-DebugCard` is `summary`, `morning`, `evening` or `details`.
     init(arguments: [String: Any] = [:], timeZone: TimeZone = .current) {
         providerMode = (arguments["DebugProviderMode"] as? String).flatMap(ProviderMode.init(rawValue:)) ?? .live
         scenario = (arguments["DebugScenario"] as? String).flatMap(MockScenario.init(rawValue:))
@@ -86,6 +93,9 @@ final class DebugSettings {
         opensPanelOnLaunch = (arguments["DebugPanel"] as? String).map(Self.isTrue) ?? false
         #if os(iOS)
         initialPane = (arguments["DebugPane"] as? String).flatMap(DayPager.Pane.init(rawValue:)) ?? .timeline
+        initialPresentation = (arguments["DebugSheet"] as? String).flatMap(DayToolbar.Presentation.init(rawValue:))
+        #elseif os(watchOS)
+        initialCard = (arguments["DebugCard"] as? String).flatMap(WatchCard.init(rawValue:)) ?? .summary
         #endif
     }
 

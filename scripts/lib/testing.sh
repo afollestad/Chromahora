@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Shared by test.sh and snapshots.sh, which source it after `cd`-ing to the repo root.
+# Shared by setup.sh, test.sh and snapshots.sh, which source it after `cd`-ing to the repo root.
 
 # Snapshot baselines only hold on the device they were recorded on, and fail anywhere else, so
 # each suite runs only on its own device. Matches `SnapshotDevice`.

@@ -29,6 +29,8 @@ struct DayScreen: View {
     var hours: [SkyHour] = []
     /// The page beside the timeline to open on, which snapshots and `-DebugPane` set.
     var initialPane = DayPager.Pane.timeline
+    /// What the toolbar opens as it appears, which `-DebugSheet` sets.
+    var initialPresentation: DayToolbar.Presentation?
     let onRetry: () -> Void
     /// Selects the day a pull through the timeline's end leads to, a number of days from the
     /// one pulled, and answers whether it's on hand to page to at once.
@@ -94,6 +96,7 @@ struct DayScreen: View {
                     deviceName: deviceName,
                     chooser: chooser,
                     showsDayPicker: !showsPanel,
+                    initialPresentation: initialPresentation,
                     onTitleMidY: { titleMidY = $0 },
                     onToday: { focus.request() }
                 )

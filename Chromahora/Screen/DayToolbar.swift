@@ -10,6 +10,12 @@ import SwiftUI
 /// either can leave a day that failed. A wide window drops the button, since the day panel
 /// shows the calendar.
 struct DayToolbar: ToolbarContent {
+    /// What the toolbar opens.
+    enum Presentation: String {
+        case location
+        case calendar
+    }
+
     let isLoading: Bool
     @Binding var skyColor: Color
     @Binding var selectedDate: Date
@@ -21,6 +27,8 @@ struct DayToolbar: ToolbarContent {
     var deviceName: String?
     let chooser: PlaceChooser
     var showsDayPicker = true
+    /// What to open as the toolbar appears, which `-DebugSheet` sets.
+    var initialPresentation: Presentation?
     let onTitleMidY: (CGFloat) -> Void
     let onToday: () -> Void
 
@@ -33,7 +41,8 @@ struct DayToolbar: ToolbarContent {
                 deviceName: deviceName,
                 chooser: chooser,
                 isLoading: isLoading,
-                skyColor: $skyColor
+                skyColor: $skyColor,
+                opensOnAppear: initialPresentation == .location
             )
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.frame(in: .global).midY
@@ -47,7 +56,13 @@ struct DayToolbar: ToolbarContent {
         // An `if` rather than `hidden(_:)`, which iOS doesn't offer for toolbar content.
         if showsDayPicker {
             ToolbarItem(placement: .primaryAction) {
-                DayPickerButton(selection: $selectedDate, now: now, calendar: calendar, onToday: onToday)
+                DayPickerButton(
+                    selection: $selectedDate,
+                    now: now,
+                    calendar: calendar,
+                    opensOnAppear: initialPresentation == .calendar,
+                    onToday: onToday
+                )
             }
         }
     }
@@ -66,6 +81,7 @@ private struct TitlePill: View {
     /// Another day is on its way while the last one stays on screen.
     let isLoading: Bool
     @Binding var skyColor: Color
+    var opensOnAppear = false
 
     @State private var isChoosingPlace = false
 
@@ -113,6 +129,14 @@ private struct TitlePill: View {
         .sheet(isPresented: $isChoosingPlace) {
             PlaceSearchSheet(place: place, deviceName: deviceName, chooser: chooser)
         }
+        .task {
+            guard opensOnAppear else {
+                return
+            }
+            // Presentations on the first frame don't render.
+            try? await Task.sleep(for: .milliseconds(500))
+            isChoosingPlace = true
+        }
     }
 
     /// The place as VoiceOver reads it, saying what the hidden glyph shows.
@@ -136,6 +160,7 @@ private struct DayPickerButton: View {
     @Binding var selection: Date
     let now: Date
     let calendar: Calendar
+    var opensOnAppear = false
     let onToday: () -> Void
 
     @State private var isChoosingDay = false
@@ -165,6 +190,14 @@ private struct DayPickerButton: View {
         }
         .onChange(of: selection) {
             isChoosingDay = false
+        }
+        .task {
+            guard opensOnAppear else {
+                return
+            }
+            // Presentations on the first frame don't render.
+            try? await Task.sleep(for: .milliseconds(500))
+            isChoosingDay = true
         }
     }
 }

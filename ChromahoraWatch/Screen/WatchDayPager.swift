@@ -7,7 +7,7 @@ import SwiftUI
 
 /// Which of a day's cards is on screen. Paging to another day keeps it, so evenings can be
 /// compared a swipe apart.
-enum WatchCard: Hashable {
+enum WatchCard: String {
     case summary
     case morning
     case evening
