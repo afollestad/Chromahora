@@ -25,6 +25,15 @@ struct PhaseComplicationView: View {
     let entry: SkyEntry
     let layout: Layout
 
+    /// A circular complication's reading as a share of its disc's width, as large as a face's own,
+    /// like Heart Rate's "82". The disc measures 46 pt on a 49 mm Ultra's face and 51 pt in Modular
+    /// on a 46 mm watch, so fixed sizes that fill one crowd the other's curve.
+    private static let circularReadingShare = 0.37
+
+    /// The name over a circular complication's reading and the AM or PM under it, under half its
+    /// size as a face's own labels are, so the narrow top and bottom of the disc hold them.
+    private static let circularLabelShare = 0.16
+
     var body: some View {
         Group {
             switch entry.state {
@@ -90,15 +99,15 @@ struct PhaseComplicationView: View {
         let range = run.rangeText(segment.interval, span: segment.span)
         switch layout {
         case .circular:
-            ComplicationDisc { scale in
-                VStack(spacing: scale.width * 0.04) {
+            circularDisc { width in
+                VStack(spacing: width * 0.04) {
                     Image(systemName: symbolName(for: segment.phase))
-                        .font(.system(size: scale.reading))
+                        .font(.system(size: width * Self.circularReadingShare))
                         .foregroundStyle(segment.phase.faceColor)
                         .widgetAccentable()
                         .accessibilityHidden(true)
                     Text(segment.phase.shortTitle)
-                        .font(.system(size: scale.label, weight: .semibold))
+                        .font(.system(size: width * Self.circularLabelShare, weight: .semibold))
                 }
             }
         case .corner:
@@ -159,22 +168,38 @@ struct PhaseComplicationView: View {
             .tint(magicHour.phase.faceColor)
         } else {
             let time = isUnderWay ? (magicHour.span.endsInRun ? magicHour.interval.end : nil) : magicHour.interval.start
-            ComplicationDisc { scale in
+            circularDisc { width in
                 // Overlaps the rows' leading, which would push the name and AM or PM into the curve.
-                VStack(spacing: scale.width * -0.03) {
+                VStack(spacing: width * -0.03) {
                     Text(magicHour.phase.shortTitle)
-                        .font(.system(size: scale.label, weight: .semibold))
+                        .font(.system(size: width * Self.circularLabelShare, weight: .semibold))
                         .foregroundStyle(magicHour.phase.faceColor)
                         .widgetAccentable()
                     Text(time.map(run.clockText) ?? "Now")
-                        .font(.system(size: scale.reading, weight: .semibold, design: .rounded))
+                        .font(.system(size: width * Self.circularReadingShare, weight: .semibold, design: .rounded))
                     if let dayHalf = time.flatMap(run.dayHalfText) {
                         Text(dayHalf)
-                            .font(.system(size: scale.label, weight: .semibold))
+                            .font(.system(size: width * Self.circularLabelShare, weight: .semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
                 .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    /// The disc behind a circular complication, with `content` sized from its width, inset from
+    /// its curve. A long line, like a two-digit hour, shrinks rather than truncate.
+    private func circularDisc(@ViewBuilder _ content: @escaping (CGFloat) -> some View) -> some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            GeometryReader { proxy in
+                let width = min(proxy.size.width, proxy.size.height)
+                content(width)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(width * 0.12)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
             }
         }
     }

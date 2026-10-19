@@ -288,7 +288,6 @@
 				Weather/ThrottledWeatherProvider.swift,
 				Weather/WeatherProvider.swift,
 				Weather/WeatherSpell.swift,
-				Widgets/ComplicationDisc.swift,
 				Widgets/OutlookComplicationView.swift,
 				Widgets/OutlookLabel.swift,
 				Widgets/PhaseComplicationView.swift,

@@ -15,23 +15,13 @@ struct OutlookComplication: Widget {
         // Weather from the forecast the watch app last stored, which `SkyLoader.live` reads
         // without a request of its own.
         StaticConfiguration(kind: Self.kind, provider: SkyTimelineProvider(showsWeather: true)) { entry in
-            OutlookComplicationEntryView(entry: entry)
+            OutlookComplicationView(entry: entry)
+                .skyWidgetBackground(for: entry)
         }
         .configurationDisplayName("Outlook")
         .description("How promising the next golden and blue hours look, from the watch app's forecast.")
-        .supportedFamilies([.accessoryCircular, .accessoryRectangular])
-    }
-}
-
-/// Reads the family the face placed the complication in, which only a view inside WidgetKit can,
-/// for the view that lays it out.
-private struct OutlookComplicationEntryView: View {
-    let entry: SkyEntry
-    @Environment(\.widgetFamily) private var family
-
-    var body: some View {
-        OutlookComplicationView(entry: entry, layout: family == .accessoryCircular ? .circular : .rectangular)
-            .skyWidgetBackground(for: entry)
+        // A rectangle alone, as `OutlookComplicationView` says why.
+        .supportedFamilies([.accessoryRectangular])
     }
 }
 
