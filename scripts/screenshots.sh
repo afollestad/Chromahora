@@ -6,13 +6,13 @@ usage() {
 Usage: ./scripts/screenshots.sh [-b|--build] [--dark] [-d|--device <name>]... [-o|--output <dir>]
 
 Launches the app in each App Store screenshot state, a day in San Francisco with the mock
-weather, and saves a PNG of each to <dir>/<device>/, `.build/screenshots` by default, emptying
-that folder first. Captures on iPhone 18 Pro, iPhone Duo, iPad Pro 13-inch (M5) (16GB) and Apple
-Watch Series 12 (46mm) unless `-d` names others, with the watch app on a watch. An iPhone's or
-iPad's status bar shows each state's time, while a watch's clock shows the real time, since
-simctl can't override it. `-b` builds first, and `--dark` captures the iPhones and iPad in dark
-mode. Afterward each simulator gets its appearance and a Duo its fold back, and status bar
-overrides are cleared.
+weather, and saves a PNG of each, without the alpha channel App Store Connect rejects, to
+<dir>/<device>/, `.build/screenshots` by default, emptying that folder first. Captures on
+iPhone 18 Pro, iPhone Duo, iPad Pro 13-inch (M5) (16GB) and Apple Watch Series 12 (46mm) unless
+`-d` names others, with the watch app on a watch. An iPhone's or iPad's status bar shows each
+state's time, while a watch's clock shows the real time, since simctl can't override it. `-b`
+builds first, and `--dark` captures the iPhones and iPad in dark mode. Afterward each simulator
+gets its appearance and a Duo its fold back, and status bar overrides are cleared.
 
 iPhone Duo is unfolded to its inner display in landscape, the way people hold it open, with
 duoctl, which setup.sh installs. There it shows the day panel, so it gets the iPad's states.
@@ -270,5 +270,6 @@ for device in "${devices[@]}"; do
     capture_settled "$udid" "$display" "$device_dir/$name.png"
     echo "Saved $device_dir/$name.png"
   done
+  xcrun swift "$repo_root/scripts/lib/drop-alpha.swift" "$device_dir"/*.png
   xcrun simctl terminate "$udid" "$bundle_id" >/dev/null 2>&1 || true
 done
