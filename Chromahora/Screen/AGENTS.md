@@ -17,7 +17,7 @@ These rules cover `Chromahora/Screen/`: the screen around the timeline, its tool
 
 ### Verifying
 
-- Check the wide layout on the iPad mini (A17 Pro) in portrait, the narrowest regular width, and on the iPhone 18 Pro Max in landscape, whose size class flips as an unfolding phone's does; no foldable simulator exists. Check the panel in both appearances, over daylight and night.
+- Check the wide layout on the iPad mini (A17 Pro) in portrait, the narrowest screen the panel shows on, and on the iPhone Duo open in both orientations and closed, folding and turning it with `duoctl`, since only its open landscape screen fits the panel. Check the panel in both appearances, over daylight and night.
 - Check anything in the navigation bar over three backdrops: around 3 AM (night), mid afternoon (daylight), and with `now` near 11:35 AM, which puts the title over the sunrise blend where the bar's scheme flips.
 - Check anything the toolbar presents after a real drag that leaves the title over the night sky and daylight below it; launch-time checks and a programmatic `scrollTo` don't make the bar pass its colors down. `simctl` can't drag, so drag with `axe drag`.
 - Check transitions in a recording, since screenshots land about 250 ms apart: `xcrun simctl io <udid> recordVideo --codec=h264 <file>`, stopped with `SIGINT`. `-DebugProviderMode slow` delays a load long enough to watch the reveal.

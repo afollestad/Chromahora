@@ -30,6 +30,8 @@ install_brew_formula xcsift
 install_brew_formula swiftlint
 # Taps, drags and reads the simulator's accessibility tree without the host's cursor.
 install_brew_formula cameroncooke/axe/axe
+# Folds, unfolds and rotates the iPhone Duo simulator, which simctl can't, for screenshots.sh.
+install_brew_formula skarol/tap/duoctl
 
 "$repo_root/scripts/install-git-hooks.sh"
 

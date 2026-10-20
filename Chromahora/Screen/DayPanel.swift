@@ -5,9 +5,9 @@
 
 import SwiftUI
 
-/// The day at a glance beside the timeline when the window has room, as on iPad or an opened
-/// foldable: the calendar, then the day's details. It floats on glass over the sky, and tapping
-/// a row scrolls the timeline to it.
+/// The day at a glance beside the timeline when the window has room, as on iPad or an iPhone
+/// Duo open in landscape: the calendar, then the day's details. It floats on glass over the sky,
+/// and tapping a row scrolls the timeline to it.
 struct DayPanel: View {
     /// `DayPicker`'s width, so the calendar sits in the panel as it does in its popover.
     static let width: CGFloat = 320

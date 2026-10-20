@@ -7,15 +7,18 @@ Usage: ./scripts/screenshots.sh [-b|--build] [--dark] [-d|--device <name>]... [-
 
 Launches the app in each App Store screenshot state, a day in San Francisco with the mock
 weather, and saves a PNG of each to <dir>/<device>/, `.build/screenshots` by default, emptying
-that folder first. Captures on iPhone 18 Pro, iPad Pro 13-inch (M5) (16GB) and Apple Watch
-Series 12 (46mm) unless `-d` names others, with the watch app on a watch. An iPhone's or iPad's
-status bar shows each state's time, while a watch's clock shows the real time, since simctl
-can't override it. `-b` builds first, and `--dark` captures the iPhone and iPad in dark mode,
-restoring each simulator's appearance afterward.
+that folder first. Captures on iPhone 18 Pro, iPhone Duo, iPad Pro 13-inch (M5) (16GB) and Apple
+Watch Series 12 (46mm) unless `-d` names others, with the watch app on a watch. An iPhone's or
+iPad's status bar shows each state's time, while a watch's clock shows the real time, since
+simctl can't override it. `-b` builds first, and `--dark` captures the iPhones and iPad in dark
+mode. Afterward each simulator gets its appearance and a Duo its fold back, and status bar
+overrides are cleared.
 
-Shots keep each simulator's orientation, and an iPad's multitasking mode, which simctl can't
-set: rotate it in Simulator, and choose Full Screen Apps in its Settings > Multitasking &
-Gestures to hide the window's resize handle.
+iPhone Duo is unfolded to its inner display in landscape, the way people hold it open, with
+duoctl, which setup.sh installs. There it shows the day panel, so it gets the iPad's states.
+Other shots keep the simulator's orientation and an iPad's multitasking mode, which simctl
+can't set: rotate it in Device Hub, and choose Full Screen Apps in an iPad's Settings >
+Multitasking & Gestures to hide the window's resize handle.
 USAGE
 }
 
@@ -79,8 +82,8 @@ day="2026-09-16"
 
 # Each state's file name, numbered in a suggested App Store order, the devices it's for, the
 # place's time it shows, and launch arguments after the shared ones. `ios` states run on the
-# iPhone and iPad, and `phone` states on the iPhone alone, since the iPad's day panel shows the
-# details and the calendar in place of the page and the button.
+# iPhones and iPad, and `phone` states only where the day panel doesn't show, since the iPad's
+# and the unfolded Duo's show the details and the calendar in place of the page and the button.
 states=(
   "1-golden-hour|ios|19:05|"
   "2-blue-hour|ios|06:30|"
@@ -107,7 +110,17 @@ scratch=$(mktemp -d -t chromahora-screenshots.XXXXXX)
 restores=()
 # Simulators whose status bar this run overrode, to clear on exit.
 status_bars=()
+# Duos this run unfolded, as `<udid>|<screen>|<orientation>`, to fold and turn back on exit.
+folds=()
 restore() {
+  local entry udid screen orientation
+  for entry in ${folds[@]+"${folds[@]}"}; do
+    IFS='|' read -r udid screen orientation <<<"$entry"
+    if [ "$screen" = cover ]; then
+      duoctl -d "$udid" close >/dev/null 2>&1 || true
+    fi
+    duoctl -d "$udid" rotate "$orientation" >/dev/null 2>&1 || true
+  done
   for entry in ${restores[@]+"${restores[@]}"}; do
     xcrun simctl ui "${entry%%=*}" appearance "${entry#*=}" >/dev/null 2>&1 || true
   done
@@ -141,19 +154,19 @@ override_status_bar_time() {
   xcrun simctl status_bar "$udid" override --time "$(date -u -r "$seconds" +%Y-%m-%dT%H:%M:%S.000Z)"
 }
 
-# Saves the screen to `$2` once the app on simulator `$1` stops moving: four seconds for it to
-# launch, then until two frames a second apart match, so the loading sky's pulse, the debug
-# sheet's half-second delay and its slide in are all over. Gives up after twenty seconds. The
-# launch screen holds still for its first moments, and its frames match each other, so a
-# shorter wait could keep one.
+# Saves simulator `$1`'s display `$2`, or simctl's default when it's empty, to `$3` once the app
+# stops moving: four seconds for it to launch, then until two frames a second apart match, so
+# the loading sky's pulse, the debug sheet's half-second delay and its slide in are all over.
+# Gives up after twenty seconds. The launch screen holds still for its first moments, and its
+# frames match each other, so a shorter wait could keep one.
 capture_settled() {
-  local udid=$1 destination=$2
+  local udid=$1 display=$2 destination=$3
   local previous="$scratch/previous.png" current="$scratch/current.png"
   sleep 4
-  xcrun simctl io "$udid" screenshot "$previous" >/dev/null 2>&1
+  xcrun simctl io "$udid" screenshot ${display:+"--display=$display"} "$previous" >/dev/null 2>&1
   for _ in $(seq 1 20); do
     sleep 1
-    xcrun simctl io "$udid" screenshot "$current" >/dev/null 2>&1
+    xcrun simctl io "$udid" screenshot ${display:+"--display=$display"} "$current" >/dev/null 2>&1
     if cmp -s "$previous" "$current"; then
       mv "$current" "$destination"
       return
@@ -162,6 +175,26 @@ capture_settled() {
   done
   echo "warning: the screen never settled; kept its last frame" >&2
   mv "$previous" "$destination"
+}
+
+# Stops the run when duoctl can't unfold Duo `$1`, which a simulator stuck mid-fold also causes
+# until it reboots.
+fold_failed() {
+  echo "error: duoctl couldn't unfold '$1'. Shut it down with 'xcrun simctl shutdown $2', which this script boots again, and rerun." >&2
+  exit 1
+}
+
+# Prints Duo `$1`'s fold as duoctl's JSON, retrying for up to ten seconds, since it finds no
+# display for a few seconds after a boot.
+duo_state() {
+  local udid=$1
+  for _ in $(seq 1 10); do
+    if duoctl -d "$udid" state 2>/dev/null; then
+      return
+    fi
+    sleep 1
+  done
+  return 1
 }
 
 for device in "${devices[@]}"; do
@@ -175,11 +208,28 @@ for device in "${devices[@]}"; do
   IFS=$'\t' read -r udid runtime device_type <<<"$simulator"
   case "$runtime:$device_type" in
     *watchOS*) kind=watch ;;
-    *iPad*) kind=pad ;;
+    # Unfolded in landscape below, where the day panel shows, as on an iPad.
+    *iPad*|*iPhone-Duo) kind=pad ;;
     *) kind=phone ;;
   esac
 
   xcrun simctl bootstatus "$udid" -b >/dev/null
+  # A Duo's screen that's off captures solid black, and simctl's default can be that one, so its
+  # shots name the inner display duoctl reports.
+  display=""
+  case "$device_type" in
+    *iPhone-Duo)
+      if ! command -v duoctl >/dev/null 2>&1; then
+        echo "error: iPhone Duo needs duoctl to unfold it. Run ./scripts/setup.sh to install it." >&2
+        exit 1
+      fi
+      fold=$(duo_state "$udid") || fold_failed "$device" "$udid"
+      folds+=("$udid|$(jq -r .activeScreen <<<"$fold")|$(jq -r .orientation <<<"$fold")")
+      duoctl -d "$udid" open >/dev/null || fold_failed "$device" "$udid"
+      duoctl -d "$udid" rotate landscape >/dev/null || fold_failed "$device" "$udid"
+      display=$(duo_state "$udid" | jq -r .displayId) || fold_failed "$device" "$udid"
+      ;;
+  esac
   if [ "$kind" = watch ]; then
     bundle_id="com.afollestad.Chromahora.watchkitapp"
     device_app_path=$watch_app_path
@@ -200,7 +250,7 @@ for device in "${devices[@]}"; do
   # A launch to throw away, since the first after an install is the slowest, and could still be
   # blank when the capture starts.
   launch "$udid" 12:00
-  capture_settled "$udid" "$scratch/warm-up.png"
+  capture_settled "$udid" "$display" "$scratch/warm-up.png"
 
   device_dir="$output_dir/$device"
   rm -rf "$device_dir"
@@ -217,7 +267,7 @@ for device in "${devices[@]}"; do
       override_status_bar_time "$udid" "$time"
     fi
     launch "$udid" "$time" ${launch_args[@]+"${launch_args[@]}"}
-    capture_settled "$udid" "$device_dir/$name.png"
+    capture_settled "$udid" "$display" "$device_dir/$name.png"
     echo "Saved $device_dir/$name.png"
   done
   xcrun simctl terminate "$udid" "$bundle_id" >/dev/null 2>&1 || true

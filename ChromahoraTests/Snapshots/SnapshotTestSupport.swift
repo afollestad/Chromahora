@@ -25,8 +25,7 @@ struct SnapshotDevice: Sendable {
     /// `SnapshotTests`' device.
     static let phone = SnapshotDevice(name: "iPhone 18 Pro", modelIdentifier: "iPhone19,2", baselineName: nil)
 
-    /// `WideSnapshotTests`' device. The narrowest regular width, where the day panel first
-    /// shows, and the closest stand-in for an opened foldable iPhone, which has no simulator.
+    /// `WideSnapshotTests`' device. The narrowest screen the day panel shows on.
     static let wide = SnapshotDevice(name: "iPad mini (A17 Pro)", modelIdentifier: "iPad16,2", baselineName: "wide")
 }
 
