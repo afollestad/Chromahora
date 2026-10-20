@@ -35,39 +35,40 @@ install_brew_formula skarol/tap/duoctl
 
 "$repo_root/scripts/install-git-hooks.sh"
 
-# Prints the newest available simulator runtime for a platform, such as `iOS`, or nothing.
+# Prints the newest available simulator runtime for a platform, such as `iOS`, that can run a
+# device type, or any runtime for the platform when no type is given, or nothing.
 newest_runtime() {
   xcrun simctl list runtimes available --json |
-    jq -r --arg platform "$1" '[.runtimes[] | select(.platform == $platform)] | sort_by(.version | split(".") | map(tonumber)) | last | .identifier // empty'
+    jq -r --arg platform "$1" --arg type "${2:-}" '[.runtimes[] | select(.platform == $platform and ($type == "" or any((.supportedDeviceTypes // [])[]; .identifier == $type)))] | sort_by(.version | split(".") | map(tonumber)) | last | .identifier // empty'
 }
 
-# xcodebuild runs a destination named without an OS on the newest iOS, so the scripts' simulators
-# belong on the newest runtime, where the snapshot baselines are recorded.
-ios_runtime=$(newest_runtime iOS)
-if [ -z "$ios_runtime" ]; then
-  echo "error: no iOS simulator runtime is installed. Install one with 'xcodebuild -downloadPlatform iOS' and rerun this script." >&2
-  exit 1
-fi
-watchos_runtime=$(newest_runtime watchOS)
-
-# Creates a simulator by this name on the newest runtime for its platform unless one is there,
-# since the run, test, snapshot and screenshot scripts find their devices by name and fail without them.
+# Creates a simulator by this name unless one is there, since the run, test, snapshot and screenshot
+# scripts find their devices by name and fail without them. It goes on the newest runtime that can
+# run the device, which xcodebuild picks for a destination named without an OS and where the
+# snapshot baselines are recorded. That isn't always the platform's newest: Xcode 27.1's iOS 27.1
+# runtime runs only iPhone Duo.
 create_simulator() {
   local name=$1
-  local device_type="" product_family="" runtime
+  local device_type="" product_family="" platform=iOS runtime
   IFS=$'\t' read -r device_type product_family < <(xcrun simctl list devicetypes --json |
     jq -r --arg name "$name" 'first(.devicetypes[] | select(.name == $name) | [.identifier, .productFamily]) // empty | @tsv') || true
   if [ -z "$device_type" ]; then
     echo "error: this Xcode has no '$name' simulator. Update Xcode and rerun this script." >&2
     exit 1
   fi
-  runtime=$ios_runtime
   if [ "$product_family" = "Apple Watch" ]; then
-    if [ -z "$watchos_runtime" ]; then
-      echo "error: no watchOS simulator runtime is installed. Install one with 'xcodebuild -downloadPlatform watchOS' and rerun this script." >&2
+    platform=watchOS
+  fi
+  runtime=$(newest_runtime "$platform" "$device_type")
+  if [ -z "$runtime" ]; then
+    if [ -z "$(newest_runtime "$platform")" ]; then
+      echo "error: no $platform simulator runtime is installed. Install one with 'xcodebuild -downloadPlatform $platform' and rerun this script." >&2
       exit 1
     fi
-    runtime=$watchos_runtime
+    # A Mac can have a device type without a runtime that runs it, like iPhone Duo without the
+    # iOS 27.1 runtime, and only the scripts that use the device need it.
+    echo "warning: skipping the $name simulator, since no installed $platform runtime can run it. Update Xcode and rerun this script to create it." >&2
+    return
   fi
   if xcrun simctl list devices available --json |
     jq -e --arg runtime "$runtime" --arg name "$name" '(.devices[$runtime] // []) | any(.name == $name)' >/dev/null; then
