@@ -67,13 +67,14 @@ struct PhotoOutlookSessionTests {
         #expect(evening.focusDate == time(18, 37).addingTimeInterval(30))
     }
 
-    /// The timeline's golden-hour labels carry their end's session, the daylight's its own, and
-    /// each night the dark sky it holds.
+    /// The timeline's golden- and blue-hour labels carry their end's session, the daylight's its
+    /// own, and each night the dark sky it holds.
     @Test func theLabelsCarryTheirSessions() {
         let sessions = PhotoOutlook.sessions(on: day(), hours: hours)
 
         #expect(PhotoOutlook.labelSessions(on: day(), hours: hours) == [
-            time(0): sessions[0], time(6, 38): sessions[1], time(7, 42): sessions[2], time(18, 5): sessions[3], time(19, 36): sessions[4]
+            time(0): sessions[0], time(6, 12): sessions[1], time(6, 38): sessions[1], time(7, 42): sessions[2],
+            time(18, 5): sessions[3], time(19, 10): sessions[3], time(19, 36): sessions[4]
         ])
     }
 
@@ -129,7 +130,7 @@ struct PhotoOutlookSessionTests {
         #expect(nights.map(\.rating) == [.fair, .fair])
         #expect(nights.allSatisfy { $0.reasons.contains("Moonlight washes out stars") })
         #expect(Set(PhotoOutlook.labelSessions(on: day, hours: hours).keys) == [
-            time(0, on: day), time(10, 30, on: day), time(16, 21, on: day), time(16, 48, on: day)
+            time(0, on: day), time(10, 3, on: day), time(10, 30, on: day), time(16, 21, on: day), time(16, 48, on: day)
         ])
     }
 
@@ -154,13 +155,13 @@ struct PhotoOutlookSessionTests {
         #expect(PhotoOutlook.sessions(on: day(.midnightSun), hours: hours).map(\.kind) == [.daylight])
     }
 
-    /// Tromsø in December: the morning's golden hour and the evening's lone blue hour carry their
-    /// ends' sessions, and each night a night session of its own.
-    @Test func polarTwilightLabelsTheGoldenHourAndTheEveningsBlueHour() {
+    /// Tromsø in December: the morning's blue and golden hours and the evening's lone blue hour
+    /// carry their ends' sessions, and each night a night session of its own.
+    @Test func polarTwilightLabelsEveryMagicHour() {
         let day = day(.polarTwilight)
 
         #expect(Set(PhotoOutlook.labelSessions(on: day, hours: hours).keys) == [
-            time(0, on: day), time(10, 6, on: day), time(13, 7, on: day), time(13, 58, on: day)
+            time(0, on: day), time(9, 14, on: day), time(10, 6, on: day), time(13, 7, on: day), time(13, 58, on: day)
         ])
     }
 

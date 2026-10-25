@@ -14,7 +14,7 @@ extension WideSnapshotTests {
         try await assertScreenSnapshot(of: timeline(now: june(16, 30), weather: WeatherSpell.mock(for: june(12))), on: .wide)
     }
 
-    /// The cloud band and the rated golden-hour labels in the column beside the panel.
+    /// The cloud band and the rated golden- and blue-hour labels in the column beside the panel.
     @Test func outlook() async throws {
         let timeline = try timeline(now: june(16, 30), weather: WeatherSpell.mock(for: june(12)), hours: SkyHour.mock(for: june(12)))
         await assertScreenSnapshot(of: timeline, on: .wide)

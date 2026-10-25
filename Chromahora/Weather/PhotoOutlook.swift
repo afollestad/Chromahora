@@ -165,18 +165,17 @@ nonisolated enum PhotoOutlook {
     }
 
     /// The session each of `day`'s phases carries on the timeline, keyed by the phase's start:
-    /// an end's golden hours, or for an end with no golden hour, as near the poles, its blue
-    /// hours, so the label of the stretch a rating is mostly about carries it; every daylight;
-    /// and every night holding a dark sky the outlook rates. A night that holds both, as a polar
-    /// night does, carries tonight's.
+    /// every golden and blue hour its end's, which rates them together, so neither label reads as
+    /// the only one rated; every daylight; and every night holding a dark sky the outlook rates.
+    /// A night that holds both, as a polar night does, carries tonight's.
     static func labelSessions(on day: SolarDay, in run: DayRun? = nil, hours: [SkyHour]) -> [Date: OutlookSession] {
         let run = run ?? DayRun(day)
         let ends = run.ends(of: day)
         var labeled: [Date: OutlookSession] = [:]
         for session in sessions(on: day, in: run, hours: hours) {
             let segments = switch session.kind {
-            case .morning: goldenOrBlue(ends.morning.magicHours)
-            case .evening: goldenOrBlue(ends.evening.magicHours)
+            case .morning: ends.morning.magicHours
+            case .evening: ends.evening.magicHours
             case .daylight: day.segments.filter { $0.phase == .daylight }
             case .beforeDawn, .night:
                 day.segments.filter { segment in
@@ -188,11 +187,6 @@ nonisolated enum PhotoOutlook {
             }
         }
         return labeled
-    }
-
-    private static func goldenOrBlue(_ magicHours: [DaySegment]) -> [DaySegment] {
-        let golden = magicHours.filter { $0.phase == .goldenHour }
-        return golden.isEmpty ? magicHours : golden
     }
 
     // MARK: Sessions
