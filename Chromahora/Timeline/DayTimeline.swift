@@ -89,8 +89,11 @@ struct DayTimeline: View {
                     SkyGradient(day: day)
                         .id(day.phaseSequence)
                         .transition(.opacity)
-                    // Under the overlay's scrim, which keeps the ruler legible over it.
+                    // Under the overlay's scrim, which keeps the ruler legible over it. Kept to the
+                    // day, since the padding past its ends shows `DayPager`'s copy carrying the band
+                    // on, which a second translucent band would double.
                     CloudBand(day: day, hours: hours, leadingInset: labelInsets.leading)
+                        .clipped()
                     DayTimelineOverlay(
                         day: day,
                         now: now,

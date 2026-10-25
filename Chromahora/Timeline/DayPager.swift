@@ -17,6 +17,7 @@ import SwiftUI
 /// Without the day panel, a swipe sideways pages from the timeline to the day's details,
 /// which dots under the sources button follow. A copy of the sky behind both pages stays where
 /// the timeline's scroll puts it, so only the labels slide away and the details over the sky.
+/// With nothing before it, the timeline holds still when pulled past its leading edge.
 struct DayPager: View {
     /// The page a sideways swipe moves between.
     enum Pane: String, CaseIterable, Sendable {
@@ -90,8 +91,8 @@ struct DayPager: View {
     /// The page the sideways scroll rests on, which `scrollPosition` keeps. Nil only before the
     /// pager appears, when it opens on `initialPane` if the details are there to open on.
     @State private var pane: Pane?
-    /// How far the sideways scroll has moved from the timeline. Read only by the scrim that
-    /// slides with it, like `skyTop`.
+    /// How far the sideways scroll has moved from the timeline, never back past it, where the
+    /// timeline holds still. Read only by the scrim and cloud band that slide with it, like `skyTop`.
     @State private var paneOffset: CGFloat = 0
 
     var body: some View {
@@ -117,7 +118,7 @@ struct DayPager: View {
             // Uncovered as the timeline overscrolls past either end or slides away, or a sideways
             // swipe overscrolls. The bars' soft edge effect fades toward it too, so each page's copy
             // moves with the page through a push between days, and it carries the cloud band and the
-            // ruler's scrim where the timeline has them.
+            // ruler's scrim where the timeline has them, and the band on past the day's ends.
             .background {
                 ZStack {
                     ForEach(pages) { page in
@@ -126,15 +127,23 @@ struct DayPager: View {
                         let top = page.frozenSkyTop.map { .constant($0) } ?? $skyTop
                         ZStack {
                             DaySky(day: pageDay, height: height, top: top)
-                            SlidingCloudBand(
-                                day: pageDay,
-                                hours: hours,
-                                height: height,
-                                leadingInset: safeAreaInsets.leading,
-                                top: top,
-                                paneOffset: $paneOffset
-                            )
+                            // Only the page on screen's. A leaving page's copy keeps the scroll it had
+                            // while the page springs back from the pull, so the band it carries past
+                            // the day's end would stand off the page's own, which covers the day.
+                            if page.frozenSkyTop == nil {
+                                SlidingCloudBand(
+                                    day: pageDay,
+                                    hours: hours,
+                                    height: height,
+                                    leadingInset: safeAreaInsets.leading,
+                                    top: top,
+                                    paneOffset: $paneOffset
+                                )
+                            }
                         }
+                        // Kept to its own screen, so the band the page coming in carries past the
+                        // day's end doesn't reach under the page it pushes off.
+                        .clipped()
                         .offset(y: reduceMotion ? 0 : offset(past: page.offscreenEdge))
                         .opacity(reduceMotion && page.offscreenEdge != nil ? 0 : 1)
                         .zIndex(Double(page.id))
@@ -179,6 +188,14 @@ struct DayPager: View {
             HStack(spacing: 0) {
                 pageStack
                     .containerRelativeFrame(.horizontal)
+                    // Held still when pulled past its leading edge, since sliding there would open a
+                    // strip of the sky behind beside the ruler's scrim and the cloud band.
+                    .visualEffect { content, proxy in
+                        // The scroll view's bounds in the page's own space, which start before it
+                        // as the pager bounces at its leading edge.
+                        let visible = proxy.bounds(of: .scrollView(axis: .horizontal))
+                        return content.offset(x: min(visible?.minX ?? 0, 0))
+                    }
                     .id(Pane.timeline)
                     .accessibilityHidden(currentPane != .timeline)
                 if showsDetails {
@@ -205,7 +222,7 @@ struct DayPager: View {
             geometry.contentOffset.x
         } action: { _, offset in
             withTransaction(\.disablesAnimations, true) {
-                paneOffset = offset
+                paneOffset = max(offset, 0)
             }
         }
         // The bars take their edge effect from this outer scroll view rather than the timeline's,

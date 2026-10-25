@@ -6,8 +6,8 @@
 import SwiftUI
 
 /// The darkened gutter behind the hour ruler, which keeps its white labels legible
-/// over the bright daylight band. `DayTimeline` also paints it past the day's ends,
-/// so overscrolling doesn't cut it off.
+/// over the bright daylight band. `DayPager`'s copy behind the pages also paints it past
+/// the day's ends, so overscrolling doesn't cut it off.
 struct RulerScrim: View {
     let leadingInset: CGFloat
     /// Wide enough to sit behind the hour labels and the start of the marker labels over them.

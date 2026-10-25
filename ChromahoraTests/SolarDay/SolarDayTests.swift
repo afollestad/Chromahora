@@ -234,6 +234,13 @@ struct SolarDayTests {
         #expect(abs(day.fraction(of: noon) - 0.5) < 0.0001)
     }
 
+    @Test func unclampedFractionRunsPastTheDaysEnds() {
+        let hour = 3600 / day.duration
+
+        #expect(abs(day.fraction(of: day.dayStart.addingTimeInterval(-3600), clamped: false) + hour) < 0.0001)
+        #expect(abs(day.fraction(of: day.dayEnd.addingTimeInterval(3600), clamped: false) - (1 + hour)) < 0.0001)
+    }
+
     @Test func containsOnlyDatesFromStartUpToButExcludingEnd() throws {
         #expect(day.contains(day.dayStart))
         #expect(day.contains(try #require(day.sunrise)))

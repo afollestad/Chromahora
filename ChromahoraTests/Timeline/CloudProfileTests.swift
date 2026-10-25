@@ -58,14 +58,48 @@ struct CloudProfileTests {
         #expect(profile.runs.map { $0.first?.fraction } == [fraction(6), fraction(8)])
     }
 
-    /// In a zone half an hour off UTC, the hours at either midnight are cut there, and hours off
-    /// the day are left out.
-    @Test func hoursAreKeptToTheDay() {
-        let profile = CloudProfile(day: day, hours: [hour(-2, cover: 0.5), hour(-0.5, cover: 0.4), hour(23.5, cover: 0.6), hour(25, cover: 1)])
+    /// The next day's hours carry the band on across midnight, past the end of the day.
+    @Test func neighboringHoursCarryOnAcrossMidnight() {
+        let profile = CloudProfile(day: day, hours: [hour(23, cover: 0.2), hour(24, cover: 0.8)])
+
+        #expect(profile.runs.count == 1)
+        #expect(profile.runs[0].dropLast() == [
+            .init(fraction: fraction(23), cover: 0.2),
+            .init(fraction: fraction(23.5), cover: 0.2),
+            .init(fraction: fraction(24.5), cover: 0.8),
+            .init(fraction: fraction(25), cover: 0.8)
+        ])
+    }
+
+    /// Where the forecast stops at or past one of the day's ends, its last cover holds out to
+    /// the reach. In a zone half an hour off UTC, the hours at either midnight run past it.
+    @Test func coverHoldsPastAnEndWhereTheForecastStops() {
+        let reach = CloudProfile.reach / SkyHour.duration
+        let profile = CloudProfile(day: day, hours: [hour(-0.5, cover: 0.4), hour(23.5, cover: 0.6)])
 
         #expect(profile.runs.count == 2)
-        #expect(profile.runs[0].map(\.fraction) == [0, 0, fraction(0.5)])
-        #expect(profile.runs[1].map(\.fraction) == [fraction(23.5), 1, 1])
+        #expect(profile.runs[0] == [
+            .init(fraction: fraction(-reach), cover: 0.4),
+            .init(fraction: fraction(-0.5), cover: 0.4),
+            .init(fraction: fraction(0), cover: 0.4),
+            .init(fraction: fraction(0.5), cover: 0.4)
+        ])
+        #expect(profile.runs[1].map(\.fraction) == [fraction(23.5), fraction(24), fraction(24.5), fraction(24 + reach)])
+    }
+
+    /// A run that stops short of the day's ends leaves its gap there too.
+    @Test func aRunShortOfAnEndHoldsNoFurther() {
+        let profile = CloudProfile(day: day, hours: [hour(1, cover: 0.5), hour(22, cover: 0.5)])
+
+        #expect(profile.runs.map { $0.first?.fraction } == [fraction(1), fraction(22)])
+        #expect(profile.runs.map { $0.last?.fraction } == [fraction(2), fraction(23)])
+    }
+
+    @Test func hoursPastTheReachAreLeftOut() {
+        let reach = CloudProfile.reach / SkyHour.duration
+        let profile = CloudProfile(day: day, hours: [hour(-reach - 1, cover: 0.5), hour(12, cover: 0.5), hour(24 + reach, cover: 0.5)])
+
+        #expect(profile.runs.map { $0.first?.fraction } == [fraction(12)])
     }
 
     @Test func coverStaysWithinTheSky() {

@@ -277,10 +277,12 @@ nonisolated struct SolarDay: Equatable, Sendable {
         return segments.last { $0.interval.start <= date }
     }
 
-    /// Where `date` falls within the day, from 0 at the start to 1 at the end.
-    func fraction(of date: Date) -> Double {
-        let offset = date.timeIntervalSince(dayStart)
-        return min(max(offset / duration, 0), 1)
+    /// Where `date` falls within the day, from 0 at the start to 1 at the end. Unclamped, a date
+    /// off the day falls past either end at the day's scale, for what carries on past midnight,
+    /// like the cloud band.
+    func fraction(of date: Date, clamped: Bool = true) -> Double {
+        let fraction = date.timeIntervalSince(dayStart) / duration
+        return clamped ? min(max(fraction, 0), 1) : fraction
     }
 }
 

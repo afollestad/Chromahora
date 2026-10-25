@@ -6,8 +6,9 @@
 import SwiftUI
 
 /// The forecast's cloud cover down the day: a soft white band out from the leading edge, behind
-/// the hour ruler, as wide as the hour's sky is covered. Hidden from VoiceOver, since each
-/// weather marker already says its spell's cloud cover.
+/// the hour ruler, as wide as the hour's sky is covered. It draws on past the day's ends, which
+/// `DayPager`'s copy shows past midnight. Hidden from VoiceOver, since each weather marker
+/// already says its spell's cloud cover.
 struct CloudBand: View {
     let day: SolarDay
     /// The forecast's hours, of any day. Those reaching this one shape the band.
