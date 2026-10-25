@@ -81,6 +81,8 @@ create_simulator() {
 
 create_simulator "$snapshot_phone_device"
 create_simulator "$snapshot_wide_device"
+# The narrowest iPhone, where `Chromahora/Timeline/AGENTS.md` has label changes checked.
+create_simulator "iPhone 17e"
 for device in "${screenshot_devices[@]}"; do
   create_simulator "$device"
 done
