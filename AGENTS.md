@@ -52,8 +52,9 @@ Every baseline of a size puts its widgets in the same frames, so the corners' co
 
 ## Privacy policy
 
-- `privacy.html` is the app's privacy policy, which the App Store listing links to. Its text moved here verbatim from af.codes, which no longer hosts it, so keep this path. Change the text only with the app's data handling, and the effective date with it.
-- It shares the home page's sheets and toggle: `styles/index-common.css` for the base and footer, the theme sheets for every color, and `styles/privacy.css` for its own layout. The home page's heading styles are scoped to `.hero-copy` and `.section-feature` so they don't reach it.
+- `privacy.html` is the app's privacy policy, moved here verbatim from af.codes. The App Store listing still links to af.codes' `privacypolicy/chromahora.html`, which redirects here with JavaScript since the listing's privacy URL can only change with a new release, so keep this path.
+- Change the policy's text only with the app's data handling, and its effective date with it.
+- The page shares the home page's sheets and toggle: `styles/index-common.css` for the base and footer, the theme sheets for every color, and `styles/privacy.css` for its own layout. The home page's heading styles are scoped to `.hero-copy` and `.section-feature` so they don't reach it.
 
 ## Content
 
