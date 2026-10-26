@@ -13,7 +13,10 @@ set -eu
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-./scripts/lint.sh --quiet
+# Branches without the app, like `gh-pages`, have no lint script and nothing for it to lint.
+if [ -f ./scripts/lint.sh ]; then
+  ./scripts/lint.sh --quiet
+fi
 git diff --cached --check
 HOOK
 
