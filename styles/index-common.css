@@ -191,7 +191,7 @@ button:focus-visible {
     filter: drop-shadow(0 .6rem 1.2rem var(--icon-shadow));
 }
 
-h1 {
+.hero-copy h1 {
     display: inline-block;
     margin-top: 1.5rem;
     font-size: clamp(2.75rem, 7vw, 4.25rem);
@@ -204,7 +204,7 @@ h1 {
 /* The name is painted with the day's light, blue hour through golden hour,
    wherever text can be a gradient's clip; elsewhere it stays plain --fg. */
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    h1 {
+    .hero-copy h1 {
         background: var(--title-gradient);
         -webkit-background-clip: text;
         background-clip: text;
@@ -433,7 +433,7 @@ h1 {
     margin-right: auto;
 }
 
-h2 {
+.section-feature h2 {
     margin-top: 1rem;
     font-size: clamp(1.9rem, 3.5vw, 2.6rem);
     font-weight: 700;

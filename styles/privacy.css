@@ -1,0 +1,197 @@
+/* Layout for privacy.html, the policy the App Store listing links to. Its
+   colors are the theme sheets' tokens, so it follows the same toggle as the
+   home page. */
+
+/* The day's light, blue hour through daylight, along the top of the page. */
+.day-band {
+    height: 6px;
+    background: linear-gradient(90deg, var(--blue-hour), var(--dusk) 35%, var(--golden-hour) 68%, var(--daylight));
+}
+
+/* As wide as the text below it, so the way home and the toggle line up with
+   the policy rather than the window's corners. */
+.policy-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 42.5rem;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 0;
+}
+
+.policy-home {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    border-radius: .5rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .policy-home:hover {
+        color: var(--accent);
+    }
+}
+
+.policy-icon {
+    width: 2rem;
+}
+
+.policy-icon img {
+    width: 100%;
+}
+
+.policy {
+    max-width: 42.5rem;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 0;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+}
+
+.policy header {
+    margin-bottom: 2rem;
+}
+
+.policy h1 {
+    margin: 0 0 .4rem;
+    font-size: 2rem;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+}
+
+.policy .meta {
+    margin: 0;
+    color: var(--secondary);
+    font-size: .95rem;
+}
+
+.policy h2 {
+    margin: 2.5rem 0 .5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--hairline);
+    font-size: 1.2rem;
+}
+
+.policy p,
+.policy ul {
+    margin: 0 0 .875rem;
+}
+
+.policy ul {
+    padding-left: 1.25em;
+}
+
+.policy li {
+    margin-bottom: .5rem;
+}
+
+.policy a {
+    color: var(--link);
+    text-underline-offset: 2px;
+}
+
+.policy strong {
+    font-weight: 600;
+}
+
+.policy .summary {
+    margin: 0 0 .5rem;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--accent);
+    border-radius: .5rem;
+    background: var(--callout);
+}
+
+.policy .summary p:last-child,
+.policy .summary ul:last-child {
+    margin-bottom: 0;
+}
+
+.policy table {
+    width: 100%;
+    margin: .5rem 0 1rem;
+    border: 1px solid var(--hairline);
+    border-collapse: collapse;
+    border-radius: .5rem;
+    overflow: hidden;
+    background: var(--surface);
+    font-size: .95rem;
+}
+
+.policy th,
+.policy td {
+    padding: .625rem .75rem;
+    border-bottom: 1px solid var(--hairline);
+    text-align: left;
+    vertical-align: top;
+}
+
+.policy tr:last-child td {
+    border-bottom: 0;
+}
+
+.policy th {
+    color: var(--secondary);
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.policy footer {
+    margin-top: 3rem;
+    color: var(--secondary);
+    font-size: .9rem;
+}
+
+/* The table stacks into a card per service, each cell labeled from its
+   data-label, since three columns of prose don't fit a phone. */
+@media (max-width: 520px) {
+    .policy {
+        padding-top: 2rem;
+        font-size: 1rem;
+    }
+
+    .policy h1 {
+        font-size: 1.6rem;
+    }
+
+    .policy table,
+    .policy thead,
+    .policy tbody,
+    .policy tr,
+    .policy th,
+    .policy td {
+        display: block;
+    }
+
+    .policy thead {
+        display: none;
+    }
+
+    .policy tr {
+        padding: .375rem 0;
+        border-bottom: 1px solid var(--hairline);
+    }
+
+    .policy tr:last-child {
+        border-bottom: 0;
+    }
+
+    .policy td {
+        padding: .25rem .75rem;
+        border-bottom: 0;
+    }
+
+    .policy td::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--secondary);
+        font-size: .8rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+}

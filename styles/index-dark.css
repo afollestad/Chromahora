@@ -11,7 +11,12 @@
     --secondary: #a6abc8;
     /* AccentColor's dark variant. */
     --accent: #e07a1f;
+    /* Links in running text, as on the privacy policy: blue hour lifted to 8:1 on --bg. */
+    --link: #8fa8ff;
+    --hairline: rgba(243, 241, 236, .12);
     --hairline-strong: rgba(243, 241, 236, .22);
+    --surface: rgba(255, 255, 255, .04);
+    --callout: #1c2350;
     --ghost-bg: rgba(255, 255, 255, .04);
     --icon-shadow: rgba(0, 0, 0, .45);
     --device-rim: #3f414f;

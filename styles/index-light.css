@@ -10,7 +10,12 @@
     --secondary: #545873;
     /* AccentColor's light variant. */
     --accent: #9e4a06;
+    /* Links in running text, as on the privacy policy: blue hour, 7.3:1 on --bg. */
+    --link: #2e4da8;
+    --hairline: rgba(16, 21, 58, .12);
     --hairline-strong: rgba(16, 21, 58, .2);
+    --surface: #ffffff;
+    --callout: #fff0d4;
     --ghost-bg: rgba(255, 255, 255, .55);
     --icon-shadow: rgba(16, 21, 58, .2);
     --device-rim: #a3a3aa;

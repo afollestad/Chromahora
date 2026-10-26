@@ -1,6 +1,6 @@
 # chromahora.af.codes
 
-This branch *is* the published site. GitHub Pages serves it from the repo root, so anything committed here goes live. There is no build step: `index.html`, the sheets in `styles/`, the scripts in `scripts/` and the assets in `images/` ship verbatim. Preview with a local static server (`python3 -m http.server`) rather than opening the file directly, so relative paths resolve the way they will in production.
+This branch *is* the published site. GitHub Pages serves it from the repo root, so anything committed here goes live. There is no build step: `index.html`, `privacy.html`, the sheets in `styles/`, the scripts in `scripts/` and the assets in `images/` ship verbatim. Preview with a local static server (`python3 -m http.server`) rather than opening the file directly, so relative paths resolve the way they will in production.
 
 ## Look
 
@@ -49,6 +49,11 @@ Every baseline of a size puts its widgets in the same frames, so the corners' co
 ### Link preview
 
 `images/og-image.png` is 1200x630 on the dark theme's opaque night (`#0d1233`), with its dusk glow and stars: the dark icon, the name in the dark title gradient and a one-line tagline on the left, and the dark `iphone-golden-hour` in its frame on the right, cut off by the bottom edge. It's rendered from a scratch page that links `styles/index-common.css` for the frame, with headless Chrome: `--headless=new --force-dark-mode --window-size=1200,630 --screenshot`. A preview can't know the reader's theme, and composites transparency unpredictably. Re-export it whenever the hero screenshot changes, and keep it a PNG, since crawler support for WebP is patchy.
+
+## Privacy policy
+
+- `privacy.html` is the app's privacy policy, which the App Store listing links to. Its text moved here verbatim from af.codes, which no longer hosts it, so keep this path. Change the text only with the app's data handling, and the effective date with it.
+- It shares the home page's sheets and toggle: `styles/index-common.css` for the base and footer, the theme sheets for every color, and `styles/privacy.css` for its own layout. The home page's heading styles are scoped to `.hero-copy` and `.section-feature` so they don't reach it.
 
 ## Content
 
