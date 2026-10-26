@@ -1,0 +1,58 @@
+/* Light theme: the page is daylight, opening on a sunrise and closing on a
+   sunset into night.
+   Don't forget to update the theme colors in scripts/dark-mode.js if --bg changes. */
+
+:root {
+    color-scheme: light;
+
+    --bg: #fff9ef;
+    --fg: #10153a;
+    --secondary: #545873;
+    /* AccentColor's light variant. */
+    --accent: #9e4a06;
+    --hairline-strong: rgba(16, 21, 58, .2);
+    --ghost-bg: rgba(255, 255, 255, .55);
+    --icon-shadow: rgba(16, 21, 58, .2);
+    --device-rim: #a3a3aa;
+    --device-shadow: rgba(16, 21, 58, .3);
+    --watch-case: #cfd0d6;
+    --watch-crown: linear-gradient(to right, #b4b5bc, #e6e7eb);
+    /* Golden hour's own orange is too light for text on --bg, so the name ends
+       on a deeper one. */
+    --title-gradient: linear-gradient(100deg, #2e4da8 5%, #8c547a 50%, #c25e12 95%);
+    --wallpaper: linear-gradient(160deg, #3a59b8 0%, #6a5594 52%, #8c547a 100%);
+    --wallpaper-shadow: 0 1.5rem 3rem -1rem rgba(16, 21, 58, .32);
+    --footer-fg: rgba(255, 255, 255, .9);
+    --fab-bg: rgba(255, 249, 239, .6);
+    --fab-border: rgba(16, 21, 58, .15);
+    --fab-fg: #10153a;
+    --fab-shadow: rgba(16, 21, 58, .2);
+}
+
+/* The canvas is night, and only the body is daylight, so overscrolling past
+   either end shows the night before sunrise and after sunset, the color the
+   footer ends on, rather than a strip of daylight under it. */
+html {
+    background: #0d1233;
+}
+
+.theme-toggle .icon-moon {
+    display: block;
+}
+
+/* Sunrise behind the devices: daylight through golden hour, fading out
+   through the dusk bridge. */
+.hero-sky {
+    background: radial-gradient(ellipse 760px 560px at 50% 72%,
+        rgba(252, 209, 77, .75) 0%, rgba(235, 133, 41, .35) 45%, rgba(140, 84, 122, .12) 75%, rgba(140, 84, 122, 0) 100%);
+}
+
+/* Sunset into night: daylight, golden hour, the dusk bridge and blue hour. The
+   stops are measured from the footer's 9rem top padding, so its text always
+   starts past blue hour. */
+.site-footer {
+    background: linear-gradient(to bottom,
+        rgba(252, 209, 77, 0) 0, rgba(252, 209, 77, .55) 2.5rem, #eb8529 4.5rem, #8c547a 6.5rem, #2e4da8 8.5rem, #0d1233 12rem);
+    background: linear-gradient(to bottom in oklab,
+        rgba(252, 209, 77, 0) 0, rgba(252, 209, 77, .55) 2.5rem, #eb8529 4.5rem, #8c547a 6.5rem, #2e4da8 8.5rem, #0d1233 12rem);
+}

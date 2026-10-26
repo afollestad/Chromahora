@@ -1,0 +1,62 @@
+/* Dark theme: the page is the app's night, opening on a dusk glow under stars
+   and closing on the first light before dawn.
+   Don't forget to update the theme colors in scripts/dark-mode.js if --bg changes,
+   and re-export images/og-image.png, which bakes it in as its canvas. */
+
+:root {
+    color-scheme: dark;
+
+    --bg: #0d1233;
+    --fg: #f3f1ec;
+    --secondary: #a6abc8;
+    /* AccentColor's dark variant. */
+    --accent: #e07a1f;
+    --hairline-strong: rgba(243, 241, 236, .22);
+    --ghost-bg: rgba(255, 255, 255, .04);
+    --icon-shadow: rgba(0, 0, 0, .45);
+    --device-rim: #3f414f;
+    --device-shadow: rgba(0, 0, 0, .55);
+    --watch-case: #2c2d35;
+    --watch-crown: linear-gradient(to right, #2c2d35, #4b4d58);
+    /* Blue hour and the mauve are lifted, as the watch lifts blue hour for its
+       face, since the app's own are too dark for text on night. */
+    --title-gradient: linear-gradient(100deg, #7fa2ff 5%, #c98bb8 40%, #f09a45 72%, #fcd14d 98%);
+    --wallpaper: linear-gradient(160deg, #3a59b8 0%, #6a5594 52%, #8c547a 100%);
+    --wallpaper-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08), 0 1.5rem 3rem -1rem rgba(0, 0, 0, .5);
+    --footer-fg: #a6abc8;
+    --fab-bg: rgba(13, 18, 51, .5);
+    --fab-border: rgba(255, 255, 255, .3);
+    --fab-fg: #ffffff;
+    --fab-shadow: rgba(0, 0, 0, .35);
+}
+
+html {
+    background: var(--bg);
+}
+
+.theme-toggle .icon-sun {
+    display: block;
+}
+
+/* Dusk behind the devices: golden hour's last glow through the dusk bridge
+   into blue hour. */
+.hero-sky {
+    background: radial-gradient(ellipse 760px 560px at 50% 72%,
+        rgba(235, 133, 41, .5) 0%, rgba(140, 84, 122, .32) 35%, rgba(46, 77, 168, .22) 62%, rgba(46, 77, 168, 0) 100%);
+}
+
+/* Stars, fading out before they reach the glow. */
+.hero-sky::before {
+    background: url("../images/stars.svg") top center / 640px 400px repeat;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .55) 30%, transparent 60%);
+    mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .55) 30%, transparent 60%);
+}
+
+/* First light: blue hour rising through the dusk bridge toward golden hour at
+   the page's bottom edge. */
+.site-footer {
+    background: linear-gradient(to bottom,
+        rgba(46, 77, 168, 0) 30%, rgba(46, 77, 168, .3) 70%, rgba(140, 84, 122, .32) 88%, rgba(235, 133, 41, .3) 100%);
+    background: linear-gradient(to bottom in oklab,
+        rgba(46, 77, 168, 0) 30%, rgba(46, 77, 168, .3) 70%, rgba(140, 84, 122, .32) 88%, rgba(235, 133, 41, .3) 100%);
+}

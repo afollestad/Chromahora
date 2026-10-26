@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chromahora</title>
+    <meta name="description"
+        content="Chromahora is a native iOS day planner for photographers: blue hour, golden hour, weather, cloud cover, UV, moon phase and dark skies, with an outlook that rates each stretch of the day's light.">
+
+    <meta name="theme-color" content="#fff9ef" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1233" media="(prefers-color-scheme: dark)">
+
+    <meta property="og:title" content="Chromahora">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://chromahora.af.codes">
+    <meta property="og:description"
+        content="A native iOS day planner for photographers: blue hour, golden hour, weather, cloud cover, UV, moon phase and dark skies, with an outlook that rates each stretch of the day's light.">
+    <!-- images/og-image.png is composed for the 1200x630 link previews expect, on
+         an opaque night sky, since a preview can't know the reader's theme and
+         composites transparency unpredictably. It has to stay a PNG: crawler
+         support for WebP is patchy. Re-export it whenever the hero screenshot
+         changes; AGENTS.md has the recipe. -->
+    <meta property="og:image" content="https://chromahora.af.codes/images/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt"
+        content="The Chromahora app icon and name beside an iPhone showing a day's timeline in San Francisco, colored from daylight through golden hour and blue hour into night.">
+    <!-- Twitter falls back to og:image on its own, but it never reads
+         og:image:alt, so the image is repeated here to give its alt an anchor. -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://chromahora.af.codes/images/og-image.png">
+    <meta name="twitter:image:alt"
+        content="The Chromahora app icon and name beside an iPhone showing a day's timeline in San Francisco, colored from daylight through golden hour and blue hour into night.">
+
+    <!-- The light rendition in both appearances: Safari draws its own backdrop
+         behind a favicon too dark for its tab bar, and reads these links once at
+         load, so a themed icon could neither look right nor follow the toggle. -->
+    <link rel="icon" href="favicon.png" type="image/png" sizes="96x96">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <link rel="stylesheet" href="styles/index-common.css">
+
+    <link rel="stylesheet" href="styles/index-dark.css" id="theme-dark" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="styles/index-light.css" id="theme-light"
+        media="(prefers-color-scheme: no-preference), (prefers-color-scheme: light)">
+
+    <script src="scripts/dark-mode.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <section class="section-hero" id="overview">
+        <div class="hero-sky" aria-hidden="true"></div>
+
+        <div class="top-brand">
+            <a class="brand-logo" href="https://af.codes" aria-label="af.codes — Aidan Follestad">
+                <img src="images/af.png" alt="" decoding="async">
+            </a>
+        </div>
+
+        <div class="top-actions">
+            <button class="top-btn theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="container hero-copy">
+            <picture class="app-icon">
+                <source srcset="images/app-icon-dark.png" data-theme="dark" media="(prefers-color-scheme: dark)">
+                <img src="images/app-icon-light.png" alt="" width="256" height="256" decoding="async">
+            </picture>
+
+            <h1>Chromahora</h1>
+            <p class="tagline">
+                A day planner for photographers: blue hour, golden hour, weather, cloud cover, UV, moon phase and
+                dark skies, with an outlook that rates each stretch of the day's light.
+            </p>
+
+            <div class="cta-row">
+                <a class="app-store" href="https://apps.apple.com/us/app/chromahora/id6817085752">
+                    <img src="images/app-store-badge.svg" alt="Download on the App Store" width="144" height="48">
+                </a>
+                <a class="btn-ghost" href="https://github.com/afollestad/Chromahora">
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/>
+                    </svg>
+                    <span class="btn-stack">
+                        <span>View on GitHub</span>
+                        <span class="btn-subtext">Stars appreciated!</span>
+                    </span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Screens are full-screen captures with square corners; the .device
+             frames draw the bezel and round them. Each iPhone and iPad shot ships
+             in both appearances: the dark one is the <source>, so the light one
+             stays the <img> fallback and only the matching appearance downloads.
+             scripts/dark-mode.js flips the source's media when the toggle
+             overrides the system preference. The watch app is always dark, so its
+             shots ship once. -->
+        <div class="hero-devices">
+            <div class="device phone">
+                <picture>
+                    <source srcset="images/iphone-golden-hour-dark.webp" type="image/webp" data-theme="dark"
+                        media="(prefers-color-scheme: dark)">
+                    <img src="images/iphone-golden-hour-light.webp"
+                        alt="Chromahora's timeline for San Francisco at 7:05 PM: daylight above, then golden hour rated Great, sunset, and blue hour rated Great sliding into night, with cloud cover and the night's Excellent rating marked along the way."
+                        width="603" height="1311" decoding="async" fetchpriority="high">
+                </picture>
+            </div>
+            <div class="device watch">
+                <img src="images/watch-countdown.webp"
+                    alt="The Apple Watch app counting down to golden hour, rated Great, in 2 hours and 11 minutes, above a bar of the day's light."
+                    width="416" height="496" decoding="async">
+            </div>
+        </div>
+    </section>
+
+    <section class="section-feature" id="timeline">
+        <div class="container feature-split">
+            <div class="feature-text">
+                <p class="chip chip-blue">Timeline</p>
+                <h2>The whole day's sky, hour by hour</h2>
+                <p class="feature-copy">
+                    Scroll through the day as it will look. Night, blue hour, golden hour and daylight each color the
+                    timeline where they fall, marked with sunrise, sunset, cloud cover and the weather.
+                </p>
+            </div>
+            <div class="feature-media">
+                <div class="device phone">
+                    <picture>
+                        <source srcset="images/iphone-blue-hour-dark.webp" type="image/webp" data-theme="dark"
+                            media="(prefers-color-scheme: dark)">
+                        <img src="images/iphone-blue-hour-light.webp"
+                            alt="The timeline at 6:30 AM: night rated Good until 6:26 AM, then blue hour and golden hour, both rated Poor, and sunrise at 6:52 AM, with cloud cover marked along the edge as the sky turns to daylight."
+                            width="603" height="1311" loading="lazy" decoding="async">
+                    </picture>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-feature" id="outlook">
+        <div class="container feature-split feature-split-reverse">
+            <div class="feature-text">
+                <p class="chip chip-golden">Outlook</p>
+                <h2>Know when the light is worth it</h2>
+                <p class="feature-copy">
+                    The outlook rates each stretch of the day, from before dawn to tonight, and says why: low cloud
+                    blocking the sun, clean air after rain, or a clear sky for stars.
+                </p>
+            </div>
+            <div class="feature-media">
+                <div class="device phone">
+                    <picture>
+                        <source srcset="images/iphone-outlook-dark.webp" type="image/webp" data-theme="dark"
+                            media="(prefers-color-scheme: dark)">
+                        <img src="images/iphone-outlook-light.webp"
+                            alt="The day's details: an outlook rating before dawn Good, morning Poor, daylight Poor, evening Great and tonight Excellent, each with its reasons, above every phase's times and length."
+                            width="603" height="1311" loading="lazy" decoding="async">
+                    </picture>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-feature" id="ipad">
+        <div class="container feature-split">
+            <div class="feature-text">
+                <p class="chip chip-daylight">iPad</p>
+                <h2>Room for the whole day</h2>
+                <p class="feature-copy">
+                    On iPad and an unfolded iPhone Duo, the calendar and the day's details sit beside the timeline.
+                    Pick any day, or search for anywhere you're headed, and its times show on its own clock.
+                </p>
+            </div>
+            <div class="feature-media">
+                <div class="device tablet">
+                    <picture>
+                        <source srcset="images/ipad-dark.webp" type="image/webp" data-theme="dark"
+                            media="(prefers-color-scheme: dark)">
+                        <img src="images/ipad-light.webp"
+                            alt="Chromahora on iPad: the day's timeline fills the screen, with a panel beside it holding the September calendar, the outlook and every phase of the day."
+                            width="1032" height="1376" loading="lazy" decoding="async">
+                    </picture>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-feature section-centered" id="widgets">
+        <div class="container">
+            <p class="chip chip-mauve">Widgets</p>
+            <h2>The next golden hour, at a glance</h2>
+            <p class="feature-copy">
+                Home Screen widgets show the next golden or blue hour, the next sunrise or sunset, the moon and
+                tonight's dark sky, or the whole day's light.
+            </p>
+
+            <!-- Each widget is cut from its snapshot baseline with transparent
+                 corners and a pixel of clear margin on every side, so a medium one
+                 spans two small ones plus exactly one gap. --widget-gap keeps that
+                 ratio at every width. -->
+            <div class="widget-grid">
+                <img class="widget widget-medium" src="images/widget-day.webp"
+                    alt="A medium widget with a bar of the day's light, and the evening's golden and blue hours, both rated Great under 20% cloud."
+                    width="700" height="332" loading="lazy" decoding="async">
+                <img class="widget" src="images/widget-now.webp"
+                    alt="A small widget during golden hour, rated Great, until 7:10 PM."
+                    width="332" height="332" loading="lazy" decoding="async">
+                <img class="widget" src="images/widget-moon.webp"
+                    alt="A small widget with a 31% waxing crescent moon and tonight's dark sky from 10:07 PM to 5:23 AM."
+                    width="332" height="332" loading="lazy" decoding="async">
+                <img class="widget" src="images/widget-sunset.webp"
+                    alt="A small widget with sunset at 6:50 PM, and the golden and blue hours around it."
+                    width="332" height="332" loading="lazy" decoding="async">
+                <img class="widget widget-medium" src="images/widget-morning-evening.webp"
+                    alt="A medium widget comparing a day's morning, rated Poor under 90% cloud, with its evening, rated Great under 20%, and each one's blue hour, golden hour, sunrise and sunset."
+                    width="700" height="332" loading="lazy" decoding="async">
+                <img class="widget" src="images/widget-next.webp"
+                    alt="A small widget with golden hour, rated Great, starting at 6:05 PM in 2 hours."
+                    width="332" height="332" loading="lazy" decoding="async">
+            </div>
+        </div>
+    </section>
+
+    <section class="section-feature section-centered" id="watch">
+        <div class="container">
+            <p class="chip chip-night">Apple Watch</p>
+            <h2>Golden hour on your wrist</h2>
+            <p class="feature-copy">
+                Turn the Digital Crown through the day's cards: a countdown to the next golden or blue hour, the
+                morning's and evening's skies, and the day's details. Complications show when the next one starts,
+                and how promising it looks.
+            </p>
+
+            <div class="watch-row">
+                <div class="device watch">
+                    <img src="images/watch-evening.webp"
+                        alt="The evening card, rated Great under 20% cloud: golden hour at 6:41 PM, now 7:05 PM, sunset at 7:15 PM and blue hour at 7:31 PM over the evening's sky."
+                        width="416" height="496" loading="lazy" decoding="async">
+                </div>
+                <div class="device watch">
+                    <img src="images/watch-morning.webp"
+                        alt="The morning card, rated Poor under 90% cloud: blue hour at 6:26 AM, now 6:30 AM, golden hour at 6:36 AM and sunrise at 6:52 AM over the morning's sky."
+                        width="416" height="496" loading="lazy" decoding="async">
+                </div>
+                <div class="device watch">
+                    <img src="images/watch-outlook.webp"
+                        alt="The outlook card: before dawn Good, as cloud hides some stars, and morning Poor, as low cloud blocks the sun."
+                        width="416" height="496" loading="lazy" decoding="async">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <p>
+            Built by <a href="https://af.codes" target="_blank">Aidan Follestad</a> &#8226;
+            <a href="https://github.com/afollestad/Chromahora">Open source</a>
+            (<a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a>)
+        </p>
+        <p class="footer-sources">
+            Sun and moon times from <a href="https://sunrise-sunset.org">sunrise-sunset.org</a> &#8226;
+            Weather from <a href="https://weatherkit.apple.com/legal-attribution.html">Apple Weather</a>
+        </p>
+    </footer>
+
+    <!-- Do NOT rename this to a generic "back to top" name (jump-to-top, back-to-top,
+         scroll-to-top): ad-block cosmetic filters hide those id/class names, which
+         makes the button vanish in browsers with a content blocker. -->
+    <button class="overview-return" id="overview-return" aria-label="Scroll to top">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+        </svg>
+    </button>
+
+    <script src="scripts/overview-return.js" type="text/javascript"></script>
+</body>
+
+</html>

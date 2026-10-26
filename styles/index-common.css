@@ -1,0 +1,677 @@
+/* Theme-independent layout for chromahora.af.codes.
+   Color tokens and the skies painted with them live in index-light.css /
+   index-dark.css. */
+
+:root {
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* The app's DayPhase colors, plus SkyGradient.duskBridge, the mauve the app
+       blends blue and golden hours through instead of a muddy olive. Every sky
+       on the page is painted from these. */
+    --night: #0d1233;
+    --blue-hour: #2e4da8;
+    --dusk: #8c547a;
+    --golden-hour: #eb8529;
+    --daylight: #fcd14d;
+
+    /* Scroll-to-top button geometry. The footer derives its bottom padding from
+       these, so the button and the footer text can never collide. */
+    --fab-size: 2.5rem;
+    --fab-inset: 1.5rem;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font);
+    line-height: 1.5;
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+p {
+    margin: 0;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Every themed image is a <picture> so it can carry a dark variant. Left
+   inline it would put the block-level image in an inline box, adding a
+   line-height gap under it. */
+picture {
+    display: block;
+}
+
+a {
+    color: inherit;
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.container {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+/* Hero ------------------------------------------------------------------- */
+
+.section-hero {
+    /* .hero-sky, .top-brand and .top-actions are absolute; without this they
+       would anchor to the initial containing block instead of the hero. The
+       glow is wider than narrow viewports, so it's clipped here rather than
+       scrolling the page sideways. */
+    position: relative;
+    overflow: hidden;
+    overflow: clip;
+    padding: 6rem 0 5rem;
+    text-align: center;
+}
+
+/* The theme sheets paint the sky: a sunrise glow on the light page, a dusk
+   glow under stars on the dark one. It fades out before the hero's bottom
+   edge, where the clip would otherwise cut the glow off in a line. */
+.hero-sky {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+
+.hero-sky::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.hero-copy,
+.hero-devices,
+.top-brand,
+.top-actions {
+    position: relative;
+    z-index: 1;
+}
+
+/* Top brand and actions -------------------------------------------------- */
+
+.top-brand,
+.top-actions {
+    position: absolute;
+    top: 1rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.top-brand {
+    left: 1.5rem;
+}
+
+.top-actions {
+    right: 1.5rem;
+    gap: .5rem;
+}
+
+.top-brand .brand-logo {
+    display: inline-flex;
+    padding: .25rem;
+    border-radius: 50%;
+}
+
+.top-brand .brand-logo img {
+    width: 2rem;
+    border-radius: 50%;
+}
+
+.top-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: .75;
+    transition: opacity .2s ease, color .2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .top-btn:hover {
+        opacity: 1;
+        color: var(--accent);
+    }
+}
+
+.top-btn:focus-visible {
+    opacity: 1;
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+    display: none;
+}
+
+/* App icon and title ----------------------------------------------------- */
+
+/* Rendered from AppIcon.icon with Icon Composer's ictool, so the plate, glass
+   and corner mask are already in the image; drop-shadow follows its alpha. */
+.app-icon {
+    width: 7rem;
+    margin: 0 auto;
+}
+
+.app-icon img {
+    width: 100%;
+    filter: drop-shadow(0 .6rem 1.2rem var(--icon-shadow));
+}
+
+h1 {
+    display: inline-block;
+    margin-top: 1.5rem;
+    font-size: clamp(2.75rem, 7vw, 4.25rem);
+    font-weight: 700;
+    letter-spacing: -.035em;
+    line-height: 1.1;
+    color: var(--fg);
+}
+
+/* The name is painted with the day's light, blue hour through golden hour,
+   wherever text can be a gradient's clip; elsewhere it stays plain --fg. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    h1 {
+        background: var(--title-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+}
+
+.tagline {
+    max-width: 35rem;
+    margin: 1rem auto 0;
+    font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+    line-height: 1.55;
+    color: var(--secondary);
+}
+
+/* Buttons ---------------------------------------------------------------- */
+
+.cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .75rem;
+    margin-top: 2rem;
+}
+
+.app-store,
+.btn-ghost {
+    border-radius: .55rem;
+    transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Apple's badge artwork, unaltered and at least the 40px tall its guidelines
+   ask for. Its own rounded corners set the ghost button's radius. */
+.app-store img {
+    width: auto;
+    height: 3rem;
+}
+
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    height: 3rem;
+    padding: 0 1.2rem;
+    border: 1px solid var(--hairline-strong);
+    background: var(--ghost-bg);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: var(--fg);
+    font-size: .95rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+/* Two-line label, shorter together than the button, so it stays level with
+   the badge. */
+.btn-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+}
+
+.btn-subtext {
+    font-size: .7rem;
+    font-weight: 500;
+    color: var(--secondary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .app-store:hover,
+    .btn-ghost:hover {
+        transform: scale(1.03);
+    }
+}
+
+/* Devices ---------------------------------------------------------------- */
+
+/* The captures are full-screen and square-cornered. Each frame sizes from its
+   screen width, --w, so the bezel and both radii scale with it at every
+   width. */
+.device {
+    position: relative;
+    margin: 0 auto;
+    padding: var(--bezel);
+    width: calc(var(--w) + 2 * var(--bezel));
+    border-radius: calc(var(--radius) + var(--bezel));
+    background: #050506;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .1),
+        0 0 0 1px var(--device-rim),
+        0 2px 4px rgba(0, 0, 0, .08),
+        0 1.5rem 3rem -1rem var(--device-shadow),
+        0 3rem 6rem -2rem var(--device-shadow);
+}
+
+.device img {
+    width: 100%;
+    border-radius: var(--radius);
+}
+
+/* iPhone 18 Pro: a 402pt-wide screen with 62pt display corners. */
+.phone {
+    --w: min(290px, 62vw);
+    --bezel: calc(var(--w) * .036);
+    --radius: calc(var(--w) * .154);
+}
+
+.phone img {
+    aspect-ratio: 603 / 1311;
+}
+
+/* The Dynamic Island draws outside the app, so the captures leave room for it
+   without showing it: 126 by 37pt, 11pt below the screen's top edge. */
+.phone::after {
+    content: "";
+    position: absolute;
+    top: calc(var(--bezel) + var(--w) * .027);
+    left: 50%;
+    width: calc(var(--w) * .313);
+    height: calc(var(--w) * .093);
+    border-radius: 999px;
+    background: #000;
+    transform: translateX(-50%);
+}
+
+/* iPad Pro 13-inch: a 1032pt-wide screen with 18pt display corners. */
+.tablet {
+    --w: min(400px, 80vw);
+    --bezel: calc(var(--w) * .03);
+    --radius: calc(var(--w) * .0175);
+}
+
+.tablet img {
+    aspect-ratio: 1032 / 1376;
+}
+
+/* Apple Watch Series 12 (46mm). Its display is black around the content, so
+   a black bezel lets the screen's edge vanish the way it does on the watch,
+   inside a ring of case and a Digital Crown on the right. */
+.watch {
+    --w: min(160px, 30vw);
+    --bezel: calc(var(--w) * .07);
+    --radius: calc(var(--w) * .2);
+    --case: calc(var(--w) * .03);
+    background: #000;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .08),
+        0 0 0 var(--case) var(--watch-case),
+        0 0 0 calc(var(--case) + 1px) var(--device-rim),
+        0 1rem 2rem -.75rem var(--device-shadow),
+        0 2rem 4rem -1.5rem var(--device-shadow);
+}
+
+.watch img {
+    aspect-ratio: 416 / 496;
+}
+
+.watch::after {
+    content: "";
+    position: absolute;
+    top: 22%;
+    right: calc(-1 * var(--case) - var(--w) * .045);
+    width: calc(var(--w) * .06);
+    height: calc(var(--w) * .2);
+    border-radius: calc(var(--w) * .02);
+    background: var(--watch-crown);
+    box-shadow: 0 0 0 1px var(--device-rim);
+}
+
+/* The watch sits over the phone's lower right, and the pair shifts left by
+   half its overhang so the two read as centered together. */
+.hero-devices {
+    --watch-w: min(150px, 26vw);
+    width: fit-content;
+    margin: 4rem auto 0;
+    transform: translateX(calc(var(--watch-w) * -.36));
+}
+
+.hero-devices .phone {
+    --w: min(300px, 58vw);
+}
+
+.hero-devices .watch {
+    --w: var(--watch-w);
+    position: absolute;
+    left: calc(100% - var(--watch-w) * .5);
+    bottom: 3%;
+}
+
+/* Features --------------------------------------------------------------- */
+
+.section-feature {
+    padding: 5rem 0;
+}
+
+.feature-split {
+    max-width: 60rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 4rem;
+}
+
+.feature-split-reverse .feature-text {
+    order: 2;
+}
+
+.feature-text {
+    max-width: 28rem;
+    justify-self: center;
+}
+
+.section-centered {
+    text-align: center;
+}
+
+.section-centered .feature-copy {
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h2 {
+    margin-top: 1rem;
+    font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1.1;
+}
+
+.feature-copy {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--secondary);
+}
+
+/* Section labels are tinted capsules like the app's own timeline labels, each
+   filled with a phase's color. */
+.chip {
+    display: inline-flex;
+    padding: .3rem .85rem;
+    border-radius: 999px;
+    background: var(--chip-bg);
+    color: var(--chip-fg);
+    font-size: .875rem;
+    font-weight: 600;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .2),
+        inset 0 1px 0 rgba(255, 255, 255, .3),
+        0 1px 2px rgba(0, 0, 0, .1),
+        0 .35rem .9rem -.35rem var(--chip-bg);
+}
+
+.chip-blue {
+    --chip-bg: var(--blue-hour);
+    --chip-fg: #fff;
+}
+
+.chip-golden {
+    --chip-bg: var(--golden-hour);
+    --chip-fg: #1a1205;
+}
+
+.chip-daylight {
+    --chip-bg: var(--daylight);
+    --chip-fg: #1a1205;
+}
+
+.chip-mauve {
+    --chip-bg: var(--dusk);
+    --chip-fg: #fff;
+}
+
+.chip-night {
+    --chip-bg: var(--night);
+    --chip-fg: #fff;
+}
+
+/* Widgets ---------------------------------------------------------------- */
+
+/* A medium widget's image is two small ones plus 36px at the captures' 2x, so
+   the gap is that share of a column at every width, and rows stay level. Four
+   columns, three gaps and the wallpaper's padding come to 4.93 columns. The
+   wallpaper keeps every widget's sky clear of the page behind it, night's
+   included. */
+.section-centered .container {
+    container-type: inline-size;
+}
+
+.widget-grid {
+    --columns: 4;
+    --span: 4.93;
+    /* 100vw counts a desktop scrollbar, so the fallback leaves room for one. */
+    --col: min(166px, calc((100vw - 3.75rem) / var(--span)));
+    --widget-gap: calc(var(--col) * 36 / 332);
+    display: grid;
+    grid-template-columns: repeat(var(--columns), var(--col));
+    grid-auto-flow: dense;
+    gap: var(--widget-gap);
+    width: fit-content;
+    margin: 3rem auto 0;
+    padding: calc(var(--col) * .3);
+    border-radius: calc(var(--col) * .3);
+    background: var(--wallpaper);
+    box-shadow: var(--wallpaper-shadow);
+}
+
+@supports (width: 1cqi) {
+    .widget-grid {
+        --col: min(166px, calc(100cqi / var(--span)));
+    }
+}
+
+.widget {
+    width: 100%;
+    filter: drop-shadow(0 .4rem .8rem rgba(0, 0, 0, .18));
+}
+
+.widget-medium {
+    grid-column: span 2;
+}
+
+/* Watch ------------------------------------------------------------------ */
+
+.watch-row {
+    display: flex;
+    justify-content: center;
+    gap: clamp(1rem, 5vw, 3.5rem);
+    margin-top: 3.5rem;
+}
+
+.watch-row .watch {
+    --w: min(170px, 21vw);
+    margin: 0;
+}
+
+/* Footer ----------------------------------------------------------------- */
+
+.site-footer {
+    /* The scroll-to-top button is fixed over the bottom-right corner, and at
+       narrow widths this text is wide enough to run under it once the page is
+       scrolled to the end. Reserve the button's band plus a gap. */
+    padding: 9rem 1.25rem calc(var(--fab-inset) + var(--fab-size) + 1rem);
+    text-align: center;
+    font-size: .875rem;
+    color: var(--footer-fg);
+}
+
+.footer-sources {
+    margin-top: .35rem;
+    font-size: .8rem;
+    opacity: .8;
+}
+
+.site-footer a {
+    text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .site-footer a:hover {
+        text-decoration: underline;
+    }
+}
+
+/* Scroll-to-top ---------------------------------------------------------- */
+
+/* Do NOT rename this to a generic "back to top" name (jump-to-top, back-to-top,
+   scroll-to-top): ad-block cosmetic filters hide those id/class names, which
+   makes the button vanish in browsers with a content blocker. Glass, like the
+   app's floating chrome. */
+.overview-return {
+    position: fixed;
+    right: var(--fab-inset);
+    bottom: var(--fab-inset);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--fab-size);
+    height: var(--fab-size);
+    padding: 0;
+    border: 1px solid var(--fab-border);
+    border-radius: 50%;
+    background: var(--fab-bg);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    color: var(--fab-fg);
+    box-shadow: 0 4px 16px var(--fab-shadow);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(.5rem);
+    transition: opacity .25s ease, transform .3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility .25s ease;
+}
+
+.overview-return.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .overview-return.visible:hover {
+        transform: translateY(0) scale(1.05);
+    }
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 820px) {
+    .section-feature {
+        padding: 4rem 0;
+    }
+
+    .feature-split {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+        text-align: center;
+    }
+
+    .feature-split-reverse .feature-text {
+        order: 0;
+    }
+
+    .feature-text {
+        max-width: 34rem;
+    }
+}
+
+/* Two columns, where four would shrink a widget's text past reading. A medium
+   widget takes a row, and dense flow pulls the small ones up in pairs. */
+@media (max-width: 760px) {
+    .widget-grid {
+        --columns: 2;
+        --span: 2.71;
+    }
+}
+
+@media (max-width: 600px) {
+    .section-hero {
+        padding: 5rem 0 3.5rem;
+    }
+
+    .app-icon {
+        width: 5.5rem;
+    }
+
+    .hero-devices {
+        margin-top: 3rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
+
+    .app-store:hover,
+    .btn-ghost:hover,
+    .overview-return.visible:hover {
+        transform: none;
+    }
+}
