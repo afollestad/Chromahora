@@ -377,13 +377,16 @@ h1 {
     box-shadow: 0 0 0 1px var(--device-rim);
 }
 
-/* The watch sits over the phone's lower right, and the pair shifts left by
-   half its overhang so the two read as centered together. */
+/* The phone stays on the copy's center line, since the watch is often below
+   the fold on first load, and centering the pair would leave the phone off
+   center alone. The watch's box is 1.14 screens wide, so .57 centers it on the
+   phone's right edge. It hangs below the phone, clear of the timeline's
+   labels, and 22vw keeps its crown at least 15px from the viewport's edge on
+   phones. */
 .hero-devices {
-    --watch-w: min(150px, 26vw);
+    --watch-w: min(150px, 22vw);
     width: fit-content;
     margin: 4rem auto 0;
-    transform: translateX(calc(var(--watch-w) * -.36));
 }
 
 .hero-devices .phone {
@@ -393,8 +396,8 @@ h1 {
 .hero-devices .watch {
     --w: var(--watch-w);
     position: absolute;
-    left: calc(100% - var(--watch-w) * .5);
-    bottom: 3%;
+    left: calc(100% - var(--watch-w) * .57);
+    bottom: -4%;
 }
 
 /* Features --------------------------------------------------------------- */
