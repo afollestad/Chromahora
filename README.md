@@ -1,8 +1,19 @@
-# Chromahora
+<p align="center">
+  <picture>
+    <source srcset="docs/images/app-icon-dark.png" media="(prefers-color-scheme: dark)">
+    <img src="docs/images/app-icon-light.png" alt="" width="128" height="128">
+  </picture>
+</p>
 
-[![Download on the App Store](docs/assets/app-store-badge.svg)](https://apps.apple.com/us/app/chromahora/id6817085752)
+<h1 align="center">Chromahora</h1>
 
-Chromahora is a native iOS day planner for photographers: blue hour, golden hour, weather, cloud cover, UV, moon phase and dark skies, with an outlook that rates each stretch of the day's light.
+<p align="center">A native iOS day planner for photographers.</p>
+
+<p align="center">
+  <a href="https://apps.apple.com/us/app/chromahora/id6817085752"><img src="docs/assets/app-store-badge.svg" alt="Download on the App Store"></a>
+</p>
+
+Chromahora covers blue hour, golden hour, weather, cloud cover, UV, moon phase and dark skies, with an outlook that rates each stretch of the day's light.
 
 Its home screen widgets show the next golden or blue hour, the next sunrise or sunset, the moon and tonight's dark sky, and the whole day's light at a glance.
 
