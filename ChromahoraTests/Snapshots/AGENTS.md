@@ -11,6 +11,7 @@ These rules cover `ChromahoraTests/Snapshots/`: `SnapshotTests` and its `+Topic`
 - `record` rewrites every baseline it runs, with encoder noise even when nothing moved, so pass the identifiers of the ones meant to change.
 - A test with no baseline yet makes `xcsift` report an unrelated test as "did not complete (possible crash)". The raw log has the real outcome; create new baselines with `record`.
 - Baselines hold only on their suite's device, full screen in portrait, in `en_US`, on the current simulator runtime: `SnapshotTests` on iPhone 18 Pro, and `WideSnapshotTests` on iPad mini (A17 Pro). When an Xcode or runtime update fails them with no code change, re-record and review the diffs.
+- CI's runner image gains simulator runtimes on its own, and xcodebuild tests on the newest, so baselines can fail only in CI. The failed run's `xcode-test-logs` artifact has an `.xcresult` naming the OS; install that runtime, which `xcodebuild -downloadPlatform iOS` fetches for this Xcode's version, then run `./scripts/setup.sh` and re-record.
 
 ### Writing
 
