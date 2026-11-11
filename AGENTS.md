@@ -6,6 +6,7 @@ Guidance for AI agents working in this repo. `README.md` says what the app is.
 
 - Keep only durable, non-obvious rules: things an agent cannot derive from the code, git history, or `README.md` and would otherwise get wrong.
 - Do not record file inventories, task history, in-progress work, or personal tooling preferences. Those live in each agent's global config.
+- Keep `README.md` for people: what the app does and the scripts that build it. Leave rules for agents, every script flag, and change history out of it.
 - One rule per bullet, in the imperative, at most two sentences. Add the reason inline when it isn't obvious.
 - Sections are fixed and stay in the order below. A section holds at most ten rules; when it outgrows that, move the detail to a file under `docs/agents/` and leave a one-line pointer here.
 - Rules that apply to a single directory go in an `AGENTS.md` inside that directory, not here.
