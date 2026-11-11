@@ -10,6 +10,8 @@
     --secondary: #545873;
     /* AccentColor's light variant. */
     --accent: #9e4a06;
+    /* 6.1:1 on --accent. */
+    --on-accent: #ffffff;
     /* Links in running text, as on the privacy policy: blue hour, 7.3:1 on --bg. */
     --link: #2e4da8;
     --hairline: rgba(16, 21, 58, .12);

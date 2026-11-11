@@ -11,6 +11,8 @@
     --secondary: #a6abc8;
     /* AccentColor's dark variant. */
     --accent: #e07a1f;
+    /* --bg, 6.1:1 on --accent; white falls to 3:1. */
+    --on-accent: #0d1233;
     /* Links in running text, as on the privacy policy: blue hour lifted to 8:1 on --bg. */
     --link: #8fa8ff;
     --hairline: rgba(243, 241, 236, .12);

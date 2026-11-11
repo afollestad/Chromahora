@@ -219,12 +219,15 @@ button:focus-visible {
     }
 }
 
+/* Widened from 35rem so the tagline sets in two lines on desktop rather than
+   three, with room to spare for other systems' fonts. */
 .tagline {
-    max-width: 35rem;
+    max-width: 47rem;
     margin: 1rem auto 0;
     font-size: clamp(1.05rem, 1.6vw, 1.2rem);
     line-height: 1.55;
     color: var(--secondary);
+    text-wrap: balance;
 }
 
 /* Buttons ---------------------------------------------------------------- */
@@ -237,24 +240,9 @@ button:focus-visible {
     margin-top: 2rem;
 }
 
-.app-store,
-.btn-ghost {
-    border-radius: .55rem;
-    transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Apple's badge artwork, unaltered and at least the 40px tall its guidelines
-   ask for. Its own rounded corners set the ghost button's radius. contain
-   scales it down whole, rather than squashing it, when a phone with enlarged
-   text caps its width. */
-.app-store img {
-    width: auto;
-    height: 3rem;
-    object-fit: contain;
-}
-
 /* A minimum height and wrapping labels, so a button too wide for a phone with
    enlarged text grows taller instead; a flex row wraps whole buttons first. */
+.btn-primary,
 .btn-ghost {
     display: inline-flex;
     align-items: center;
@@ -263,37 +251,56 @@ button:focus-visible {
     min-height: 3rem;
     max-width: 100%;
     padding: .4rem 1.2rem;
+    border-radius: .55rem;
+    font-size: .95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-primary svg,
+.btn-ghost svg {
+    flex-shrink: 0;
+}
+
+/* Filled with AccentColor, like the sibling sites' download buttons. */
+.btn-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+    box-shadow: 0 .5rem 1.25rem -.5rem var(--accent);
+}
+
+.btn-ghost {
     border: 1px solid var(--hairline-strong);
     background: var(--ghost-bg);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     color: var(--fg);
-    font-size: .95rem;
-    font-weight: 600;
-    text-decoration: none;
 }
 
-.btn-ghost svg {
-    flex-shrink: 0;
-}
-
-/* Two-line label, shorter together than the button, so it stays level with
-   the badge. */
+/* Two-line labels, shorter together than the button, so both buttons stay
+   the same height. */
 .btn-stack {
     display: inline-flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     line-height: 1.15;
+    text-align: left;
 }
 
+/* Full --on-accent on the App Store button: a muted color on the accent
+   drops below 4.5:1. */
 .btn-subtext {
     font-size: .7rem;
     font-weight: 500;
+}
+
+.btn-ghost .btn-subtext {
     color: var(--secondary);
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .app-store:hover,
+    .btn-primary:hover,
     .btn-ghost:hover {
         transform: scale(1.03);
     }
@@ -688,7 +695,7 @@ button:focus-visible {
         animation-duration: .01ms !important;
     }
 
-    .app-store:hover,
+    .btn-primary:hover,
     .btn-ghost:hover,
     .overview-return.visible:hover {
         transform: none;
