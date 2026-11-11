@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source srcset="docs/images/app-icon-dark.png" media="(prefers-color-scheme: dark)">
-    <img src="docs/images/app-icon-light.png" alt="" width="128" height="128">
+    <img src="docs/images/app-icon-light.png" alt="" width="96" height="96">
   </picture>
 </p>
 
@@ -17,21 +17,23 @@ Chromahora covers blue hour, golden hour, weather, cloud cover, UV, moon phase a
 
 Its home screen widgets show the next golden or blue hour, the next sunrise or sunset, the moon and tonight's dark sky, and the whole day's light at a glance.
 
-On Apple Watch, the Digital Crown moves through a day's cards: a countdown to the next golden or blue hour, the morning's and evening's skies, and the day's details, with the days either side a swipe away. Complications on the watch face show when the next golden or blue hour starts, or while one is under way, when it ends, and how promising it looks.
+On Apple Watch, the Digital Crown moves through the day's cards, and complications show when the next golden or blue hour starts and how promising it looks.
 
-Sun and moon times come from [sunrise-sunset.org](https://sunrise-sunset.org), weather from [Apple WeatherKit](https://developer.apple.com/weatherkit/), and place search and town names from Apple Maps. Live weather needs WeatherKit enabled for the App ID, under both Capabilities and App Services.
+Sun and moon times come from [sunrise-sunset.org](https://sunrise-sunset.org), weather from [Apple WeatherKit](https://developer.apple.com/weatherkit/), and place search and town names from Apple Maps.
 
 ## Development
 
 ```sh
-./scripts/setup.sh             # Install SwiftLint, xcsift, AXe and duoctl, a lint pre-commit hook, and the simulators the scripts run on
-./scripts/build.sh             # Build for the iOS Simulator, with the watch app it embeds (--watch builds the watch app alone; --device <udid> for an iPhone or iPad)
-./scripts/run.sh -b            # Build, install, and launch on a reachable iPhone or iPad, else the simulator (-s for the simulator; -d <name or UDID> for a device; -w for the watch app; omit -b to relaunch the last build; pass launch arguments after --)
+./scripts/setup.sh             # Install tools, a lint pre-commit hook, and the simulators the scripts use
+./scripts/build.sh             # Build for the iOS Simulator, with the watch app it embeds
+./scripts/run.sh -b            # Build and launch on a reachable iPhone or iPad, else the simulator (-s for the simulator, -w for the watch app)
 ./scripts/test.sh              # Run unit and snapshot tests
 ./scripts/snapshots.sh verify  # Compare snapshots against their baselines (record to update them)
 ./scripts/lint.sh              # Run SwiftLint
-./scripts/screenshots.sh -b    # Build, then capture App Store screenshots on iPhone 18 Pro, iPhone Duo, iPad Pro 13-inch and Apple Watch Series 12 (46mm) (--dark for dark mode)
+./scripts/screenshots.sh -b    # Build, then capture App Store screenshots (--dark for dark mode)
 ```
+
+Live weather needs WeatherKit enabled for the App ID, under both Capabilities and App Services.
 
 ## License
 
